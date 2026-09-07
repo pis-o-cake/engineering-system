@@ -20,3 +20,19 @@
 - [Project lock schema](schemas/lock.schema.json)
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
+
+## Local use
+
+개발 중에는 한 번만 plugin directory를 연결한다.
+
+```sh
+claude --plugin-dir /path/to/engineering-system
+```
+
+대상 Git 프로젝트에서는 dependency 설치 없이 adapter만 만든다. `init`은 기존 계약을 절대
+덮어쓰지 않으며, manifest를 수동으로 바꾼 뒤에는 `sync`와 `check`를 차례로 실행한다.
+
+```sh
+/path/to/engineering-system/bin/engsys init --verify 'make check'
+/path/to/engineering-system/bin/engsys check
+```

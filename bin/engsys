@@ -1,0 +1,362 @@
+#!/bin/sh
+
+# Dependency-free project adapter for the Engineering System plugin.
+set -eu
+
+system_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+
+die() {
+  printf '%s\n' "engsys: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  engsys init --verify <command> [options]
+  engsys check [--project <directory>]
+  engsys sync [--project <directory>]
+
+Options for init:
+  --project <directory>       Target Git worktree (default: current directory)
+  --name <name>               Project name (default: directory name)
+  --profile <profile>         System profile (default: baseline)
+  --verify <command>          Project-native verification command (required)
+  --source <name=path>        Source-of-truth path; repeatable
+  --policy <path>             Documentation policy path
+  --architecture <path>       Current architecture document path
+  --generated <path> <command>
+                              Generated document output and its check command; repeatable
+  --lifecycle <name> <path> <statuses>
+                              Historical record path and comma-separated frozen statuses; repeatable
+EOF
+}
+
+yaml_quote() {
+  printf "'%s'" "$(printf %s "$1" | sed "s/'/''/g")"
+}
+
+yaml_unquote() {
+  value=$1
+  case "$value" in
+    \'*\') value=${value#\'}; value=${value%\'}; value=$(printf %s "$value" | sed "s/''/'/g") ;;
+  esac
+  printf %s "$value"
+}
+
+require_value() {
+  [ "$#" -ge 2 ] || die "$1 requires a value"
+}
+
+normalise_project_dir() {
+  [ -d "$1" ] || die "project directory does not exist: $1"
+  (CDPATH= cd -- "$1" && pwd)
+}
+
+require_worktree() {
+  git -C "$1" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || die "target is not a Git worktree: $1"
+}
+
+require_profile() {
+  case "$1" in
+    ''|*[!A-Za-z0-9_-]*) die "invalid profile name: $1" ;;
+  esac
+  [ -f "$system_root/profiles/$1.yaml" ] || die "unknown profile: $1"
+}
+
+require_relative_path() {
+  case "$1" in
+    ''|/*|..|../*|*/../*|*/..) die "path must be project-relative: $1" ;;
+  esac
+}
+
+profile_packages() {
+  sed -n 's/^  -[[:space:]]*//p' "$system_root/profiles/$1.yaml"
+}
+
+package_version() {
+  sed -n 's/^  version:[[:space:]]*//p' "$system_root/packages/$1/package.yaml" | sed -n '1p'
+}
+
+system_revision() {
+  git -C "$system_root" rev-parse HEAD 2>/dev/null || printf '%s' 'unversioned'
+}
+
+write_status_list() {
+  statuses=$1
+  old_ifs=$IFS
+  IFS=,
+  set -- $statuses
+  IFS=$old_ifs
+  [ "$#" -gt 0 ] || die "lifecycle requires at least one frozen status"
+
+  first=true
+  printf '['
+  for status in "$@"; do
+    [ -n "$status" ] || die "lifecycle contains an empty frozen status"
+    if [ "$first" = true ]; then
+      first=false
+    else
+      printf ', '
+    fi
+    yaml_quote "$status"
+  done
+  printf ']'
+}
+
+write_project_contract() {
+  project_dir=$1
+  profile=$2
+  name=$3
+  verify=$4
+  sources=$5
+  policy=$6
+  architecture=$7
+  generated=$8
+  lifecycles=$9
+
+  {
+    printf '%s\n' 'system:'
+    printf '  profile: '; yaml_quote "$profile"; printf '\n\n'
+    printf '%s\n' 'project:'
+    printf '  name: '; yaml_quote "$name"; printf '\n'
+    if [ -n "$sources" ]; then
+      printf '%s\n' '  source-of-truth:'
+      printf '%s\n' "$sources" | while IFS="$(printf '\t')" read -r source_name source_path; do
+        printf '    %s: ' "$source_name"; yaml_quote "$source_path"; printf '\n'
+      done
+    else
+      printf '%s\n' '  source-of-truth: {}'
+    fi
+    printf '\n%s\n' 'commands:'
+    printf '  verify: '; yaml_quote "$verify"; printf '\n\n'
+    printf '%s\n' 'documentation:'
+    if [ -n "$policy" ]; then
+      printf '  policy: '; yaml_quote "$policy"; printf '\n'
+    fi
+    if [ -n "$architecture" ]; then
+      printf '  architecture: '; yaml_quote "$architecture"; printf '\n'
+    fi
+    if [ -n "$generated" ]; then
+      printf '%s\n' '  generated:'
+      printf '%s\n' "$generated" | while IFS="$(printf '\t')" read -r output command; do
+        printf '    - output: '; yaml_quote "$output"; printf '\n'
+        printf '      command: '; yaml_quote "$command"; printf '\n'
+      done
+    else
+      printf '%s\n' '  generated: []'
+    fi
+    if [ -n "$lifecycles" ]; then
+      printf '%s\n' '  lifecycle:'
+      printf '%s\n' "$lifecycles" | while IFS="$(printf '\t')" read -r lifecycle_name lifecycle_path lifecycle_statuses; do
+        printf '    %s:\n' "$lifecycle_name"
+        printf '      path: '; yaml_quote "$lifecycle_path"; printf '\n'
+        printf '      frozen-status: '; write_status_list "$lifecycle_statuses"; printf '\n'
+      done
+    else
+      printf '%s\n' '  lifecycle: {}'
+    fi
+  } >"$project_dir/.engsys/project.yaml"
+}
+
+write_lock() {
+  project_dir=$1
+  profile=$2
+  revision=$(system_revision)
+
+  {
+    printf '%s\n' 'lock-version: 1'
+    printf '%s\n' 'system:'
+    printf '%s\n' '  repository: github.com/pis-o-cake/engineering-system'
+    printf '  revision: '; yaml_quote "$revision"; printf '\n'
+    printf 'profile: '; yaml_quote "$profile"; printf '\n'
+    printf '%s\n' 'packages:'
+    profile_packages "$profile" | while IFS= read -r package; do
+      [ -f "$system_root/packages/$package/package.yaml" ] || die "profile references missing package: $package"
+      version=$(package_version "$package")
+      [ -n "$version" ] || die "package has no version: $package"
+      printf '  %s:\n' "$package"
+      printf '    version: '; yaml_quote "$version"; printf '\n'
+      printf '    revision: '; yaml_quote "$revision"; printf '\n'
+    done
+  } >"$project_dir/.engsys/lock.yaml"
+}
+
+extract_generated_paths() {
+  contract=$1
+  sed -n 's/^[[:space:]]*-[[:space:]]*output:[[:space:]]*//p' "$contract" \
+    | while IFS= read -r path; do
+        yaml_unquote "$path"
+        printf '\n'
+      done
+}
+
+sync_generated_paths() {
+  project_dir=$1
+  destination=$2
+  temporary="$destination.tmp.$$"
+  cleanup_temporary() {
+    cleanup_status=$?
+    rm -f "$temporary"
+    trap - 0 1 2 15
+    exit "$cleanup_status"
+  }
+  trap cleanup_temporary 0 1 2 15
+  extract_generated_paths "$project_dir/.engsys/project.yaml" >"$temporary"
+  while IFS= read -r output || [ -n "$output" ]; do
+    require_relative_path "$output"
+  done <"$temporary"
+  mv "$temporary" "$destination"
+  trap - 0 1 2 15
+}
+
+init() {
+  project_dir=$(pwd)
+  profile=baseline
+  name=
+  verify=
+  sources=
+  policy=
+  architecture=
+  generated=
+  lifecycles=
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --profile) require_value "$@"; profile=$2; shift 2 ;;
+      --name) require_value "$@"; name=$2; shift 2 ;;
+      --verify) require_value "$@"; verify=$2; shift 2 ;;
+      --source)
+        require_value "$@"
+        source_name=${2%%=*}
+        source_path=${2#*=}
+        [ "$source_name" != "$source_path" ] && [ -n "$source_name" ] && [ -n "$source_path" ] \
+          || die "--source must be name=path"
+        case "$source_name" in *[!A-Za-z0-9_-]*) die "invalid source name: $source_name" ;; esac
+        require_relative_path "$source_path"
+        sources="${sources}${sources:+
+}$source_name$(printf '\t')$source_path"
+        shift 2
+        ;;
+      --policy) require_value "$@"; policy=$2; require_relative_path "$policy"; shift 2 ;;
+      --architecture) require_value "$@"; architecture=$2; require_relative_path "$architecture"; shift 2 ;;
+      --generated)
+        [ "$#" -ge 3 ] || die "--generated requires an output path and command"
+        require_relative_path "$2"
+        [ -n "$3" ] || die "generated document command must not be empty"
+        generated="${generated}${generated:+
+}$2$(printf '\t')$3"
+        shift 3
+        ;;
+      --lifecycle)
+        [ "$#" -ge 4 ] || die "--lifecycle requires a name, path, and frozen statuses"
+        case "$2" in ''|*[!A-Za-z0-9_-]*) die "invalid lifecycle name: $2" ;; esac
+        require_relative_path "$3"
+        [ -n "$4" ] || die "lifecycle requires frozen statuses"
+        lifecycles="${lifecycles}${lifecycles:+
+}$2$(printf '\t')$3$(printf '\t')$4"
+        shift 4
+        ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown init option: $1" ;;
+    esac
+  done
+
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  require_profile "$profile"
+  [ -n "$verify" ] || die "--verify is required; declare the project's native verification command"
+  [ -n "$name" ] || name=$(basename "$project_dir")
+
+  if [ -e "$project_dir/.engsys/project.yaml" ] || [ -e "$project_dir/.engsys/lock.yaml" ]; then
+    die "project contract already exists; inspect it and use engsys sync or upgrade instead"
+  fi
+
+  mkdir -p "$project_dir/.engsys" "$project_dir/.claude/rules"
+  write_project_contract "$project_dir" "$profile" "$name" "$verify" "$sources" "$policy" "$architecture" "$generated" "$lifecycles"
+  write_lock "$project_dir" "$profile"
+  sync_generated_paths "$project_dir" "$project_dir/.engsys/generated-paths.txt"
+
+  route="$project_dir/.claude/rules/engineering-system.md"
+  if [ ! -e "$route" ]; then
+    cp "$system_root/templates/project/.claude/rules/engineering-system.md" "$route"
+  fi
+
+  printf '%s\n' "Initialized Engineering System contract in $project_dir"
+}
+
+check() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown check option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+
+  contract="$project_dir/.engsys/project.yaml"
+  lock="$project_dir/.engsys/lock.yaml"
+  generated_paths="$project_dir/.engsys/generated-paths.txt"
+  route="$project_dir/.claude/rules/engineering-system.md"
+  [ -f "$contract" ] || die "missing .engsys/project.yaml"
+  [ -f "$lock" ] || die "missing .engsys/lock.yaml"
+  [ -f "$generated_paths" ] || die "missing .engsys/generated-paths.txt"
+  [ -f "$route" ] || die "missing .claude/rules/engineering-system.md"
+
+  profile=$(sed -n 's/^  profile:[[:space:]]*//p' "$contract" | sed -n '1p')
+  profile=$(yaml_unquote "$profile")
+  [ -n "$profile" ] || die "project contract has no system.profile"
+  require_profile "$profile"
+  grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
+  grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
+  grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
+  lock_profile=$(sed -n 's/^profile:[[:space:]]*//p' "$lock" | sed -n '1p')
+  lock_profile=$(yaml_unquote "$lock_profile")
+  [ "$profile" = "$lock_profile" ] || die "lock profile does not match project profile"
+  grep -Eq '^  repository:[[:space:]]*[^[:space:]]' "$lock" || die "lock has no system repository"
+  grep -Eq '^  revision:[[:space:]]*[^[:space:]]' "$lock" || die "lock has no system revision"
+  profile_packages "$profile" | while IFS= read -r package; do
+    grep -Fq "  $package:" "$lock" || die "lock omits profile package: $package"
+  done
+
+  expected="$generated_paths.expected.$$"
+  sync_generated_paths "$project_dir" "$expected"
+  if ! cmp -s "$expected" "$generated_paths"; then
+    rm -f "$expected"
+    die "generated-paths.txt is stale; run engsys sync"
+  fi
+  rm -f "$expected"
+
+  printf '%s\n' "Engineering System adapter checks passed: $project_dir"
+}
+
+sync() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown sync option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  [ -f "$project_dir/.engsys/project.yaml" ] || die "missing .engsys/project.yaml"
+  mkdir -p "$project_dir/.engsys"
+  sync_generated_paths "$project_dir" "$project_dir/.engsys/generated-paths.txt"
+  printf '%s\n' "Synchronized generated paths: $project_dir/.engsys/generated-paths.txt"
+}
+
+command=${1:-help}
+case "$command" in
+  init) shift; init "$@" ;;
+  check) shift; check "$@" ;;
+  sync) shift; sync "$@" ;;
+  help|-h|--help) usage ;;
+  *) die "unknown command: $command" ;;
+esac

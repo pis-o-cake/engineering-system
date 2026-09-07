@@ -3,7 +3,13 @@
 set -eu
 
 test_dir=$(mktemp -d)
-trap 'rm -rf "$test_dir"' EXIT
+cleanup() {
+  cleanup_status=$?
+  rm -rf "$test_dir"
+  trap - 0 1 2 15
+  exit "$cleanup_status"
+}
+trap cleanup 0 1 2 15
 git -C "$test_dir" init -q
 mkdir -p "$test_dir/.engsys"
 printf '%s\n' 'docs/generated.md' >"$test_dir/.engsys/generated-paths.txt"

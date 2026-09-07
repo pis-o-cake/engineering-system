@@ -17,5 +17,5 @@ workflow:
     - copy system skills or hooks into the project
     - modify project-owned CLAUDE.md
   verify:
-    - project contract validates against schema
+    - engsys check passes
     - resolved packages match selected profile

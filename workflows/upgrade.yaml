@@ -15,5 +15,5 @@ workflow:
     - modify project-owned documentation
     - silently change a locked package revision
   verify:
-    - project contract validates against schema
+    - engsys check passes
     - project native verify command succeeds
