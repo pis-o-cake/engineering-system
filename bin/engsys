@@ -534,21 +534,11 @@ write_lock() {
 }
 
 extract_generated_paths() {
-  contract=$1
-  sed -n 's/^[[:space:]]*-[[:space:]]*output:[[:space:]]*//p' "$contract" \
-    | while IFS= read -r path; do
-        yaml_unquote "$path"
-        printf '\n'
-      done
+  awk -v requested=output -f "$system_root/lib/generated-documents.awk" "$1"
 }
 
 extract_generated_commands() {
-  contract=$1
-  sed -n 's/^      command:[[:space:]]*//p' "$contract" \
-    | while IFS= read -r command; do
-        yaml_unquote "$command"
-        printf '\n'
-      done
+  awk -v requested=command -f "$system_root/lib/generated-documents.awk" "$1"
 }
 
 sync_generated_paths() {
