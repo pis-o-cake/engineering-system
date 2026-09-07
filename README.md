@@ -23,10 +23,11 @@
 
 ## Local use
 
-개발 중에는 한 번만 plugin directory를 연결한다.
+개발 중에는 shell profile에 한 번만 system command를 연결한다. 이 명령은 파일을 수정하지 않고
+shell에 넣을 export문만 출력한다.
 
 ```sh
-claude --plugin-dir /path/to/engineering-system
+eval "$(/path/to/engineering-system/bin/engsys shellenv)"
 ```
 
 대상 Git 프로젝트에서는 dependency 설치 없이 adapter만 만든다. `init`은 기존 계약을 절대
@@ -41,3 +42,6 @@ claude --plugin-dir /path/to/engineering-system
 `check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않으며,
 `engsys upgrade`가 먼저 plan을 보여 준 뒤 `--apply`를 명시해야 반영한다.
+
+Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision과 일치하는
+plugin root를 선택하고, 없으면 system cache에 해당 Git worktree를 준비한다.

@@ -3,6 +3,11 @@ adapter:
   plugin: engsys
   status: draft
 
+launcher:
+  command: engsys claude
+  plugin-root: project lock system.revision
+  cache: developer-local Git worktree
+
 context-budget:
   project-route-max-lines: 12
   skill-description-max-characters: 240

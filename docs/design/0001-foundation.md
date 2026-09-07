@@ -56,6 +56,15 @@ upgrade는 먼저 plan을 보여 준 뒤 lock과 generated adapter만 바꾼다.
 - Historical record 본문 변경은 v0.1에서 막지 않고 lifecycle skill과 native 검사로 검토한다.
 - Hook이 닿지 않는 사람·CI 경로는 project native gate가 동일 규칙을 검사한다.
 
+## 개발자 활성화와 lock
+
+개발자는 clone한 system root의 `engsys shellenv` 출력을 shell profile에 한 번만 등록한다.
+프로젝트에서는 `engsys claude`로 Claude Code를 실행한다. 이 launcher는 `.engsys/lock.yaml`의
+revision과 같은 clean plugin root를 선택한다. 현재 root가 다르면 cache worktree를 만든다.
+
+따라서 system catalog를 pull한 사실만으로 옛 프로젝트의 skill·hook이 바뀌지 않는다. lock을
+바꾸는 길은 `engsys upgrade`의 plan과 명시적 `--apply`뿐이다.
+
 ## Context budget
 
 Project route는 12줄 이하로 둔다. skill description은 240자 이하, 본문은 150줄 이하로 둔다.

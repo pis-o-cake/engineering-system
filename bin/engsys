@@ -3,7 +3,11 @@
 # Dependency-free project adapter for the Engineering System plugin.
 set -eu
 
-system_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ]; then
+  system_root=$(CDPATH= cd -- "$ENGSYS_SYSTEM_ROOT" && pwd)
+else
+  system_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+fi
 
 die() {
   printf '%s\n' "engsys: $*" >&2
@@ -18,6 +22,9 @@ Usage:
   engsys sync [--project <directory>]
   engsys verify [--project <directory>]
   engsys upgrade [--project <directory>] [--apply]
+  engsys resolve [--project <directory>]
+  engsys claude [--project <directory>] [claude arguments...]
+  engsys shellenv
 
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
@@ -89,6 +96,26 @@ system_revision() {
   git -C "$system_root" rev-parse HEAD 2>/dev/null || printf '%s' 'unversioned'
 }
 
+system_is_clean() {
+  [ -z "$(git -C "$system_root" status --porcelain --untracked-files=no 2>/dev/null)" ]
+}
+
+cache_root() {
+  if [ -n "${ENGSYS_CACHE_DIR:-}" ]; then
+    printf '%s' "$ENGSYS_CACHE_DIR"
+  elif [ -n "${XDG_CACHE_HOME:-}" ]; then
+    printf '%s/engineering-system' "$XDG_CACHE_HOME"
+  else
+    printf '%s/.cache/engineering-system' "$HOME"
+  fi
+}
+
+require_safe_revision() {
+  case "$1" in
+    ''|*[!A-Za-z0-9._-]*) die "unsupported lock revision: $1" ;;
+  esac
+}
+
 project_profile() {
   profile=$(sed -n 's/^  profile:[[:space:]]*//p' "$1" | sed -n '1p')
   yaml_unquote "$profile"
@@ -125,6 +152,40 @@ lock_package_value() {
 lock_system_revision() {
   revision=$(sed -n '/^system:$/,/^profile:$/s/^  revision:[[:space:]]*//p' "$1" | sed -n '1p')
   yaml_unquote "$revision"
+}
+
+resolve_locked_plugin() {
+  project_dir=$1
+  lock="$project_dir/.engsys/lock.yaml"
+  [ -f "$lock" ] || die "missing .engsys/lock.yaml"
+  revision=$(lock_system_revision "$lock")
+  [ -n "$revision" ] || die "lock has no system revision"
+  require_safe_revision "$revision"
+
+  if [ "$(system_revision)" = "$revision" ] && system_is_clean; then
+    printf '%s\n' "$system_root"
+    return
+  fi
+
+  cache_dir="$(cache_root)/releases/$revision"
+  if [ -d "$cache_dir" ]; then
+    cached_revision=$(git -C "$cache_dir" rev-parse HEAD 2>/dev/null || true)
+    [ "$cached_revision" = "$revision" ] || die "cached revision is invalid: $cache_dir"
+    [ -z "$(git -C "$cache_dir" status --porcelain --untracked-files=no 2>/dev/null)" ] \
+      || die "cached revision has local changes: $cache_dir"
+    printf '%s\n' "$cache_dir"
+    return
+  fi
+
+  if ! git -C "$system_root" cat-file -e "$revision^{commit}" 2>/dev/null; then
+    git -C "$system_root" fetch --quiet origin
+  fi
+  git -C "$system_root" cat-file -e "$revision^{commit}" 2>/dev/null \
+    || die "locked revision is unavailable from origin: $revision"
+  mkdir -p "$(cache_root)/releases"
+  git -C "$system_root" worktree add --quiet --detach "$cache_dir" "$revision" \
+    || die "could not prepare cached revision: $revision"
+  printf '%s\n' "$cache_dir"
 }
 
 list_contains() {
@@ -499,6 +560,46 @@ upgrade() {
   printf '%s\n' "Applied Engineering System upgrade: $project_dir"
 }
 
+resolve() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown resolve option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  resolve_locked_plugin "$project_dir"
+}
+
+claude() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) break ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  command -v claude >/dev/null 2>&1 || die "Claude Code is not on PATH"
+  plugin_root=$(resolve_locked_plugin "$project_dir")
+  unset ENGSYS_SYSTEM_ROOT
+  exec claude --plugin-dir "$plugin_root" "$@"
+}
+
+shell_quote() {
+  printf "'%s'" "$(printf %s "$1" | sed "s/'/'\\\\''/g")"
+}
+
+shellenv() {
+  bin_dir="$system_root/bin"
+  printf 'export PATH=%s:"$PATH"\n' "$(shell_quote "$bin_dir")"
+}
+
 command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
@@ -506,6 +607,9 @@ case "$command" in
   sync) shift; sync "$@" ;;
   verify) shift; verify "$@" ;;
   upgrade) shift; upgrade "$@" ;;
+  resolve) shift; resolve "$@" ;;
+  claude) shift; claude "$@" ;;
+  shellenv) shift; shellenv "$@" ;;
   help|-h|--help) usage ;;
   *) die "unknown command: $command" ;;
 esac
