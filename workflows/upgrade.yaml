@@ -16,3 +16,7 @@ workflow:
   verify:
     - engsys check passes
     - project native verify command succeeds
+    - declared generated-document checks succeed
+  on-failure:
+    - restore the previous lock
+    - return the verification failure status

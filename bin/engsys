@@ -513,6 +513,7 @@ write_project_contract() {
 write_lock() {
   project_dir=$1
   profile=$2
+  lock_destination=${3:-"$project_dir/.engsys/lock.yaml"}
   revision=$(system_revision)
 
   {
@@ -530,7 +531,7 @@ write_lock() {
       printf '    version: '; yaml_quote "$version"; printf '\n'
       printf '    revision: '; yaml_quote "$revision"; printf '\n'
     done
-  } >"$project_dir/.engsys/lock.yaml"
+  } >"$lock_destination"
 }
 
 extract_generated_paths() {
@@ -741,7 +742,7 @@ verify() {
   printf '%s\n' "Engineering System verification passed: $project_dir"
 }
 
-upgrade() {
+upgrade() (
   project_dir=$(pwd)
   apply=false
   while [ "$#" -gt 0 ]; do
@@ -787,10 +788,44 @@ upgrade() {
     return
   fi
 
-  write_lock "$project_dir" "$profile"
-  check --project "$project_dir"
+  # Keep the previous lock until the new one passes every declared check. Run verify
+  # as a fresh process: testing a shell function in `if` disables its errexit behavior.
+  upgrade_lock="$project_dir/.engsys/lock.yaml"
+  upgrade_backup=$(mktemp "$project_dir/.engsys/lock.yaml.backup.XXXXXX")
+  cp -p "$upgrade_lock" "$upgrade_backup"
+  upgrade_next=
+  upgrade_complete=false
+  finish_upgrade() {
+    upgrade_status=$?
+    trap - 0 1 2 15
+    if [ "$upgrade_complete" = false ]; then
+      if ! mv -f "$upgrade_backup" "$upgrade_lock"; then
+        printf '%s\n' "engsys: could not restore lock; backup remains at $upgrade_backup" >&2
+        exit 1
+      fi
+      printf '%s\n' 'engsys: upgrade failed; restored the previous lock' >&2
+    else
+      rm -f "$upgrade_backup"
+    fi
+    [ -z "$upgrade_next" ] || rm -f "$upgrade_next"
+    exit "$upgrade_status"
+  }
+  trap finish_upgrade 0
+  trap 'exit 129' 1
+  trap 'exit 130' 2
+  trap 'exit 143' 15
+
+  upgrade_next=$(mktemp "$project_dir/.engsys/lock.yaml.next.XXXXXX")
+  cp -p "$upgrade_backup" "$upgrade_next"
+  write_lock "$project_dir" "$profile" "$upgrade_next"
+  mv -f "$upgrade_next" "$upgrade_lock"
+  if "$system_root/bin/engsys" verify --project "$project_dir"; then
+    upgrade_complete=true
+  else
+    exit "$?"
+  fi
   printf '%s\n' "Applied Engineering System upgrade: $project_dir"
-}
+)
 
 resolve() {
   project_dir=$(pwd)
