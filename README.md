@@ -46,6 +46,11 @@ eval "$(/path/to/engineering-system/bin/engsys shellenv)"
 `check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않으며,
 `engsys upgrade`가 먼저 plan을 보여 준 뒤 `--apply`를 명시해야 반영한다.
+적용 시 native test와 generated document check까지 실행하며, 실패하면 이전 lock을 복원한다.
+
+`documentation.generated`는 `output`과 `command`의 순서에 관계없이 읽는다. 각 항목은 두 값을
+모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로
+처리한다. 명령에 quote나 escape가 필요하면 single-quoted scalar를 쓴다.
 
 Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision의 clean system
 worktree를 고른 뒤, lock에 있는 package만 developer-local cache plugin view로 조합한다. 따라서
@@ -67,3 +72,8 @@ bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 
 ```
 
 `docs/generated/`는 사람이 고치지 않는다. `python3 tools/generate-catalog.py`로 다시 만든다.
+
+이 레포의 native 검사에는 `python3 tools/check-documentation.py`도 포함된다. `.engsys/`에
+선언한 historical 문서의 필수 frontmatter, policy의 status 목록, local link 대상 존재 여부를
+확인한다. 본문을 현행 코드와 비교하거나 외부 URL·heading fragment를 검사하지 않는다.
+다른 프로젝트의 문서 검사는 그 프로젝트의 native command가 맡는다.
