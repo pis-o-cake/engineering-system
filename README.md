@@ -11,7 +11,7 @@
 
 ## v0.1
 
-첫 package는 `foundation`과 `documentation-governance`다. `public-ai-qa`는 첫 pilot이며
+첫 package는 `foundation`, `documentation-governance`, `pipeline`이다. `public-ai-qa`는 첫 pilot이며
 공통 표준의 정본은 아니다.
 
 - [Foundation design](docs/design/0001-foundation.md)
@@ -35,4 +35,9 @@ claude --plugin-dir /path/to/engineering-system
 ```sh
 /path/to/engineering-system/bin/engsys init --verify 'make check'
 /path/to/engineering-system/bin/engsys check
+/path/to/engineering-system/bin/engsys verify
 ```
+
+`check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
+generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않으며,
+`engsys upgrade`가 먼저 plan을 보여 준 뒤 `--apply`를 명시해야 반영한다.

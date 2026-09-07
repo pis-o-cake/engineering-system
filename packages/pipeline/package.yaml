@@ -1,0 +1,8 @@
+package:
+  name: pipeline
+  version: 0.1.0-draft
+  status: draft
+  owns:
+    - project contract verification command
+    - explicit Engineering System verification entrypoint
+    - native Git hook and CI integration contract

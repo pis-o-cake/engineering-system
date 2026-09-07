@@ -9,7 +9,6 @@ workflow:
     - upgrade plan before any write
   writes-after-approval:
     - .engsys/lock.yaml
-    - generated project adapter files only
   must-not:
     - modify project source code
     - modify project-owned documentation

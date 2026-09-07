@@ -12,6 +12,7 @@ project-contract:
 packages:
   - foundation
   - documentation-governance
+  - pipeline
 
 delivery:
   project-installation: none

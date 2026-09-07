@@ -1,0 +1,28 @@
+pipeline:
+  name: pipeline
+  version: 0.1.0-draft
+
+entrypoints:
+  contract-check:
+    command: engsys check --project <project-root>
+    purpose: validate the locked adapter without running project tests
+  full-check:
+    command: engsys verify --project <project-root>
+    order:
+      - contract-check
+      - commands.verify
+      - documentation.generated[].command
+
+ownership:
+  system:
+    - declares command order
+    - validates adapter and lock consistency
+  project:
+    - owns native test commands
+    - owns Git hook and CI invocation timing
+    - owns credentials and runner images
+
+constraints:
+  no-project-dependency-install: true
+  no-copied-shared-hook: true
+  explicit-upgrade-required: true

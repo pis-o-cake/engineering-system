@@ -5,11 +5,7 @@ disable-model-invocation: true
 
 # Upgrade project contract
 
-Read `.engsys/project.yaml`, `.engsys/lock.yaml`, and the system catalog. Compare the locked and
-target package revisions.
+Run `${CLAUDE_PLUGIN_ROOT}/bin/engsys upgrade` and return its plan. Do not write files in this step.
 
-First return an upgrade plan containing changed packages, generated adapter changes, migration
-notes, and native verification commands. Do not write files in this step.
-
-Apply only after the user approves that plan. Change the lock and generated adapter files only;
-never modify project source code, project-owned documentation, or `CLAUDE.md`.
+Apply only after the user approves that plan by running `engsys upgrade --apply`. It changes the
+lock only; never modify project source code, project-owned documentation, or `CLAUDE.md`.

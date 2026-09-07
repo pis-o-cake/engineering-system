@@ -16,6 +16,10 @@ packages:
     path: packages/documentation-governance
     version: 0.1.0-draft
     status: draft
+  pipeline:
+    path: packages/pipeline
+    version: 0.1.0-draft
+    status: draft
 
 profiles:
   baseline:
@@ -23,3 +27,4 @@ profiles:
     packages:
       - foundation
       - documentation-governance
+      - pipeline

@@ -16,6 +16,8 @@ Usage:
   engsys init --verify <command> [options]
   engsys check [--project <directory>]
   engsys sync [--project <directory>]
+  engsys verify [--project <directory>]
+  engsys upgrade [--project <directory>] [--apply]
 
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
@@ -59,10 +61,14 @@ require_worktree() {
 }
 
 require_profile() {
+  require_profile_name "$1"
+  [ -f "$system_root/profiles/$1.yaml" ] || die "unknown profile: $1"
+}
+
+require_profile_name() {
   case "$1" in
     ''|*[!A-Za-z0-9_-]*) die "invalid profile name: $1" ;;
   esac
-  [ -f "$system_root/profiles/$1.yaml" ] || die "unknown profile: $1"
 }
 
 require_relative_path() {
@@ -81,6 +87,53 @@ package_version() {
 
 system_revision() {
   git -C "$system_root" rev-parse HEAD 2>/dev/null || printf '%s' 'unversioned'
+}
+
+project_profile() {
+  profile=$(sed -n 's/^  profile:[[:space:]]*//p' "$1" | sed -n '1p')
+  yaml_unquote "$profile"
+}
+
+lock_package_names() {
+  awk '
+    /^packages:$/ { in_packages = 1; next }
+    in_packages && /^  [A-Za-z0-9_-]+:$/ {
+      name = $0
+      sub(/^  /, "", name)
+      sub(/:$/, "", name)
+      print name
+    }
+  ' "$1"
+}
+
+lock_package_value() {
+  lock=$1
+  package=$2
+  key=$3
+  value=$(awk -v package="$package" -v key="$key" '
+    $0 == "  " package ":" { in_package = 1; next }
+    in_package && /^  [A-Za-z0-9_-]+:$/ { exit }
+    in_package && $0 ~ "^    " key ":[[:space:]]*" {
+      sub("^    " key ":[[:space:]]*", "")
+      print
+      exit
+    }
+  ' "$lock")
+  yaml_unquote "$value"
+}
+
+lock_system_revision() {
+  revision=$(sed -n '/^system:$/,/^profile:$/s/^  revision:[[:space:]]*//p' "$1" | sed -n '1p')
+  yaml_unquote "$revision"
+}
+
+list_contains() {
+  printf '%s\n' "$1" | grep -Fxq "$2"
+}
+
+project_verify_command() {
+  command=$(sed -n 's/^  verify:[[:space:]]*//p' "$1" | sed -n '1p')
+  yaml_unquote "$command"
 }
 
 write_status_list() {
@@ -188,6 +241,15 @@ extract_generated_paths() {
   sed -n 's/^[[:space:]]*-[[:space:]]*output:[[:space:]]*//p' "$contract" \
     | while IFS= read -r path; do
         yaml_unquote "$path"
+        printf '\n'
+      done
+}
+
+extract_generated_commands() {
+  contract=$1
+  sed -n 's/^      command:[[:space:]]*//p' "$contract" \
+    | while IFS= read -r command; do
+        yaml_unquote "$command"
         printf '\n'
       done
 }
@@ -308,10 +370,9 @@ check() {
   [ -f "$generated_paths" ] || die "missing .engsys/generated-paths.txt"
   [ -f "$route" ] || die "missing .claude/rules/engineering-system.md"
 
-  profile=$(sed -n 's/^  profile:[[:space:]]*//p' "$contract" | sed -n '1p')
-  profile=$(yaml_unquote "$profile")
+  profile=$(project_profile "$contract")
   [ -n "$profile" ] || die "project contract has no system.profile"
-  require_profile "$profile"
+  require_profile_name "$profile"
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
@@ -320,8 +381,14 @@ check() {
   [ "$profile" = "$lock_profile" ] || die "lock profile does not match project profile"
   grep -Eq '^  repository:[[:space:]]*[^[:space:]]' "$lock" || die "lock has no system repository"
   grep -Eq '^  revision:[[:space:]]*[^[:space:]]' "$lock" || die "lock has no system revision"
-  profile_packages "$profile" | while IFS= read -r package; do
-    grep -Fq "  $package:" "$lock" || die "lock omits profile package: $package"
+  locked_packages=$(lock_package_names "$lock")
+  [ -n "$locked_packages" ] || die "lock has no packages"
+  for package in $locked_packages; do
+    case "$package" in ''|*[!A-Za-z0-9_-]*) die "lock has invalid package name: $package" ;; esac
+    version=$(lock_package_value "$lock" "$package" version)
+    revision=$(lock_package_value "$lock" "$package" revision)
+    [ -n "$version" ] || die "lock package has no version: $package"
+    [ -n "$revision" ] || die "lock package has no revision: $package"
   done
 
   expected="$generated_paths.expected.$$"
@@ -352,11 +419,93 @@ sync() {
   printf '%s\n' "Synchronized generated paths: $project_dir/.engsys/generated-paths.txt"
 }
 
+verify() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown verify option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  check --project "$project_dir"
+
+  contract="$project_dir/.engsys/project.yaml"
+  verify_command=$(project_verify_command "$contract")
+  [ -n "$verify_command" ] || die "project contract has no commands.verify"
+  printf '%s\n' "Running project verification: $verify_command"
+  (cd "$project_dir" && sh -c "$verify_command")
+
+  generated_commands=$(extract_generated_commands "$contract")
+  if [ -n "$generated_commands" ]; then
+    printf '%s\n' "$generated_commands" | while IFS= read -r generated_command; do
+      [ -n "$generated_command" ] || continue
+      printf '%s\n' "Running generated-document verification: $generated_command"
+      (cd "$project_dir" && sh -c "$generated_command")
+    done
+  fi
+  printf '%s\n' "Engineering System verification passed: $project_dir"
+}
+
+upgrade() {
+  project_dir=$(pwd)
+  apply=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --apply) apply=true; shift ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown upgrade option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  check --project "$project_dir"
+
+  contract="$project_dir/.engsys/project.yaml"
+  lock="$project_dir/.engsys/lock.yaml"
+  profile=$(project_profile "$contract")
+  require_profile "$profile"
+  locked_packages=$(lock_package_names "$lock")
+  target_packages=$(profile_packages "$profile")
+
+  printf '%s\n' "Engineering System upgrade plan: $project_dir"
+  printf '%s\n' "  system: $(lock_system_revision "$lock") -> $(system_revision)"
+  printf '%s\n' "  profile: $profile"
+  for package in $target_packages; do
+    target_version=$(package_version "$package")
+    target_revision=$(system_revision)
+    locked_version=$(lock_package_value "$lock" "$package" version)
+    locked_revision=$(lock_package_value "$lock" "$package" revision)
+    if [ -n "$locked_version" ]; then
+      printf '%s\n' "  $package: $locked_version@$locked_revision -> $target_version@$target_revision"
+    else
+      printf '%s\n' "  $package: added -> $target_version@$target_revision"
+    fi
+  done
+  for package in $locked_packages; do
+    if ! list_contains "$target_packages" "$package"; then
+      printf '%s\n' "  $package: removed"
+    fi
+  done
+
+  if [ "$apply" = false ]; then
+    printf '%s\n' 'No files changed. Re-run with --apply only after reviewing this plan.'
+    return
+  fi
+
+  write_lock "$project_dir" "$profile"
+  check --project "$project_dir"
+  printf '%s\n' "Applied Engineering System upgrade: $project_dir"
+}
+
 command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
   check) shift; check "$@" ;;
   sync) shift; sync "$@" ;;
+  verify) shift; verify "$@" ;;
+  upgrade) shift; upgrade "$@" ;;
   help|-h|--help) usage ;;
   *) die "unknown command: $command" ;;
 esac

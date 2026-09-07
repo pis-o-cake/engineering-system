@@ -35,6 +35,7 @@ upgrade는 먼저 plan을 보여 준 뒤 lock과 generated adapter만 바꾼다.
 |---|---|---|
 | `foundation` | contract, profile, bootstrap, upgrade, compatibility | 아니오 |
 | `documentation-governance` | lifecycle, impact prompt, generated·historical guardrail | 아니오 |
+| `pipeline` | contract check와 project-native verification 순서 | 아니오 |
 | profile | package 조합과 language/framework adapter 선택 | 선언만 |
 | project manifest | source-of-truth와 native command | 예 |
 | lock | 적용 version | 예 |
