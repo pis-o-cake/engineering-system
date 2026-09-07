@@ -16,6 +16,12 @@ classes:
     agent-action: show-impact-prompt
     native-action: project-declared-docs-check
 
+historical-records:
+  required-frontmatter: [type, status]
+  statuses:
+    design: [draft, review, approved, implementing, implemented, superseded, obsolete]
+    adr: [proposed, accepted, deprecated, superseded, rejected]
+
 triggers:
   data-model:
     prompt:
