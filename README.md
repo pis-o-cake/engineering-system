@@ -13,11 +13,13 @@
 
 ## v0.1
 
-첫 package는 `foundation`, `docs-gov`, `pipeline`이다. `public-ai-qa`는 첫 pilot이며
-공통 표준의 정본은 아니다.
+첫 package는 `foundation`, `docs-gov`, `pipeline`이다. 이 레포 자신이 첫 pilot이며,
+`.engsys/`로 자기 표준을 채택하고 있다.
 
-- [Foundation design](docs/design/0001-foundation.md)
-- [System catalog](system.yaml)
+- [Current architecture](docs/architecture/README.md) — 지금 어떻게 되어 있는가
+- [Architecture Decision Record](docs/adr) — 그 뒤로 왜 바뀌었는가
+- [Foundation design](docs/design/0001-foundation.md) — 그때 왜 이렇게 설계했는가
+- [System catalog](docs/generated/system-catalog.md) — 선언에서 생성되는 package·skill 목록
 - [Project contract schema](schemas/project.schema.json)
 - [Project lock schema](schemas/lock.schema.json)
 - [Baseline profile](profiles/baseline.yaml)
@@ -48,3 +50,20 @@ generated document check를 실행한다. profile 변경과 package 추가는 �
 Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision의 clean system
 worktree를 고른 뒤, lock에 있는 package만 developer-local cache plugin view로 조합한다. 따라서
 선택하지 않은 skill·hook은 Claude에 등록되지 않는다.
+
+launcher는 plugin view 경로를 `ENGSYS_PLUGIN_ROOT`로 export한다. skill은 이 변수로만 plugin
+안의 스크립트를 실행한다. `CLAUDE_PLUGIN_ROOT`는 hook process 전용이라 skill에서는 비어 있다
+([ADR 0003](docs/adr/0003-skill-uses-launcher-environment.md)).
+
+## System development
+
+이 레포를 고칠 때만 필요한 전제가 하나 있다. `tools/`의 검사·생성 도구는 python3 표준
+라이브러리를 쓴다. 표준을 채택하는 프로젝트에는 이 전제가 없다
+([ADR 0001](docs/adr/0001-posix-sh-core-with-python-tooling.md)).
+
+```sh
+sh tests/test-all.sh          # 전체 검사 (이 레포의 commands.verify)
+bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 여부
+```
+
+`docs/generated/`는 사람이 고치지 않는다. `python3 tools/generate-catalog.py`로 다시 만든다.
