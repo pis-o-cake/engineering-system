@@ -5,7 +5,7 @@ description: Review documentation impact for the current diff using the adopted 
 # Documentation impact
 
 Read `${CLAUDE_PROJECT_DIR}/.engsys/project.yaml`, the current Git diff, and
-`${CLAUDE_PLUGIN_ROOT}/packages/documentation-governance/policy.yaml`.
+`${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/policy.yaml`.
 
 Classify each affected document as generated output, historical record, current document, or
 project guide. Report only affected classes.

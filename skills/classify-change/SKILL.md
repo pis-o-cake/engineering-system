@@ -8,7 +8,7 @@ Read `${CLAUDE_PROJECT_DIR}/.engsys/project.yaml`. If it does not exist, say tha
 has not adopted Engineering System and stop.
 
 Read the current Git diff and only the enabled package policies needed for changed paths. For
-Documentation Governance, read `${CLAUDE_PLUGIN_ROOT}/packages/documentation-governance/policy.yaml`.
+the `docs-gov` package, read `${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/policy.yaml`.
 
 Return exactly these sections:
 

@@ -12,8 +12,8 @@ packages:
     path: packages/foundation
     version: 0.1.0-draft
     status: draft
-  documentation-governance:
-    path: packages/documentation-governance
+  docs-gov:
+    path: packages/docs-gov
     version: 0.1.0-draft
     status: draft
   pipeline:
@@ -26,5 +26,5 @@ profiles:
     path: profiles/baseline.yaml
     packages:
       - foundation
-      - documentation-governance
+      - docs-gov
       - pipeline

@@ -1,5 +1,5 @@
 package:
-  name: documentation-governance
+  name: docs-gov
   version: 0.1.0-draft
   status: draft
   owns:

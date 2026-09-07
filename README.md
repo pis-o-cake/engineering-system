@@ -11,7 +11,7 @@
 
 ## v0.1
 
-첫 package는 `foundation`, `documentation-governance`, `pipeline`이다. `public-ai-qa`는 첫 pilot이며
+첫 package는 `foundation`, `docs-gov`, `pipeline`이다. `public-ai-qa`는 첫 pilot이며
 공통 표준의 정본은 아니다.
 
 - [Foundation design](docs/design/0001-foundation.md)

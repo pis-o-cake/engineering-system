@@ -7,6 +7,6 @@ packages:
   foundation:
     version: 0.1.0
     revision: v0.1.0
-  documentation-governance:
+  docs-gov:
     version: 0.1.0
     revision: v0.1.0

@@ -30,7 +30,7 @@ skills:
     invocation: model-or-user
     reads:
       - .engsys/project.yaml
-      - documentation-governance policy
+      - docs-gov policy
       - current Git diff
     writes: []
   bootstrap:

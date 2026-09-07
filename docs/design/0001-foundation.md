@@ -34,7 +34,7 @@ upgrade는 먼저 plan을 보여 준 뒤 lock과 generated adapter만 바꾼다.
 | Component | 책임 | 프로젝트에 복사되는가 |
 |---|---|---|
 | `foundation` | contract, profile, bootstrap, upgrade, compatibility | 아니오 |
-| `documentation-governance` | lifecycle, impact prompt, generated·historical guardrail | 아니오 |
+| `docs-gov` | lifecycle, impact prompt, generated·historical guardrail | 아니오 |
 | `pipeline` | contract check와 project-native verification 순서 | 아니오 |
 | profile | package 조합과 language/framework adapter 선택 | 선언만 |
 | project manifest | source-of-truth와 native command | 예 |
@@ -96,5 +96,5 @@ Project route는 12줄 이하로 둔다. skill description은 240자 이하, 본
 
 1. manifest와 lock의 정확한 lifecycle
 2. bootstrap·upgrade input/output
-3. documentation-governance trigger, prompt, hard gate matrix
+3. docs-gov trigger, prompt, hard gate matrix
 4. Claude plugin의 skill·hook contract
