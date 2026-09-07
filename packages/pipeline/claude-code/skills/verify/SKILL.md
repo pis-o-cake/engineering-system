@@ -6,6 +6,7 @@ disable-model-invocation: true
 
 # Verify project contract
 
-Run `${CLAUDE_PLUGIN_ROOT}/bin/engsys verify`. It checks the adapter, then runs the project-declared
+Run `"$ENGSYS_PLUGIN_ROOT/bin/engsys" verify` — the `engsys claude` launcher exports this
+variable. It checks the adapter, then runs the project-declared
 `commands.verify` and every `documentation.generated` command in order. Report each result. Do not
 replace project-native checks with a generic check from this plugin.

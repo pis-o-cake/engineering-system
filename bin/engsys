@@ -327,11 +327,11 @@ EOF
 write_plugin_wrapper() {
   source_root=$1
   destination=$2
-  {
-    printf '%s\n' '#!/bin/sh'
-    printf 'export ENGSYS_SYSTEM_ROOT=%s\n' "$(shell_quote "$source_root")"
-    printf 'exec %s "\$@"\n' "$(shell_quote "$source_root/bin/engsys")"
-  } >"$destination"
+  cat >"$destination" <<EOF
+#!/bin/sh
+export ENGSYS_SYSTEM_ROOT=$(shell_quote "$source_root")
+exec $(shell_quote "$source_root/bin/engsys") "\$@"
+EOF
   chmod +x "$destination"
 }
 
@@ -422,6 +422,10 @@ resolve_locked_plugin() {
 
 list_contains() {
   printf '%s\n' "$1" | grep -Fxq "$2"
+}
+
+top_level_keys() {
+  sed -n 's/^\([A-Za-z][A-Za-z0-9_-]*\):.*$/\1/p' "$1"
 }
 
 project_verify_command() {
@@ -666,9 +670,15 @@ check() {
   profile=$(project_profile "$contract")
   [ -n "$profile" ] || die "project contract has no system.profile"
   require_profile_name "$profile"
+  # 계약 형식의 정본은 schemas/project.schema.json이다. 프로젝트에서는 dependency 없이 돌아야
+  # 하므로 additionalProperties:false를 최상위 key 검사로 근사한다.
+  unknown_key=$(top_level_keys "$contract" | grep -vxE 'system|project|commands|documentation' | sed -n '1p')
+  [ -z "$unknown_key" ] || die "project contract has an unknown top-level key: $unknown_key"
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
+  unknown_key=$(top_level_keys "$lock" | grep -vxE 'lock-version|system|profile|packages' | sed -n '1p')
+  [ -z "$unknown_key" ] || die "lock has an unknown top-level key: $unknown_key"
   lock_profile=$(sed -n 's/^profile:[[:space:]]*//p' "$lock" | sed -n '1p')
   lock_profile=$(yaml_unquote "$lock_profile")
   [ "$profile" = "$lock_profile" ] || die "lock profile does not match project profile"
@@ -822,6 +832,10 @@ claude() {
   plugin_source=$(resolve_locked_plugin "$project_dir")
   plugin_root=$(materialize_plugin_view "$project_dir" "$plugin_source")
   unset ENGSYS_SYSTEM_ROOT
+  # IMPORTANT: CLAUDE_PLUGIN_ROOT·CLAUDE_PROJECT_DIR는 hook process에만 주입된다. skill이
+  # Bash로 실행하는 명령은 launcher가 export한 이 변수로만 plugin view에 닿을 수 있다.
+  export ENGSYS_PLUGIN_ROOT="$plugin_root"
+  cd "$project_dir" || die "could not enter project directory: $project_dir"
   exec claude --plugin-dir "$plugin_root" "$@"
 }
 

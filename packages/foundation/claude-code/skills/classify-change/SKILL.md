@@ -5,15 +5,16 @@ description: Classify the current project change against its Engineering System 
 
 # Classify change
 
-Read `${CLAUDE_PROJECT_DIR}/.engsys/project.yaml`. If it does not exist, say that the project
+Read `.engsys/project.yaml` at the project root. If it does not exist, say that the project
 has not adopted Engineering System and stop.
 
 Read the current Git diff and only the enabled package policies needed for changed paths. For
-the `docs-gov` package, read `${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/policy.yaml`.
+the `docs-gov` package, read `"$ENGSYS_PLUGIN_ROOT/packages/docs-gov/policy.yaml"` — the
+`engsys claude` launcher exports this variable.
 
 Return exactly these sections:
 
-1. `Class` — ordinary, data-model, runtime-boundary, API-contract, deployment-boundary, or
+1. `Class` — ordinary, data-model, runtime-boundary, api-contract, deployment-boundary, or
    documentation-only. State the evidence path.
 2. `Required review` — only the prompt items triggered by the class.
 3. `Hard checks` — only commands declared in the project contract.

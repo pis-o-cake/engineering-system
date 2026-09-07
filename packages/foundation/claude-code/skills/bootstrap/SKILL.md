@@ -8,7 +8,10 @@ disable-model-invocation: true
 
 Inspect the project before writing. Use the `baseline` profile unless the user names another one.
 
-Run `${CLAUDE_PLUGIN_ROOT}/bin/engsys init` with the inspected project name and native verify
+The `engsys claude` launcher exports `ENGSYS_PLUGIN_ROOT`. If the variable is empty, say the
+session was not started through the launcher and stop.
+
+Run `"$ENGSYS_PLUGIN_ROOT/bin/engsys" init` with the inspected project name and native verify
 command. Pass each discovered source-of-truth, generated document, and lifecycle declaration as
 an option. It creates these generated adapter files without installing dependencies or copying this
 plugin:
@@ -19,4 +22,4 @@ plugin:
 - `.claude/rules/engineering-system.md` — copy the short route template only when absent.
 
 Preserve existing `CLAUDE.md`, project policy, and CI configuration. Stop if the project contract
-already exists; never overwrite it. Run `${CLAUDE_PLUGIN_ROOT}/bin/engsys check` after writing.
+already exists; never overwrite it. Run `"$ENGSYS_PLUGIN_ROOT/bin/engsys" check` after writing.

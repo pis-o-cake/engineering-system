@@ -1,7 +1,7 @@
 workflow:
   name: upgrade
   input:
-    - target system revision
+    - developer's current system checkout revision
   preconditions:
     - existing .engsys/project.yaml
     - existing .engsys/lock.yaml

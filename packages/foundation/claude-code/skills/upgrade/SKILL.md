@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 # Upgrade project contract
 
-Run `${CLAUDE_PLUGIN_ROOT}/bin/engsys upgrade` and return its plan. Do not write files in this step.
+Run `"$ENGSYS_PLUGIN_ROOT/bin/engsys" upgrade` and return its plan — the `engsys claude` launcher
+exports this variable. Do not write files in this step.
 
-Apply only after the user approves that plan by running `engsys upgrade --apply`. It changes the
+Apply only after the user approves that plan by running `"$ENGSYS_PLUGIN_ROOT/bin/engsys" upgrade
+--apply`. It changes the
 lock only; never modify project source code, project-owned documentation, or `CLAUDE.md`.
