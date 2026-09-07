@@ -1,0 +1,9 @@
+package:
+  name: documentation-governance
+  version: 0.1.0-draft
+  status: draft
+  owns:
+    - documentation lifecycle classification
+    - documentation impact prompt
+    - generated-document verification contract
+    - historical-record guardrails

@@ -1,0 +1,25 @@
+system:
+  profile: baseline
+
+project:
+  name: example-service
+  source-of-truth:
+    runtime: src/
+    schema: migrations/
+
+commands:
+  verify: make check
+
+documentation:
+  policy: docs/documentation-policy.md
+  architecture: docs/architecture/README.md
+  generated:
+    - output: docs/architecture/data-model.md
+      command: make docs-schema
+  lifecycle:
+    design:
+      path: docs/design
+      frozen-status: [implemented]
+    adr:
+      path: docs/adr
+      frozen-status: [accepted]

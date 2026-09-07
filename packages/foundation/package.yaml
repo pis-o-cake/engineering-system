@@ -1,0 +1,9 @@
+package:
+  name: foundation
+  version: 0.1.0-draft
+  status: draft
+  owns:
+    - project contract
+    - bootstrap and upgrade workflow
+    - profile resolution
+    - version compatibility

@@ -1,0 +1,40 @@
+policy:
+  name: documentation-governance
+  version: 0.1.0-draft
+
+classes:
+  generated-output:
+    detect: documentation.generated[].output
+    agent-action: deny-direct-edit
+    native-action: run-declared-generator-check
+  historical-record:
+    detect: documentation.lifecycle.*.path with frozen-status
+    agent-action: warn-and-route-to-lifecycle-skill
+    native-action: validate-frontmatter-and-links
+  current-document:
+    detect: project-declared current architecture or runbook path
+    agent-action: show-impact-prompt
+    native-action: project-declared-docs-check
+
+triggers:
+  data-model:
+    prompt:
+      - generated-output review
+      - current architecture review
+      - ADR review
+  runtime-boundary:
+    prompt:
+      - current architecture review
+      - ADR review
+  api-contract:
+    prompt:
+      - runtime API reference review
+  deployment-boundary:
+    prompt:
+      - current architecture review
+      - runbook review
+
+constraints:
+  no-inferred-rationale: true
+  no-automatic-historical-rewrite: true
+  generated-output-owner: generator

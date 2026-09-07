@@ -1,0 +1,59 @@
+adapter:
+  name: claude-code
+  plugin: engsys
+  status: draft
+
+context-budget:
+  project-route-max-lines: 12
+  skill-description-max-characters: 240
+  skill-instructions-max-lines: 150
+  default-loaded-policy: none
+
+skills:
+  classify-change:
+    invocation: model-or-user
+    reads:
+      - .engsys/project.yaml
+      - current Git diff
+      - enabled package policy
+    writes: []
+    returns:
+      - change class
+      - required prompt items
+      - native verification commands
+  documentation-impact:
+    invocation: model-or-user
+    reads:
+      - .engsys/project.yaml
+      - documentation-governance policy
+      - current Git diff
+    writes: []
+  bootstrap:
+    invocation: user-only
+    writes:
+      - project contract
+      - project lock
+      - short project route
+  upgrade:
+    invocation: user-only
+    writes-after-plan-approval:
+      - project lock
+      - generated project adapter files
+  verify:
+    invocation: user-only
+    reads:
+      - project manifest commands
+    writes: []
+
+hooks:
+  generated-output-direct-edit:
+    event: PreToolUse
+    matcher: Edit|Write
+    action: deny
+    condition: target matches documentation.generated[].output
+    path-source: .engsys/generated-paths.txt
+
+non-goals:
+  - no UserPromptSubmit classifier in v0.1
+  - no Stop hook that runs verification automatically
+  - no hook as the only enforcement path

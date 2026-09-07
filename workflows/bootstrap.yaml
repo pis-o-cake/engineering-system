@@ -1,0 +1,21 @@
+workflow:
+  name: bootstrap
+  input:
+    - profile
+    - project-name
+    - source-of-truth
+    - native-verify-command
+  preconditions:
+    - selected profile exists in system catalog
+    - target project is a Git worktree
+  writes:
+    - .engsys/project.yaml
+    - .engsys/lock.yaml
+    - .claude/rules/engineering-system.md
+  must-not:
+    - install a package dependency in the project
+    - copy system skills or hooks into the project
+    - modify project-owned CLAUDE.md
+  verify:
+    - project contract validates against schema
+    - resolved packages match selected profile

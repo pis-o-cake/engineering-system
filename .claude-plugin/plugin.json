@@ -1,0 +1,9 @@
+{
+  "name": "engsys",
+  "description": "Engineering System foundation and documentation governance",
+  "version": "0.1.0",
+  "author": {
+    "name": "pis-o-cake"
+  },
+  "repository": "https://github.com/pis-o-cake/engineering-system"
+}

@@ -1,0 +1,12 @@
+lock-version: 1
+system:
+  repository: github.com/pis-o-cake/engineering-system
+  revision: v0.1.0
+profile: baseline
+packages:
+  foundation:
+    version: 0.1.0
+    revision: v0.1.0
+  documentation-governance:
+    version: 0.1.0
+    revision: v0.1.0

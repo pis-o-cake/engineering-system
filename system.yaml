@@ -1,0 +1,25 @@
+system:
+  name: engineering-system
+  version: 0.1.0-draft
+  plugin: engsys
+  plugin-root: .
+  delivery:
+    development: plugin-directory
+    release: private-marketplace
+
+packages:
+  foundation:
+    path: packages/foundation
+    version: 0.1.0-draft
+    status: draft
+  documentation-governance:
+    path: packages/documentation-governance
+    version: 0.1.0-draft
+    status: draft
+
+profiles:
+  baseline:
+    path: profiles/baseline.yaml
+    packages:
+      - foundation
+      - documentation-governance

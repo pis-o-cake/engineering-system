@@ -1,0 +1,18 @@
+profile:
+  name: baseline
+  description: 언어와 framework에 독립적인 최소 Engineering System profile
+
+project-contract:
+  required:
+    - .engsys/project.yaml
+    - .engsys/lock.yaml
+  optional:
+    - CLAUDE.md
+
+packages:
+  - foundation
+  - documentation-governance
+
+delivery:
+  project-installation: none
+  developer-activation: one-time
