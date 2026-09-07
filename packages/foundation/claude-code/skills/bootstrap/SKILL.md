@@ -1,4 +1,5 @@
 ---
+name: bootstrap
 description: Bootstrap an Engineering System contract in the current Git project. Use only when the user explicitly asks to adopt or initialize Engineering System.
 disable-model-invocation: true
 ---

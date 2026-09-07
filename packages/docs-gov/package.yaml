@@ -7,3 +7,11 @@ package:
     - documentation impact prompt
     - generated-document verification contract
     - historical-record guardrails
+  claude-code:
+    skills:
+      - claude-code/skills/documentation-impact
+    hooks:
+      - event: PreToolUse
+        matcher: Edit|Write
+        command: claude-code/hooks/block-generated-edit.sh
+        timeout: 3

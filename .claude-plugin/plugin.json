@@ -1,9 +1,18 @@
 {
   "name": "engsys",
-  "description": "Engineering System foundation and documentation governance",
+  "displayName": "Engineering System",
+  "description": "Lock-aware Engineering System workflows.",
   "version": "0.1.0",
   "author": {
     "name": "pis-o-cake"
   },
-  "repository": "https://github.com/pis-o-cake/engineering-system"
+  "repository": "https://github.com/pis-o-cake/engineering-system",
+  "skills": [
+    "./packages/foundation/claude-code/skills/bootstrap",
+    "./packages/foundation/claude-code/skills/classify-change",
+    "./packages/foundation/claude-code/skills/upgrade",
+    "./packages/docs-gov/claude-code/skills/documentation-impact",
+    "./packages/pipeline/claude-code/skills/verify"
+  ],
+  "hooks": "./adapters/claude-code/hooks/catalog.json"
 }

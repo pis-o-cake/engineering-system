@@ -6,3 +6,6 @@ package:
     - project contract verification command
     - explicit Engineering System verification entrypoint
     - native Git hook and CI integration contract
+  claude-code:
+    skills:
+      - claude-code/skills/verify

@@ -15,13 +15,13 @@ mkdir -p "$test_dir/.engsys"
 printf '%s\n' 'docs/generated.md' >"$test_dir/.engsys/generated-paths.txt"
 
 denied=$(printf '%s' '{"tool_input":{"file_path":"docs/generated.md"}}' \
-  | CLAUDE_PROJECT_DIR="$test_dir" sh hooks/block-generated-edit.sh)
+  | CLAUDE_PROJECT_DIR="$test_dir" sh packages/docs-gov/claude-code/hooks/block-generated-edit.sh)
 denied_absolute=$(printf '%s' "{\"tool_input\":{\"file_path\":\"$test_dir/docs/generated.md\"}}" \
-  | CLAUDE_PROJECT_DIR="$test_dir" sh hooks/block-generated-edit.sh)
+  | CLAUDE_PROJECT_DIR="$test_dir" sh packages/docs-gov/claude-code/hooks/block-generated-edit.sh)
 denied_worktree=$(printf '%s' "{\"cwd\":\"$test_dir\",\"tool_input\":{\"file_path\":\"$test_dir/docs/generated.md\"}}" \
-  | CLAUDE_PROJECT_DIR='/not-the-current-worktree' sh hooks/block-generated-edit.sh)
+  | CLAUDE_PROJECT_DIR='/not-the-current-worktree' sh packages/docs-gov/claude-code/hooks/block-generated-edit.sh)
 allowed=$(printf '%s' '{"tool_input":{"file_path":"docs/guide.md"}}' \
-  | CLAUDE_PROJECT_DIR="$test_dir" sh hooks/block-generated-edit.sh)
+  | CLAUDE_PROJECT_DIR="$test_dir" sh packages/docs-gov/claude-code/hooks/block-generated-edit.sh)
 
 printf '%s' "$denied" | grep -Fq 'permissionDecision' || exit 1
 printf '%s' "$denied_absolute" | grep -Fq 'permissionDecision' || exit 1

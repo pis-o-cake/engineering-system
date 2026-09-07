@@ -1,4 +1,5 @@
 ---
+name: documentation-impact
 description: Review documentation impact for the current diff using the adopted Engineering System documentation contract. Use when code, architecture, runbook, ADR, design, or generated docs may change.
 ---
 

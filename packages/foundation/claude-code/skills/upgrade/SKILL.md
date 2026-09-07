@@ -1,4 +1,5 @@
 ---
+name: upgrade
 description: Plan or apply an explicit Engineering System package upgrade for the current project. Use only when the user explicitly asks to upgrade Engineering System.
 disable-model-invocation: true
 ---

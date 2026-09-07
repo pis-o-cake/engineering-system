@@ -2,7 +2,7 @@ system:
   name: engineering-system
   version: 0.1.0-draft
   plugin: engsys
-  plugin-root: .
+  plugin-root: developer-local materialized view
   delivery:
     development: plugin-directory
     release: private-marketplace

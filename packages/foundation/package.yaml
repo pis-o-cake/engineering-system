@@ -7,3 +7,8 @@ package:
     - bootstrap and upgrade workflow
     - profile resolution
     - version compatibility
+  claude-code:
+    skills:
+      - claude-code/skills/bootstrap
+      - claude-code/skills/classify-change
+      - claude-code/skills/upgrade

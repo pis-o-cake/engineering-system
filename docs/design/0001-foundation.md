@@ -40,6 +40,9 @@ upgrade는 먼저 plan을 보여 준 뒤 lock과 generated adapter만 바꾼다.
 | project manifest | source-of-truth와 native command | 예 |
 | lock | 적용 version | 예 |
 
+Claude Code skill과 hook handler의 정본은 각 package의 `claude-code/` 아래에 둔다. root manifest는
+catalog 검증용이고, launcher는 lock에 있는 package만 local cache plugin view로 조합한다.
+
 ## 실행 흐름
 
 ```text
@@ -60,7 +63,7 @@ upgrade는 먼저 plan을 보여 준 뒤 lock과 generated adapter만 바꾼다.
 
 개발자는 clone한 system root의 `engsys shellenv` 출력을 shell profile에 한 번만 등록한다.
 프로젝트에서는 `engsys claude`로 Claude Code를 실행한다. 이 launcher는 `.engsys/lock.yaml`의
-revision과 같은 clean plugin root를 선택한다. 현재 root가 다르면 cache worktree를 만든다.
+revision과 package set에 맞는 clean system worktree와 local cache plugin view를 선택한다.
 
 따라서 system catalog를 pull한 사실만으로 옛 프로젝트의 skill·hook이 바뀌지 않는다. lock을
 바꾸는 길은 `engsys upgrade`의 plan과 명시적 `--apply`뿐이다.

@@ -5,8 +5,12 @@ adapter:
 
 launcher:
   command: engsys claude
-  plugin-root: project lock system.revision
-  cache: developer-local Git worktree
+  plugin-root: project lock system.revision and package set
+  cache: developer-local Git worktree plus materialized plugin view
+
+assembly:
+  source: package-owned claude-code declarations
+  runtime: selected lock packages only
 
 context-budget:
   project-route-max-lines: 12
@@ -14,49 +18,10 @@ context-budget:
   skill-instructions-max-lines: 150
   default-loaded-policy: none
 
-skills:
-  classify-change:
-    invocation: model-or-user
-    reads:
-      - .engsys/project.yaml
-      - current Git diff
-      - enabled package policy
-    writes: []
-    returns:
-      - change class
-      - required prompt items
-      - native verification commands
-  documentation-impact:
-    invocation: model-or-user
-    reads:
-      - .engsys/project.yaml
-      - docs-gov policy
-      - current Git diff
-    writes: []
-  bootstrap:
-    invocation: user-only
-    writes:
-      - project contract
-      - project lock
-      - short project route
-  upgrade:
-    invocation: user-only
-    writes-after-plan-approval:
-      - project lock
-      - generated project adapter files
-  verify:
-    invocation: user-only
-    reads:
-      - project manifest commands
-    writes: []
-
-hooks:
-  generated-output-direct-edit:
-    event: PreToolUse
-    matcher: Edit|Write
-    action: deny
-    condition: target matches documentation.generated[].output
-    path-source: .engsys/generated-paths.txt
+package-contributions:
+  source: packages/*/package.yaml package.claude-code
+  selection: project lock packages
+  materialization: developer-local plugin view
 
 non-goals:
   - no UserPromptSubmit classifier in v0.1

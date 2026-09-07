@@ -1,4 +1,5 @@
 ---
+name: verify
 description: Run the native verification commands declared by an adopted Engineering System project. Use only when the user explicitly asks to verify the project contract or policy checks.
 disable-model-invocation: true
 ---

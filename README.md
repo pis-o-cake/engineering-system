@@ -7,6 +7,8 @@
 - 이 레포는 package, profile, Claude Code plugin, schema, fixture의 정본이다.
 - 프로젝트는 `.engsys/project.yaml`과 `.engsys/lock.yaml`으로 선택한 표준과 버전을 선언한다.
 - 공통 정책·skill·hook을 프로젝트에 복사하지 않는다.
+- Claude Code skill·hook handler는 각 package가 소유한다. launcher는 lock의 package만 local cache
+  plugin view로 조합한다.
 - 확정적인 규칙은 프로젝트 native test·Git hook·CI가 검사한다.
 
 ## v0.1
@@ -43,5 +45,6 @@ eval "$(/path/to/engineering-system/bin/engsys shellenv)"
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않으며,
 `engsys upgrade`가 먼저 plan을 보여 준 뒤 `--apply`를 명시해야 반영한다.
 
-Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision과 일치하는
-plugin root를 선택하고, 없으면 system cache에 해당 Git worktree를 준비한다.
+Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision의 clean system
+worktree를 고른 뒤, lock에 있는 package만 developer-local cache plugin view로 조합한다. 따라서
+선택하지 않은 skill·hook은 Claude에 등록되지 않는다.

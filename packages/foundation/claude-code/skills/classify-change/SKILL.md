@@ -1,4 +1,5 @@
 ---
+name: classify-change
 description: Classify the current project change against its Engineering System contract. Use before implementing a structural, API, schema, deployment, or documentation change.
 ---
 
