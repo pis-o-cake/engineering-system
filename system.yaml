@@ -4,8 +4,9 @@ system:
   plugin: engsys
   plugin-root: developer-local materialized view
   delivery:
-    development: plugin-directory
-    release: private-marketplace
+    activation: install script in a developer clone
+    channel: origin/main
+    pinning: project lock revision
 
 packages:
   foundation:
