@@ -1,16 +1,24 @@
 engsys-document-review: 1
 document: README.md
-blob: 2633cd2b4976fe0faadc0a15dc5c8741a4766924
+blob: 295887375379d0d6027e0cfb94acfaa0e1d59cba
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
-audience: 이 레포를 처음 여는 개발자
-purpose: 무엇을 시작하고 어떻게 검사하는가
+audience: 이 레포를 처음 여는 팀원
+purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
 
-"문서 편집 검토" 절의 명령 예시에서 --scope 를 걷어내고, 범위의 정본이 계약의
-documentation.review.scopes 라는 문장을 넣었다. --scope 를 안 주면 계약을 읽는다는 것이
-이번 변경의 실제 동작이고, 프로젝트 hook 이 같은 목록을 다시 파싱하지 않아도 되는 이유다.
-push gate 문단도 --revision 이 범위·생성 문서 목록·본문을 모두 그 commit 에서 읽는다는
-사실로 고쳤다 — 이전 문장은 본문만 읽는 것처럼 읽혔다.
-"문서 유형과 구조 검사" 절과 경계·Local use·System development 절은 바꾸지 않았다.
-치환하면서 어긋난 줄바꿈을 72자 기준으로 다시 맞췄고, 링크 대상은 그대로다.
+전문을 다시 읽었다. 절 순서를 독자의 실제 순서로 바꿨다 — 활성화 → 표준 버전 올리기 →
+프로젝트 채택 → 시스템 레포 개발.
+"활성화" 절을 새로 썼다. 이전에는 shell profile 에 eval 을 직접 넣으라고만 했고 hook 등록은
+"시스템 레포 개발" 절에 따로 있었다. 두 곳에 나뉜 절차를 install.sh 하나로 모았고, 남은
+문제는 engsys doctor 가 보고한다는 것을 적었다.
+"표준 버전 올리기" 절을 새로 썼다. lock 이 실행한 checkout 의 revision 을 기록한다는 것과,
+그래서 올리기 전에 checkout 을 맞춰야 한다는 순서를 명시했다. push 하지 않은 revision 에
+lock 하면 팀원 clone 이 fetch 하지 못한다는 결과도 적었다 — 이게 실제 실패 모드다.
+중복 제거: "시스템 레포 개발" 절의 core.hooksPath 등록 명령을 지우고 install.sh 로 연결했다.
+같은 등록을 두 곳에서 안내하던 상태였다. upgrade 설명도 "프로젝트 채택" 절에서 빼고 전용
+절로 연결했다.
+명령 예시를 PATH 기준(engsys ...)으로 통일했다. 활성화 절이 앞에 왔으니 전체 경로를 다시
+쓸 이유가 없다. 영문 제목 두 개(Local use, System development)를 내용에 맞는 한국어로 바꿨다 —
+다른 문서에서 이 anchor 를 참조하지 않는 것을 확인했다.
+검증: engsys docs check 11편 0건, tools/check-documentation.py 로 링크 대상 확인.
 

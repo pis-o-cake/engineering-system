@@ -26,8 +26,10 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 ## 구성 요소
 
 - `bin/engsys` — 프로젝트가 실행하는 유일한 진입점. dependency 없는 POSIX sh다.
-  계약 생성(`init`), 검사(`check`), 프로젝트 검증(`verify`), 문서 구조 검사(`docs`), 문서 검토(`review`),
-  lock 변경(`upgrade`), Claude Code 실행(`claude`)을 담당한다.
+  계약 생성(`init`), 검사(`check`), 진단(`doctor`), 프로젝트 검증(`verify`), 문서 구조 검사(`docs`),
+  문서 검토(`review`), lock 변경(`upgrade`), Claude Code 실행(`claude`)을 담당한다.
+- `install.sh` — 개발자 활성화. shell profile 한 줄과 이 clone의 `core.hooksPath`만 바꾼다.
+  프로젝트에는 쓰지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).
 - `lib/generated-documents.awk` — `documentation.generated`를 항목 단위로 읽는 core parser다.
   `output`·`command` 순서는 자유이며, 누락·중복·지원하지 않는 문법은 오류로 처리한다.
 - `packages/*` — 정책과 Claude Code skill·hook의 정본. 프로젝트에 복사되지 않는다.
@@ -115,3 +117,5 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0005](../adr/0005-individual-document-editorial-review.md)).
 - 문서 유형 계약은 구조만 강제한다. 유형별 규칙을 프로젝트에 복사하지 않는다
   ([ADR 0006](../adr/0006-document-type-contract-in-posix-sh.md)).
+- 배포 채널은 `origin/main`이고 lock은 실행한 checkout의 revision을 기록한다. `doctor`는 진단만
+  하고 고치지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).

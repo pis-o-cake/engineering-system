@@ -30,28 +30,56 @@ status: active
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
 
-## Local use
+## 활성화
 
-개발 중에는 shell profile에 한 번만 system command를 연결한다. 이 명령은 파일을 수정하지 않고
-shell에 넣을 export문만 출력한다.
+팀원은 이 레포를 clone한 뒤 한 번만 실행한다. 개발자 자신의 shell profile과 이 clone의 Git hook
+경로만 바꾸며, 프로젝트에는 아무것도 쓰지 않는다.
 
 ```sh
-eval "$(/path/to/engineering-system/bin/engsys shellenv)"
+git clone https://github.com/pis-o-cake/engineering-system
+cd engineering-system && ./install.sh
 ```
+
+`--print`를 주면 profile에 넣을 줄만 출력한다. profile에 이미 다른 checkout을 가리키는 줄이
+있으면 덮지 않고 그 줄을 알려 준다.
+
+활성화 상태는 언제든 `engsys doctor`로 확인한다. PATH 연결, locked revision을 이 clone에서
+가져올 수 있는지, 계약이 `engsys check`를 통과하는지, origin/main에 더 새 revision이 있는지를
+보고하고 각각 실행할 명령을 알려 준다.
+
+```sh
+engsys doctor --project /path/to/project
+```
+
+## 표준 버전 올리기
+
+배포 채널은 `origin/main`이다. lock은 명령을 실행한 개발자의 system checkout revision을 기록하므로,
+올리기 전에 checkout을 원하는 지점에 둔다. 특정 release에 고정하려면 그 tag를 checkout한다.
+
+```sh
+git -C /path/to/engineering-system checkout main && git -C /path/to/engineering-system pull
+engsys upgrade --project /path/to/project            # plan만 출력
+engsys upgrade --project /path/to/project --apply
+```
+
+`--apply`는 새 lock으로 native test와 generated document check까지 실행하고, 실패하면 이전 lock을
+복원한다. `doctor`는 lock이 아직 `origin/main`에 없으면 경고한다. 그 상태로 프로젝트를 push하면
+팀원의 clone이 그 revision을 fetch하지 못한다.
+
+## 프로젝트 채택
 
 대상 Git 프로젝트에서는 dependency 설치 없이 adapter만 만든다. `init`은 기존 계약을 절대
 덮어쓰지 않으며, manifest를 수동으로 바꾼 뒤에는 `sync`와 `check`를 차례로 실행한다.
 
 ```sh
-/path/to/engineering-system/bin/engsys init --verify 'make check'
-/path/to/engineering-system/bin/engsys check
-/path/to/engineering-system/bin/engsys verify
+engsys init --project /path/to/project --verify 'make check'
+engsys check --project /path/to/project
+engsys verify --project /path/to/project
 ```
 
 `check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
-generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않으며,
-`engsys upgrade`가 먼저 plan을 보여 준 뒤 `--apply`를 명시해야 반영한다.
-적용 시 native test와 generated document check까지 실행하며, 실패하면 이전 lock을 복원한다.
+generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —
+반영은 위 "표준 버전 올리기"의 `upgrade`가 맡는다.
 
 `documentation.generated`는 `output`과 `command`의 순서에 관계없이 읽는다. 각 항목은 두 값을
 모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로
@@ -65,7 +93,7 @@ launcher는 plugin view 경로를 `ENGSYS_PLUGIN_ROOT`로 export한다. skill은
 안의 스크립트를 실행한다. `CLAUDE_PLUGIN_ROOT`는 hook process 전용이라 skill에서는 비어 있다
 ([ADR 0003](docs/adr/0003-skill-uses-launcher-environment.md)).
 
-## System development
+## 시스템 레포 개발
 
 이 레포를 고칠 때만 필요한 전제가 하나 있다. `tools/`의 검사·생성 도구는 python3 표준
 라이브러리를 쓴다. 표준을 채택하는 프로젝트에는 이 전제가 없다
@@ -76,12 +104,9 @@ sh tests/test-all.sh          # 전체 검사 (이 레포의 commands.verify)
 bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 여부
 ```
 
-CI runner가 준비되기 전까지는 push 전 검사를 Git hook으로 강제한다. clone 후 한 번만 등록하며,
-CI가 열리면 같은 명령을 그대로 옮긴다.
-
-```sh
-git config core.hooksPath .githooks   # pre-push가 sh tests/test-all.sh 실행
-```
+CI runner가 준비되기 전까지는 push 전 검사를 Git hook으로 강제한다. `pre-push`가
+`sh tests/test-all.sh`와 전송할 commit의 문서 검토 검사를 실행한다. 등록은 `install.sh`가 하며,
+등록 여부는 `engsys doctor`가 보고한다. CI가 열리면 같은 명령을 그대로 옮긴다.
 
 native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`lib/`를 바꾸는 commit 뒤에는
 `bin/engsys upgrade --project . --apply`로 자기 lock을 올리고 그 lock 변경을 커밋한다.
