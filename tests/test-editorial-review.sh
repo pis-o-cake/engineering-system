@@ -78,6 +78,18 @@ reject check --scope docs --scope missing
 printf '\ndecision: fail\n' >"$project/.engsys/reviews/docs/report with space.md.review"
 reject check --scope 'docs/report with space.md'
 
+# --scope 없이 부르면 계약의 documentation.review.scopes 를 정본으로 쓴다.
+reject check
+grep -Fq 'pass --scope or declare documentation.review.scopes' "$temporary/result"
+cat >>"$project/.engsys/project.yaml" <<'EOF'
+  review:
+    scopes:
+      - 'docs'
+EOF
+reject check
+grep -Fq 'docs/brief.html' "$temporary/result"
+python3 "$system_root/tools/validate-contract.py" project "$project/.engsys/project.yaml" >/dev/null
+
 # Hook input must survive native tests that read stdin, and deleted refs are skipped.
 mkdir -p "$project/bin" "$project/tests"
 printf '#!/bin/sh\ncat >/dev/null\n' >"$project/tests/test-all.sh"

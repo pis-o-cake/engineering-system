@@ -16,4 +16,4 @@ python3 "$test_root/test-documentation.py"
 python3 "$test_root/../tools/check-documentation.py"
 "$test_root/test-self-contract.sh"
 "$test_root/../bin/engsys" docs check --project "$test_root/.."
-"$test_root/../bin/engsys" review check --project "$test_root/.." --scope docs --scope README.md
+"$test_root/../bin/engsys" review check --project "$test_root/.."

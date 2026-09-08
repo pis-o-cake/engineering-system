@@ -117,16 +117,19 @@ engsys docs check --project .
 기록에는 본문 해시, 검토자, 독자, 문서가 답할 질문, 구체적인 검토 내용을 담는다.
 
 ```sh
-engsys review status --scope docs --scope README.md
+engsys review status
 engsys review record --document docs/report.md --blob <검토한-본문-해시> \
   --reviewer <실제-검토자> --audience <독자> --purpose <답할-질문> --notes-file <검토-메모>
-engsys review check --scope docs --scope README.md
+engsys review check
 ```
 
-프로젝트는 마지막 명령을 native 검사에 연결한다. 생성 문서는 제외되며, 새 문서나 검토 후
-바뀐 문서는 실패한다. 기존 문서를 범위에 넣을 때도 최초 개별 검토가 필요하다. 문서와
-`.engsys/reviews/`의 해당 기록을 함께 commit한다. 전체 문체를 자동 판정하거나 일괄 승인하지 않는다.
+검사 범위의 정본은 계약의 `documentation.review.scopes`다. `--scope`를 주지 않으면 그 목록을
+읽으므로 프로젝트 hook이 같은 목록을 다시 파싱하지 않는다. 프로젝트는 `engsys review check`를
+native 검사에 연결한다. 생성 문서는 제외되며, 새 문서나 검토 후 바뀐 문서는 실패한다. 기존
+문서를 범위에 넣을 때도 최초 개별 검토가 필요하다. 문서와 `.engsys/reviews/`의 해당 기록을
+함께 commit한다. 전체 문체를 자동 판정하거나 일괄 승인하지 않는다.
 
-push gate에서는 `engsys review check --revision <전송할-commit> --scope docs --scope README.md`로
-전송할 본문과 기록을 함께 검사한다. 이 레포는 `.githooks/pre-push`에 연결한다. 검사는 검토
-기록의 존재와 신선도를 확인하며, 글의 품질이나 상급자의 승인을 증명하지 않는다.
+push gate에서는 `engsys review check --revision <전송할-commit>`으로 전송할 본문과 기록을 함께
+검사한다. 범위와 생성 문서 목록도 그 commit의 계약에서 읽는다. 이 레포는 `.githooks/pre-push`에
+연결한다. 검사는 검토 기록의 존재와 신선도를 확인하며, 글의 품질이나 상급자의 승인을 증명하지
+않는다.

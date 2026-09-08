@@ -665,17 +665,6 @@ init() {
   printf '%s\n' "Initialized Engineering System contract in $project_dir"
 }
 
-project_review_scopes() {
-  awk '
-    /^[A-Za-z]/ { section = $0; sub(/:.*/, "", section); review = 0; scopes = 0 }
-    section == "documentation" && /^  review:/ { review = 1; next }
-    section == "documentation" && /^  [A-Za-z]/ { review = 0; scopes = 0 }
-    review && /^    scopes:/ { scopes = 1; next }
-    review && /^    [A-Za-z]/ { scopes = 0 }
-    scopes && /^      - / { line = $0; sub(/^      - /, "", line); print line }
-  ' "$1"
-}
-
 docs() {
   project_dir=$(pwd)
   action=${1:-check}
@@ -804,15 +793,10 @@ verify() {
     docs check --project "$project_dir"
   fi
 
-  review_scopes=$(project_review_scopes "$contract")
-  if [ -n "$review_scopes" ]; then
+  if grep -q '^  review:' "$contract"; then
     printf '%s\n' "Running editorial review verification"
-    set -- check --project "$project_dir"
-    for scope in $review_scopes; do
-      set -- "$@" --scope "$(yaml_unquote "$scope")"
-    done
     ENGSYS_SYSTEM_ROOT="$system_root" \
-      sh "$system_root/packages/docs-gov/bin/review-documents.sh" "$@"
+      sh "$system_root/packages/docs-gov/bin/review-documents.sh" check --project "$project_dir"
   fi
 
   printf '%s\n' "Engineering System verification passed: $project_dir"

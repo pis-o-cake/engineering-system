@@ -88,9 +88,31 @@ if [ -n "$revision" ]; then
   revision=$(git rev-parse --verify "$revision^{commit}") || fail 'revision is not a commit'
   git show "$revision:.engsys/generated-paths.txt" >"$temporary/generated" \
     || fail 'revision has no generated-paths contract'
+  git show "$revision:.engsys/project.yaml" >"$temporary/contract" \
+    || fail 'revision has no project contract'
 else
   cp .engsys/generated-paths.txt "$temporary/generated"
+  cp .engsys/project.yaml "$temporary/contract"
 fi
+
+# documentation.review.scopes 는 검사 범위의 정본이다. 프로젝트 hook 이 같은 목록을 다시
+# 파싱하지 않도록, --scope 를 주지 않으면 계약에서 읽는다.
+contract_review_scopes() {
+  awk '
+    /^documentation:$/ { in_documentation = 1; next }
+    /^[A-Za-z]/ { in_documentation = 0 }
+    in_documentation && /^  review:$/ { in_review = 1; next }
+    in_documentation && /^  [a-z-]+:/ { in_review = 0 }
+    in_review && /^    scopes:$/ { in_scopes = 1; next }
+    in_review && /^    [a-z-]+:/ { in_scopes = 0 }
+    in_scopes && /^      - / {
+      value = $0; sub(/^      - /, "", value)
+      gsub(/^[ \t]+|[ \t]+$/, "", value)
+      if (value ~ /^\047.*\047$/) { value = substr(value, 2, length(value) - 2); gsub(/\047\047/, "\047", value) }
+      print value
+    }
+  ' "$temporary/contract"
+}
 
 generated() { grep -Fxq -- "$1" "$temporary/generated"; }
 current_blob() {
@@ -158,7 +180,17 @@ if [ "$action" = record ]; then
   exit 0
 fi
 
-[ -n "$scopes" ] || fail 'declare at least one --scope file or directory'
+if [ -z "$scopes" ]; then
+  scopes=$(contract_review_scopes)
+  [ -n "$scopes" ] \
+    || fail 'pass --scope or declare documentation.review.scopes in the project contract'
+  while IFS= read -r scope; do
+    [ -n "$scope" ] || continue
+    relative_path "${scope%/}"
+  done <<EOF
+$scopes
+EOF
+fi
 [ -z "$document$expected_blob$reviewer$audience$purpose$notes" ] || fail 'status/check do not accept record fields'
 printf '%s\n' "$scopes" >"$temporary/scopes"
 : >"$temporary/paths"

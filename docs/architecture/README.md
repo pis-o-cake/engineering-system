@@ -95,10 +95,10 @@ Historical 검사는 `.engsys/project.yaml`의 lifecycle 경로와 docs-gov poli
 검토자는 문서 전체를 읽고 편집한 뒤 최종본을 다시 읽는다. `engsys review record`는 문서 하나의
 해시와 검토 내용을 `.engsys/reviews/<document-path>.review`에 남긴다.
 
-`engsys review check --scope docs --scope README.md`는 해당 범위의 Markdown·HTML 중 생성
-문서를 제외하고 검토 기록을 대조한다. 새로운 문서와 검토 후 변경한 문서는 실패한다.
-`--revision <commit>`을 주면 그 commit의 본문과 기록을 함께 검사해 working tree의 후속 수정이
-push할 문서의 검토를 대신하지 못하게 한다. 프로젝트는 native gate에 필요한 범위를 명시한다.
+`engsys review check`는 계약의 `documentation.review.scopes`에서 범위를 읽어, 그 범위의
+Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 새로운 문서와 검토 후 변경한
+문서는 실패한다. `--revision <commit>`을 주면 범위·생성 문서 목록·본문을 모두 그 commit에서
+읽어, working tree의 후속 수정이 push할 문서의 검토를 대신하지 못하게 한다.
 이 검사는 문체를 자동 채점하거나 실제로 읽었는지를 증명하지 않는다.
 
 ## 제약과 근거
