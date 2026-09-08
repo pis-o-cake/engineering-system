@@ -17,7 +17,7 @@ die() {
 usage() {
   cat <<'EOF'
 Usage:
-  engsys init --verify <command> [options]
+  engsys init [--detect | --verify <command>] [options]
   engsys check [--project <directory>]
   engsys doctor [--project <directory>]
   engsys sync [--project <directory>]
@@ -31,6 +31,8 @@ Usage:
 
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
+  --detect                    Fill unset declarations by inspecting the project
+  --hooks                     Write .githooks/pre-push and point core.hooksPath at it
   --name <name>               Project name (default: directory name)
   --profile <profile>         System profile (default: baseline)
   --verify <command>          Project-native verification command (required)
@@ -531,6 +533,25 @@ write_project_contract() {
     else
       printf '%s\n' '  lifecycle: {}'
     fi
+    # authoring_assign 과 review_scopes 는 init 의 scope 에서 읽는다. 이 함수는 POSIX shell 이
+    # 직접 참조할 수 있는 위치 인자를 이미 모두 쓴다.
+    if [ -n "${authoring_assign:-}" ]; then
+      printf '%s\n' '  authoring:'
+      printf '%s\n' '    assign:'
+      printf '%s\n' "$authoring_assign" | while IFS="$(printf '\t')" read -r assign_path assign_type; do
+        [ -n "$assign_path" ] || continue
+        printf '      - path: '; yaml_quote "$assign_path"; printf '\n'
+        printf '        type: '; yaml_quote "$assign_type"; printf '\n'
+      done
+    fi
+    if [ -n "${review_scopes:-}" ]; then
+      printf '%s\n' '  review:'
+      printf '%s\n' '    scopes:'
+      printf '%s\n' "$review_scopes" | while IFS= read -r review_scope; do
+        [ -n "$review_scope" ] || continue
+        printf '      - '; yaml_quote "$review_scope"; printf '\n'
+      done
+    fi
   } >"$project_dir/.engsys/project.yaml"
 }
 
@@ -590,6 +611,118 @@ sync_generated_paths() {
   trap - 0 1 2 15
 }
 
+# Detection fills declarations a new project would otherwise type by hand. Every value it
+# writes is reported, and any explicit option wins over it.
+detect_verify_command() {
+  dir=$1
+  if [ -f "$dir/Makefile" ]; then
+    if grep -Eq '^check[[:space:]]*:' "$dir/Makefile"; then printf 'make check'; return; fi
+    if grep -Eq '^test[[:space:]]*:' "$dir/Makefile"; then printf 'make test'; return; fi
+  fi
+  if [ -f "$dir/pyproject.toml" ]; then
+    if grep -q '\[tool\.poe' "$dir/pyproject.toml"; then printf 'poe check'; return; fi
+    printf 'pytest'; return
+  fi
+  if [ -f "$dir/package.json" ] && grep -q '"test"[[:space:]]*:' "$dir/package.json"; then
+    printf 'npm test'; return
+  fi
+  if [ -f "$dir/gradlew" ]; then printf './gradlew check'; return; fi
+  if [ -f "$dir/go.mod" ]; then printf 'go test ./...'; return; fi
+  if [ -f "$dir/Cargo.toml" ]; then printf 'cargo test'; return; fi
+}
+
+# A path only gets a type assignment while it holds no authored document. Assigning a
+# directory of untyped documents would fail every check from the first run.
+path_has_documents() {
+  target="$1/$2"
+  if [ -f "$target" ]; then return 0; fi
+  [ -d "$target" ] || return 1
+  found=$(find "$target" -type f \( -name '*.md' -o -name '*.html' \) -print 2>/dev/null | head -1)
+  [ -n "$found" ]
+}
+
+detect_declarations() {
+  dir=$1
+  if [ -z "$verify" ]; then
+    verify=$(detect_verify_command "$dir")
+    [ -z "$verify" ] || printf '%s\n' "detected verify command: $verify"
+  fi
+  if [ -z "$sources" ]; then
+    for candidate in backend frontend infra src app server client migrations; do
+      [ -d "$dir/$candidate" ] || continue
+      sources="${sources}${sources:+
+}$candidate$(printf '\t')$candidate/"
+      printf '%s\n' "detected source-of-truth: $candidate -> $candidate/"
+    done
+  fi
+  if [ -z "$policy" ] && [ -f "$dir/docs/documentation-policy.md" ]; then
+    policy=docs/documentation-policy.md
+    printf '%s\n' "detected documentation policy: $policy"
+  fi
+  if [ -z "$architecture" ] && [ -f "$dir/docs/architecture/README.md" ]; then
+    architecture=docs/architecture/README.md
+    printf '%s\n' "detected current architecture: $architecture"
+  fi
+  if [ -z "$lifecycles" ]; then
+    if [ -d "$dir/docs/design" ]; then
+      lifecycles="${lifecycles}${lifecycles:+
+}design$(printf '\t')docs/design$(printf '\t')implemented"
+      printf '%s\n' 'detected lifecycle: design -> docs/design'
+    fi
+    if [ -d "$dir/docs/adr" ]; then
+      lifecycles="${lifecycles}${lifecycles:+
+}adr$(printf '\t')docs/adr$(printf '\t')accepted"
+      printf '%s\n' 'detected lifecycle: adr -> docs/adr'
+    fi
+  fi
+  detect_authoring "$dir"
+}
+
+detect_authoring() {
+  dir=$1
+  [ -z "$authoring_assign" ] || return 0
+  pending=
+  for pair in 'README.md guide' 'docs/adr decision-record' 'docs/architecture architecture' \
+              'docs/design design-proposal'; do
+    candidate=${pair%% *}
+    type_name=${pair##* }
+    if path_has_documents "$dir" "$candidate"; then
+      pending="${pending}${pending:+, }$candidate"
+      continue
+    fi
+    [ -e "$dir/$candidate" ] || [ "$candidate" = README.md ] || continue
+    authoring_assign="${authoring_assign}${authoring_assign:+
+}$candidate$(printf '\t')$type_name"
+    printf '%s\n' "assigned document type: $candidate -> $type_name"
+  done
+  [ -z "$pending" ] || printf '%s\n' \
+    "not assigned because documents already exist there: $pending
+  declare a type on each document, then add it to documentation.authoring.assign"
+}
+
+write_project_hook() {
+  dir=$1
+  source_hook="$system_root/templates/project/.githooks/pre-push"
+  [ -f "$source_hook" ] || die "hook template is missing: $source_hook"
+  mkdir -p "$dir/.githooks"
+  if [ -e "$dir/.githooks/pre-push" ]; then
+    printf '%s\n' 'kept the existing .githooks/pre-push'
+  else
+    cp "$source_hook" "$dir/.githooks/pre-push"
+    chmod +x "$dir/.githooks/pre-push"
+    printf '%s\n' 'wrote .githooks/pre-push'
+  fi
+  current=$(git -C "$dir" config --get core.hooksPath 2>/dev/null || true)
+  if [ -z "$current" ]; then
+    git -C "$dir" config core.hooksPath .githooks
+    printf '%s\n' 'registered core.hooksPath .githooks'
+  elif [ "$current" = .githooks ]; then
+    printf '%s\n' 'core.hooksPath is already .githooks'
+  else
+    printf '%s\n' "left core.hooksPath as $current; run the gate from there or change it yourself"
+  fi
+}
+
 init() {
   project_dir=$(pwd)
   profile=baseline
@@ -600,10 +733,16 @@ init() {
   architecture=
   generated=
   lifecycles=
+  authoring_assign=
+  review_scopes=
+  detect=false
+  hooks=false
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --detect) detect=true; shift ;;
+      --hooks) hooks=true; shift ;;
       --profile) require_value "$@"; profile=$2; shift 2 ;;
       --name) require_value "$@"; name=$2; shift 2 ;;
       --verify) require_value "$@"; verify=$2; shift 2 ;;
@@ -646,12 +785,15 @@ init() {
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
   require_profile "$profile"
-  [ -n "$verify" ] || die "--verify is required; declare the project's native verification command"
-  [ -n "$name" ] || name=$(basename "$project_dir")
 
   if [ -e "$project_dir/.engsys/project.yaml" ] || [ -e "$project_dir/.engsys/lock.yaml" ]; then
     die "project contract already exists; inspect it and use engsys sync or upgrade instead"
   fi
+
+  [ "$detect" = false ] || detect_declarations "$project_dir"
+  [ -n "$verify" ] \
+    || die "--verify is required; detection found no native verification command in $project_dir"
+  [ -n "$name" ] || name=$(basename "$project_dir")
 
   mkdir -p "$project_dir/.engsys" "$project_dir/.claude/rules"
   write_project_contract "$project_dir" "$profile" "$name" "$verify" "$sources" "$policy" "$architecture" "$generated" "$lifecycles"
@@ -662,6 +804,8 @@ init() {
   if [ ! -e "$route" ]; then
     cp "$system_root/templates/project/.claude/rules/engineering-system.md" "$route"
   fi
+
+  [ "$hooks" = false ] || write_project_hook "$project_dir"
 
   printf '%s\n' "Initialized Engineering System contract in $project_dir"
 }
@@ -774,6 +918,16 @@ doctor() {
     doctor_report fail 'project contract or lock does not pass engsys check' \
       "run: engsys check --project $project_dir"
     failures=$((failures + 1))
+  fi
+
+  if [ "$project_dir" != "$system_root" ]; then
+    project_hooks=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
+    if [ "$project_hooks" = .githooks ] && [ -f "$project_dir/.githooks/pre-push" ]; then
+      doctor_report ok 'project push gate is registered'
+    else
+      doctor_report warn 'project push gate is not registered' \
+        "run: engsys init --hooks, or point core.hooksPath at your own gate"
+    fi
   fi
 
   contract="$project_dir/.engsys/project.yaml"

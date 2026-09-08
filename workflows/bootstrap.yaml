@@ -5,6 +5,7 @@ workflow:
     - project-name
     - source-of-truth
     - native-verify-command
+    - detected declarations for values the caller did not set
   preconditions:
     - selected profile exists in system catalog
     - target project is a Git worktree
@@ -12,6 +13,7 @@ workflow:
     - .engsys/project.yaml
     - .engsys/lock.yaml
     - .claude/rules/engineering-system.md
+    - .githooks/pre-push when the caller asks for the project gate
   must-not:
     - install a package dependency in the project
     - copy system skills or hooks into the project

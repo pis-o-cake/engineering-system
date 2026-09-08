@@ -122,6 +122,18 @@ grep "^assign$tab" "$work/authoring" >"$work/assign" 2>/dev/null || : >"$work/as
 grep "^deferred$tab" "$work/authoring" >"$work/deferred" 2>/dev/null || : >"$work/deferred"
 grep "^exempt$tab" "$work/authoring" >"$work/exempt" 2>/dev/null || : >"$work/exempt"
 [ -s "$work/assign" ] || fail 'project contract declares no documentation.authoring.assign entries'
+# An assignment may name a path that holds no document yet. A path that does not exist at all
+# is a stale declaration, and every such entry means the check is not looking at anything.
+existing_assignments=0
+while IFS="$tab" read -r _ pattern _; do
+  [ -n "$pattern" ] || continue
+  case "$pattern" in
+    *[*?]*) existing_assignments=$((existing_assignments + 1)) ;;
+    *) [ ! -e "$project/$pattern" ] || existing_assignments=$((existing_assignments + 1)) ;;
+  esac
+done <"$work/assign"
+[ "$existing_assignments" -gt 0 ] \
+  || fail 'no documentation.authoring.assign path exists; fix the declaration'
 if [ -f "$project/.engsys/generated-paths.txt" ]; then
   cp "$project/.engsys/generated-paths.txt" "$work/generated"
 else
@@ -321,7 +333,6 @@ while IFS= read -r path; do
 done <"$work/paths"
 
 findings=$(grep -c . "$work/findings" || true)
-[ "$checked" -gt 0 ] || fail 'no assigned documents were found; check documentation.authoring.assign'
 printf 'Document structure: %s assigned documents, %s findings\n' "$checked" "$findings"
 if [ "$findings" -gt 0 ]; then
   while IFS= read -r finding; do

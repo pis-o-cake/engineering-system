@@ -1,14 +1,15 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 09bd490c2259c088d24aca018cd1bad225297653
+blob: 21cc521b16b1de037b1c3b31d1a172b77c1505e2
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-구성 요소에 install.sh 를 추가하고, bin/engsys 의 책임 목록에 doctor 를 넣었다. 제약과 근거에
-ADR 0007 한 줄을 추가했다 — 배포 채널이 origin/main 이고 doctor 는 진단만 한다는 두 사실이다.
-doctor 는 gate 가 아니라 진단이라 강제 지점 표에는 넣지 않았다. 표는 "무엇이 위반을 막는가"를
-답하는데 doctor 는 아무것도 막지 않는다.
-다른 절은 바꾸지 않았다. 링크 7개가 실재하는지 확인했다.
+구성 요소에 templates/project/* 를 추가했다. packages/* 는 복사되지 않고 templates/* 는
+복사된다는 차이가 이 시스템의 경계라 한 줄로 명시했다.
+제약과 근거에 ADR 0008 한 줄을 추가했다.
+templates 는 gate 를 seed 하지만 그 자체가 gate 는 아니라 강제 지점 표에는 넣지 않았다.
+복사 뒤에는 프로젝트가 소유하므로 이 시스템이 무엇을 막는지의 답이 아니다.
+다른 절은 바꾸지 않았다. 링크 8개가 실재하는지 확인했다.
 

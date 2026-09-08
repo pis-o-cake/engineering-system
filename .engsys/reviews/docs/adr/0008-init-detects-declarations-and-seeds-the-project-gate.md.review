@@ -1,0 +1,20 @@
+engsys-document-review: 1
+document: docs/adr/0008-init-detects-declarations-and-seeds-the-project-gate.md
+blob: a88ed9e84449954aa40a287af1d5a88a51a339be
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 새 프로젝트의 채택을 어디까지 자동으로 채우는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 결정 6항목을 구현과 대조했다 — 미설정 항목만 채우기,
+verify 미감지 시 기본값 대신 요구, 문서 없는 경로에만 배정, hooksPath 가 비었을 때만 등록,
+기존 hook 보존, launcher 없으면 push 를 막지 않기.
+대안 5개는 전부 실제로 판단한 것이다. 문서 골격 template 은 유형 계약의 필수 절과 충돌해서
+버렸고(빈 절이 기본값이 된다), profile 언어별 분리는 package 차이가 없어 버렸다. 두 번째는
+이번 단계 계획에 있던 항목이라 왜 하지 않았는지를 남겨야 했다.
+"gate 가 engsys 를 못 찾으면 막지 않는다"는 결정의 이유를 대안 절에 적었다 — 막힌 이유를
+설명하지 못하는 gate 는 삭제된다. 이건 public-ai-qa 세션이 같은 판단을 먼저 했고 그 근거를
+그대로 채택한 것이다.
+영향 절에 감지의 한계(최상위만 본다)와 기존 프로젝트의 전환 순서를 남겼다.
+미확정 없음. 재검토 조건은 언어별로 실제 다른 package 가 생길 때다.
+
