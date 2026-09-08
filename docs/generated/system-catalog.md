@@ -25,7 +25,7 @@ Claude Code skill:
 
 Claude Code hook:
 
-- `PreToolUse` matcher `Edit|Write` → `claude-code/hooks/block-generated-edit.sh` (timeout 3s)
+- `PreToolUse` matcher `Edit|MultiEdit|Write` → `claude-code/hooks/block-generated-edit.sh` (timeout 3s)
 
 ### foundation
 

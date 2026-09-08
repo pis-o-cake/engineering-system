@@ -12,6 +12,6 @@ package:
       - claude-code/skills/documentation-impact
     hooks:
       - event: PreToolUse
-        matcher: Edit|Write
+        matcher: Edit|MultiEdit|Write
         command: claude-code/hooks/block-generated-edit.sh
         timeout: 3
