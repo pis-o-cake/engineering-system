@@ -989,9 +989,14 @@ check() {
   lock="$project_dir/.engsys/lock.yaml"
   generated_paths="$project_dir/.engsys/generated-paths.txt"
   route="$project_dir/.claude/rules/engineering-system.md"
-  [ -f "$contract" ] || die "missing .engsys/project.yaml"
-  [ -f "$lock" ] || die "missing .engsys/lock.yaml"
-  [ -f "$generated_paths" ] || die "missing .engsys/generated-paths.txt"
+  if [ ! -f "$contract" ]; then
+    die "no Engineering System contract in $project_dir
+  this branch has not adopted the standard, or the adoption lives on another branch
+  adopt it:  engsys init --project $project_dir --detect --hooks
+  diagnose:  engsys doctor --project $project_dir"
+  fi
+  [ -f "$lock" ] || die "missing .engsys/lock.yaml; run engsys init or restore the lock from Git"
+  [ -f "$generated_paths" ] || die "missing .engsys/generated-paths.txt; run engsys sync"
   [ -f "$route" ] || die "missing .claude/rules/engineering-system.md"
 
   profile=$(project_profile "$contract")
@@ -1043,7 +1048,8 @@ sync() {
   done
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
-  [ -f "$project_dir/.engsys/project.yaml" ] || die "missing .engsys/project.yaml"
+  [ -f "$project_dir/.engsys/project.yaml" ] \
+    || die "no Engineering System contract in $project_dir; run engsys init --detect first"
   mkdir -p "$project_dir/.engsys"
   sync_generated_paths "$project_dir" "$project_dir/.engsys/generated-paths.txt"
   printf '%s\n' "Synchronized generated paths: $project_dir/.engsys/generated-paths.txt"

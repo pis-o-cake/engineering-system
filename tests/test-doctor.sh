@@ -33,6 +33,23 @@ grep -Fq 'project has not adopted Engineering System' "$temporary/result"
 grep -Fq 'engsys init --verify' "$temporary/result"
 grep -Fq '0 problem(s) to fix' "$temporary/result"
 
+# 계약이 없는 프로젝트에서 다른 명령을 먼저 부르면 doctor 와 init 으로 안내한다.
+for command in check sync verify; do
+  if "$system_root/bin/engsys" "$command" --project "$project" >"$temporary/result" 2>&1; then
+    printf 'Unexpected success for %s without a contract\n' "$command" >&2
+    exit 1
+  fi
+  grep -Fq 'no Engineering System contract' "$temporary/result" || {
+    printf '%s must name the missing contract\n' "$command" >&2
+    cat "$temporary/result" >&2
+    exit 1
+  }
+  grep -Fq 'engsys init' "$temporary/result" || {
+    printf '%s must name the command that adopts the standard\n' "$command" >&2
+    exit 1
+  }
+done
+
 "$system_root/bin/engsys" init --project "$project" --verify true >/dev/null 2>&1
 run
 grep -Fq 'project contract and lock pass engsys check' "$temporary/result"
