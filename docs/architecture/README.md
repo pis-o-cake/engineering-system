@@ -67,7 +67,7 @@ engsys verify
 | 계약 형식 | 없음 | `engsys check` + `tools/validate-contract.py` |
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
-| 문서 유형·필수 구성 | `write-document` skill이 작성 전 유형과 계약을 읽음 | `engsys docs check`가 선언한 유형·metadata·절·근거 경로 검사 |
+| 문서 유형·필수 구성 | `write-document` skill이 작성 전 유형과 계약을 읽고, `PostToolUse`가 방금 쓴 문서 하나를 검사해 결과를 세션에 돌려줌 | `engsys docs check`가 선언한 유형·metadata·절·근거 경로 검사 |
 | authored 문서의 편집 검토 | `review-document` skill로 개별 검토 | `engsys review check`가 문서별 검토 기록과 본문 해시 비교 |
 | self lock 신선도 | 없음 | tests가 lock revision과 HEAD의 `packages`·`bin`·`lib` tree 비교 |
 
@@ -90,6 +90,12 @@ Historical 검사는 `.engsys/project.yaml`의 lifecycle 경로와 docs-gov poli
 필수 metadata가 채워졌는지, metadata가 가리키는 근거 경로가 존재하는지, 첫 절 앞에 도입 문단이
 있는지, 필수 절이 있는지를 본다. 유형의 `frozen-status`에 해당하는 기록은 절의 존재만 보고
 순서는 보지 않는다. HTML은 `<meta name="doc-*">`로 같은 metadata를 선언한다.
+
+검사는 세 시점에 돈다. 문서를 쓴 직후 `PostToolUse` hook이 `--path`로 **그 문서 하나만** 보고,
+실패하면 exit 2로 끝내 그 결과가 세션 안의 Claude에게 전달된다. 세션을 열 때 `SessionStart` hook이
+남은 findings와 미검토 문서 수를 한 줄로 주입한다. 마지막으로 `engsys verify`와 push gate가 전체를
+본다. 턴마다 전체를 검증하는 `Stop` hook은 쓰지 않는다
+([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 
 이 검사는 구조만 판정한다. 문장의 적절성과 근거의 충분성은 아래 편집 검토가 판단한다.
 
@@ -123,3 +129,5 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   하고 고치지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).
 - `init --detect`는 설정하지 않은 선언만 채우고, 이미 문서가 있는 경로에는 유형을 배정하지 않는다
   ([ADR 0008](../adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).
+- 구조 검사는 작성 시점에 문서 하나 단위로 돌고 결과는 Claude가 받는다. 편집 검토는 옮기지 않는다
+  ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).

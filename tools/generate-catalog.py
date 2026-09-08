@@ -108,9 +108,11 @@ def _render_package(name, entry):
     lines.append("")
     if hooks:
         for hook in hooks:
+            matcher = hook.get("matcher")
+            scope = "matcher `%s`" % matcher if matcher else "모든 호출"
             lines.append(
-                "- `%s` matcher `%s` → `%s` (timeout %ss)"
-                % (hook["event"], hook["matcher"], hook["command"], hook["timeout"])
+                "- `%s` %s → `%s` (timeout %ss)"
+                % (hook["event"], scope, hook["command"], hook["timeout"])
             )
     else:
         lines.append("- 없음")

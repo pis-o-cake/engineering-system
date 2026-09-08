@@ -28,6 +28,7 @@ context-budget:
   skill-description-max-characters: 240
   skill-instructions-max-lines: 150
   default-loaded-policy: none
+  session-start-context-max-lines: 2
 
 package-contributions:
   source: packages/*/package.yaml package.claude-code
@@ -38,3 +39,4 @@ non-goals:
   - no UserPromptSubmit classifier in v0.1
   - no Stop hook that runs verification automatically
   - no hook as the only enforcement path
+  - no editorial review demanded while a document is still being written

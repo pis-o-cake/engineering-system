@@ -141,6 +141,13 @@ native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`
 engsys docs check --project .
 ```
 
+`--path <문서>`를 주면 그 문서 하나만 본다. 배정되지 않은 경로와 없는 파일은 오류가 아니다.
+
+`engsys claude`로 연 세션에서는 이 검사가 자동으로 돈다. 문서를 쓴 직후 그 문서 하나가 검사되고,
+실패하면 결과가 Claude에게 전달돼 그 자리에서 고친다. 세션을 열 때는 남은 findings와 미검토 문서
+수가 한 줄로 주입된다. 사람이 에디터로 직접 고친 문서는 이 층에 걸리지 않으며 push gate가 잡는다
+([ADR 0009](docs/adr/0009-document-structure-feedback-at-write-time.md)).
+
 배정된 문서의 유형·status·필수 metadata·근거 경로·도입 문단·필수 절을 검사한다. 유형의
 `frozen-status`에 해당하는 기록은 절의 존재만 보고 순서는 강제하지 않으며, `deferred`로 선언한
 경로는 절 검사를 유예하고 metadata만 검사한다. 구조 검사는 문체를 판정하지 않는다

@@ -23,7 +23,7 @@ Usage:
   engsys sync [--project <directory>]
   engsys verify [--project <directory>]
   engsys review <status|record|check> [options]
-  engsys docs check [--project <directory>]
+  engsys docs check [--project <directory>] [--path <document>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -195,7 +195,8 @@ package_adapter_hooks() {
 
   awk '
     function emit() {
-      if (event != "") print event "\t" matcher "\t" command "\t" timeout
+      # IFS 로 TAB 을 쓰면 빈 field 가 사라진다. matcher 없는 event 는 '-' 로 표시해 실어 보낸다.
+      if (event != "") print event "\t" (matcher == "" ? "-" : matcher) "\t" command "\t" timeout
       event = matcher = command = timeout = ""
     }
     /^  claude-code:$/ { in_adapter = 1; in_hooks = 0; next }
@@ -285,7 +286,7 @@ write_plugin_hooks() {
           [ -n "$event" ] || continue
           require_plugin_relative_path "$command"
           case "$event" in ''|*[!A-Za-z]*) die "package hook has invalid event: $event" ;; esac
-          case "$matcher" in ''|*[!A-Za-z'|']*) die "package hook has invalid matcher: $matcher" ;; esac
+          case "$matcher" in ''|*[!A-Za-z'|-']*) die "package hook has invalid matcher: $matcher" ;; esac
           case "$timeout" in ''|*[!0-9]*) die "package hook has invalid timeout: $timeout" ;; esac
           [ -f "$source_root/packages/$package/$command" ] \
             || die "package hook handler is missing: $package/$command"
@@ -313,9 +314,9 @@ write_plugin_hooks() {
         else
           printf ',\n'
         fi
+        printf '%s\n' '      {'
+        [ "$matcher" = - ] || printf '        "matcher": "%s",\n' "$matcher"
         cat <<EOF
-      {
-        "matcher": "$matcher",
         "hooks": [
           {
             "type": "command",
@@ -818,17 +819,21 @@ docs() {
     -h|--help) usage; exit 0 ;;
     *) die "unknown docs action: $action" ;;
   esac
+  docs_path=
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --path) require_value "$@"; docs_path=$2; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown docs option: $1" ;;
     esac
   done
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
+  set -- --project "$project_dir"
+  [ -z "$docs_path" ] || set -- "$@" --path "$docs_path"
   ENGSYS_SYSTEM_ROOT="$system_root" \
-    sh "$system_root/packages/docs-gov/bin/check-structure.sh" --project "$project_dir"
+    sh "$system_root/packages/docs-gov/bin/check-structure.sh" "$@"
 }
 
 doctor_report() {

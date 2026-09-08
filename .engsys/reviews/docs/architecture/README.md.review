@@ -1,15 +1,16 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 21cc521b16b1de037b1c3b31d1a172b77c1505e2
+blob: 9b716b254c357b142ec4d6ef7ff7732eb643d31d
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-구성 요소에 templates/project/* 를 추가했다. packages/* 는 복사되지 않고 templates/* 는
-복사된다는 차이가 이 시스템의 경계라 한 줄로 명시했다.
-제약과 근거에 ADR 0008 한 줄을 추가했다.
-templates 는 gate 를 seed 하지만 그 자체가 gate 는 아니라 강제 지점 표에는 넣지 않았다.
-복사 뒤에는 프로젝트가 소유하므로 이 시스템이 무엇을 막는지의 답이 아니다.
-다른 절은 바꾸지 않았다. 링크 8개가 실재하는지 확인했다.
+"문서 유형 구조 검사" 절에 검사가 도는 세 시점(작성 직후·세션 시작·verify/push)을 한 문단으로
+넣었다. 그 전에는 engsys docs check 가 언제 실행되는지가 이 문서에 없었다.
+강제 지점 표의 문서 유형 행에 PostToolUse 를 추가했다. Claude 보조 경로 열의 내용이라 native
+gate 열은 그대로 뒀다 — 자동 실행이 늘어도 정본은 여전히 engsys docs check 다.
+제약과 근거에 ADR 0009 한 줄을 추가했다.
+SessionStart 는 아무것도 막지 않으므로 강제 지점 표에 넣지 않았다. doctor 와 같은 이유다.
+다른 절은 바꾸지 않았다. 링크 9개가 실재하는지 확인했다.
 
