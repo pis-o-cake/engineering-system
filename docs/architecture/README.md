@@ -53,8 +53,11 @@ engsys verify
 | 계약 형식 | 없음 | `engsys check` + `tools/validate-contract.py` |
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
+| self lock 신선도 | 없음 | tests가 lock revision과 HEAD의 `packages`·`bin`·`lib` tree 비교 |
 
 hook은 사람이 우회할 수 있으므로 정본이 아니다. 같은 규칙을 native gate가 다시 검사한다.
+CI runner가 준비되기 전까지 push 전 강제는 `.githooks/pre-push`가 맡는다
+(`git config core.hooksPath .githooks`로 1회 활성화). CI가 열리면 같은 명령을 옮긴다.
 
 Historical 검사는 `.engsys/project.yaml`의 lifecycle 경로와 docs-gov policy의 필수 metadata·status
 목록을 읽는다. `tests/test-all.sh`에 연결되므로 이 레포의 `engsys verify`에서도 실행된다.

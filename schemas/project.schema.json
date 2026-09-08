@@ -29,6 +29,7 @@
     },
     "commands": {
       "type": "object",
+      "required": ["verify"],
       "additionalProperties": {"type": "string", "minLength": 1}
     },
     "documentation": {

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# CI runner가 준비되기 전까지의 hard gate. push 전에 이 레포의 native 검사를 강제한다.
+# 활성화(1회): git config core.hooksPath .githooks
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+sh tests/test-all.sh

@@ -71,6 +71,17 @@ sh tests/test-all.sh          # 전체 검사 (이 레포의 commands.verify)
 bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 여부
 ```
 
+CI runner가 준비되기 전까지는 push 전 검사를 Git hook으로 강제한다. clone 후 한 번만 등록하며,
+CI가 열리면 같은 명령을 그대로 옮긴다.
+
+```sh
+git config core.hooksPath .githooks   # pre-push가 sh tests/test-all.sh 실행
+```
+
+native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`lib/`를 바꾸는 commit 뒤에는
+`bin/engsys upgrade --project . --apply`로 자기 lock을 올리고 그 lock 변경을 커밋한다.
+그러지 않으면 `engsys claude`가 병합 전 revision의 skill·hook을 조합한다.
+
 `docs/generated/`는 사람이 고치지 않는다. `python3 tools/generate-catalog.py`로 다시 만든다.
 
 이 레포의 native 검사에는 `python3 tools/check-documentation.py`도 포함된다. `.engsys/`에

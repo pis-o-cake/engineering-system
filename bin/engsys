@@ -85,7 +85,11 @@ require_relative_path() {
 }
 
 profile_packages() {
-  sed -n 's/^  -[[:space:]]*//p' "$system_root/profiles/$1.yaml"
+  awk '
+    /^packages:$/ { in_packages = 1; next }
+    /^[A-Za-z]/ { in_packages = 0 }
+    in_packages && /^  - / { sub(/^  -[ \t]*/, ""); print }
+  ' "$system_root/profiles/$1.yaml"
 }
 
 package_version() {
@@ -367,6 +371,13 @@ materialize_plugin_view() {
   fi
 
   temporary="$view.tmp.$$"
+  cleanup_view_temporary() {
+    view_status=$?
+    rm -rf "$temporary"
+    trap - 0 1 2 15
+    exit "$view_status"
+  }
+  trap cleanup_view_temporary 0 1 2 15
   mkdir -p "$temporary/.claude-plugin" "$temporary/bin" "$temporary/hooks" "$temporary/packages"
   for package in $packages; do
     [ -d "$source_root/packages/$package" ] \
@@ -382,7 +393,17 @@ materialize_plugin_view() {
     printf '%s\n' "$packages"
   } >"$temporary/.engsys-view"
   mkdir -p "$(dirname "$view")"
+  if [ -e "$view" ]; then
+    # 동시 실행이 같은 view를 먼저 완성했다. 승자를 쓰고 임시본은 버린다.
+    rm -rf "$temporary"
+    trap - 0 1 2 15
+    plugin_view_is_ready "$view" "$revision" "$profile" \
+      || die "cached plugin view is incomplete or incompatible: $view"
+    printf '%s\n' "$view"
+    return
+  fi
   mv "$temporary" "$view"
+  trap - 0 1 2 15
   printf '%s\n' "$view"
 }
 
@@ -515,6 +536,11 @@ write_lock() {
   profile=$2
   lock_destination=${3:-"$project_dir/.engsys/lock.yaml"}
   revision=$(system_revision)
+  [ "$revision" != unversioned ] \
+    || die "system checkout is not a Git repository; cannot record a lock revision"
+  # 검증은 working tree로 돌지만 lock은 commit만 가리킬 수 있다. 어긋남을 조용히 넘기지 않는다.
+  system_is_clean || printf '%s\n' \
+    "engsys: warning: system checkout has uncommitted changes; the lock records committed revision $revision" >&2
 
   {
     printf '%s\n' 'lock-version: 1'
