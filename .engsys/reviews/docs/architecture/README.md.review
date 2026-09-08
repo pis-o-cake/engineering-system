@@ -1,0 +1,19 @@
+engsys-document-review: 1
+document: docs/architecture/README.md
+blob: 35aec3ba45ca72aa6cf13398e36f92a4d8c3d6e4
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 개발자와 운영자
+purpose: 지금 시스템이 어떤 경계로 동작하는가
+
+절 3개를 추가하고 metadata 2건을 고쳤다. status 를 living 에서 active 로 바꾼 것은 architecture
+유형의 status 어휘에 living 이 없기 때문이고, 문서의 성격을 바꾼 것이 아니다. last-reviewed
+2026-09-08 을 추가했다.
+구조 요약: packages/profiles/프로젝트 계약의 세 층과 lock 이 조합을 고정한다는 사실만 적었다.
+아래 절과 중복되는 구성요소 목록은 넣지 않았다.
+문서 유형 구조 검사: 검사 항목 6가지와 frozen/deferred 의 차이를 적고 "구조만 판정한다"로
+편집 검토와의 경계를 명시했다.
+제약과 근거: ADR 0001~0006 을 각 한 줄로 연결했다. 링크 6개가 실재하는지 확인했다.
+강제 지점 표에 문서 유형 행을 추가했다.
+검증: engsys docs check 10편 0건, tools/check-documentation.py 통과로 링크 대상을 확인했다.
+

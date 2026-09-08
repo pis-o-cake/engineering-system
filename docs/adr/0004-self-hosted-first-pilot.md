@@ -7,6 +7,9 @@ date: 2026-09-07
 
 # 0004. 이 레포를 표준의 첫 pilot으로 삼는다
 
+이 레포 자신을 표준의 첫 pilot으로 삼아 `.engsys/` 계약과 문서 세 구분을 직접 운영한다.
+`public-ai-qa`는 언어·framework가 있는 두 번째 pilot으로 남는다.
+
 ## 맥락
 
 v0.1 설계는 첫 pilot을 별도 프로젝트(`public-ai-qa`)로 잡았다. 그동안 이 레포 자신은

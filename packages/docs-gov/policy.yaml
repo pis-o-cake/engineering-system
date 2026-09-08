@@ -44,3 +44,28 @@ constraints:
   no-inferred-rationale: true
   no-automatic-historical-rewrite: true
   generated-output-owner: generator
+
+editorial-review:
+  criteria: packages/docs-gov/editorial.md
+  review-unit: one-complete-document
+  reviewer-action: read-edit-and-reread
+  receipt: .engsys/reviews/<document-path>.review
+  native-action: check-receipt-and-content-hash
+  project-enforcement: explicit-native-command-with-review-scopes
+  constraints:
+    - no-automated-prose-grading
+    - no-batch-review-approval
+    - no-invented-evidence-or-reviewer
+    - no-pass-with-unresolved-contradictions
+
+document-types:
+  registry: packages/docs-gov/document-types.yaml
+  design: docs/design/0002-document-authoring-contracts.md
+  project-declaration: documentation.authoring
+  native-action: check-declared-type-metadata-and-sections
+  frozen-records: presence-required-order-preserved
+  deferred-records: project-listed-paths-keep-metadata-checks-only
+  constraints:
+    - no-prose-scoring
+    - no-uniform-template-across-types
+    - no-policy-copy-per-project

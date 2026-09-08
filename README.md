@@ -1,3 +1,8 @@
+---
+type: guide
+status: active
+---
+
 # Engineering System
 
 프로젝트마다 같은 개발 판단을 반복 가능하게 만드는 실행형 표준이다.
@@ -88,3 +93,40 @@ native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`
 선언한 historical 문서의 필수 frontmatter, policy의 status 목록, local link 대상 존재 여부를
 확인한다. 본문을 현행 코드와 비교하거나 외부 URL·heading fragment를 검사하지 않는다.
 다른 프로젝트의 문서 검사는 그 프로젝트의 native command가 맡는다.
+
+## 문서 유형과 구조 검사
+
+새 문서는 유형을 먼저 정한다. 유형별 독자, 답할 질문, 필수 metadata, 필수 절의 정본은
+[document types](packages/docs-gov/document-types.yaml)이고, 프로젝트는 `.engsys/project.yaml`의
+`documentation.authoring`에서 경로에 유형을 배정한다. `/engsys:write-document`가 작성 전에 그
+계약을 읽는 절차를 제공한다.
+
+```sh
+engsys docs check --project .
+```
+
+배정된 문서의 유형·status·필수 metadata·근거 경로·도입 문단·필수 절을 검사한다. 유형의
+`frozen-status`에 해당하는 기록은 절의 존재만 보고 순서는 강제하지 않으며, `deferred`로 선언한
+경로는 절 검사를 유예하고 metadata만 검사한다. 구조 검사는 문체를 판정하지 않는다
+([ADR 0006](docs/adr/0006-document-type-contract-in-posix-sh.md)).
+
+## 문서 편집 검토
+
+보고·운영·설계 문서는 [편집 기준](packages/docs-gov/editorial.md)에 따라 한 편씩 읽고 수정한다.
+`/engsys:review-document`가 최종본을 검토하고 문서별 기록을 남기는 절차를 제공한다.
+기록에는 본문 해시, 검토자, 독자, 문서가 답할 질문, 구체적인 검토 내용을 담는다.
+
+```sh
+engsys review status --scope docs --scope README.md
+engsys review record --document docs/report.md --blob <검토한-본문-해시> \
+  --reviewer <실제-검토자> --audience <독자> --purpose <답할-질문> --notes-file <검토-메모>
+engsys review check --scope docs --scope README.md
+```
+
+프로젝트는 마지막 명령을 native 검사에 연결한다. 생성 문서는 제외되며, 새 문서나 검토 후
+바뀐 문서는 실패한다. 기존 문서를 범위에 넣을 때도 최초 개별 검토가 필요하다. 문서와
+`.engsys/reviews/`의 해당 기록을 함께 commit한다. 전체 문체를 자동 판정하거나 일괄 승인하지 않는다.
+
+push gate에서는 `engsys review check --revision <전송할-commit> --scope docs --scope README.md`로
+전송할 본문과 기록을 함께 검사한다. 이 레포는 `.githooks/pre-push`에 연결한다. 검사는 검토
+기록의 존재와 신선도를 확인하며, 글의 품질이나 상급자의 승인을 증명하지 않는다.

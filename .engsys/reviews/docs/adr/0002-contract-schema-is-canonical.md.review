@@ -1,0 +1,12 @@
+engsys-document-review: 1
+document: docs/adr/0002-contract-schema-is-canonical.md
+blob: 82f347e7f12ad193a156fb6f2d38477486213f37
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 계약 형식의 정본이 무엇인가
+
+도입 문단 두 문장을 추가했다. "정본은 JSON Schema, engsys check 는 근사"라는 결정 절의 두
+항목만 옮겼다. 근사의 한계(최상위 key 와 필수 항목 밖은 놓친다)는 결과 절에 이미 있어 도입에
+반복하지 않았다. 대안 세 개와 각 제외 이유, date 는 그대로다.
+

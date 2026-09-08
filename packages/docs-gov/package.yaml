@@ -7,9 +7,13 @@ package:
     - documentation impact prompt
     - generated-document verification contract
     - historical-record guardrails
+    - individual document editorial review and review freshness gate
+    - document type contracts and their structural check
   claude-code:
     skills:
       - claude-code/skills/documentation-impact
+      - claude-code/skills/write-document
+      - claude-code/skills/review-document
     hooks:
       - event: PreToolUse
         matcher: Edit|MultiEdit|Write

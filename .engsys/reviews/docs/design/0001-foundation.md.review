@@ -1,0 +1,10 @@
+engsys-document-review: 1
+document: docs/design/0001-foundation.md
+blob: df2052c70c9a487fb7a6061f8eb5b2120fe3b7a7
+decision: pass
+reviewer: Codex (기존 문서 검토)
+audience: Foundation 설계 맥락을 확인하는 엔지니어
+purpose: v0.1에서 어떤 경계와 적용 흐름을 선택했는가
+
+Foundation v0.1의 문제, 초기 결정 표, component 경계, 실행 흐름, context 제약, 비목표와 성공 기준을 전부 읽었다. 계약과 lock을 분리하고 native 검사와 Claude 보조를 구분한 당시 설계가 드러난다. 첫 외부 pilot과 다음 설계 항목은 당시 계획으로 보존했다. 후속 pilot 변경과 편집 검토 도입은 ADR과 현행 아키텍처에서 설명하므로 과거 본문에 역으로 반영하지 않았다. 문서가 전체 roadmap 완료를 주장하지 않으며 v0.1 경계를 전달하는 것으로 판단했다.
+

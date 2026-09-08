@@ -11,7 +11,9 @@
     "./packages/foundation/claude-code/skills/bootstrap",
     "./packages/foundation/claude-code/skills/classify-change",
     "./packages/foundation/claude-code/skills/upgrade",
+    "./packages/docs-gov/claude-code/skills/write-document",
     "./packages/docs-gov/claude-code/skills/documentation-impact",
+    "./packages/docs-gov/claude-code/skills/review-document",
     "./packages/pipeline/claude-code/skills/verify"
   ],
   "hooks": "./adapters/claude-code/hooks/catalog.json"

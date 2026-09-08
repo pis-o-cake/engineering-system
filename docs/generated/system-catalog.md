@@ -18,10 +18,14 @@
 - documentation impact prompt
 - generated-document verification contract
 - historical-record guardrails
+- individual document editorial review and review freshness gate
+- document type contracts and their structural check
 
 Claude Code skill:
 
 - `documentation-impact` (`packages/docs-gov/claude-code/skills/documentation-impact`)
+- `write-document` (`packages/docs-gov/claude-code/skills/write-document`)
+- `review-document` (`packages/docs-gov/claude-code/skills/review-document`)
 
 Claude Code hook:
 
