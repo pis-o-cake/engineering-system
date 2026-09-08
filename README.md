@@ -72,10 +72,21 @@ engsys upgrade --project /path/to/project --apply
 덮어쓰지 않으며, manifest를 수동으로 바꾼 뒤에는 `sync`와 `check`를 차례로 실행한다.
 
 ```sh
-engsys init --project /path/to/project --verify 'make check'
-engsys check --project /path/to/project
+engsys init --project /path/to/project --detect --hooks
 engsys verify --project /path/to/project
 ```
+
+`--detect`는 설정하지 않은 선언만 프로젝트에서 읽어 채우고 채운 값을 모두 출력한다 — native 검증
+명령, source-of-truth 디렉토리, 문서 정본 경로, lifecycle, 그리고 아직 문서가 없는 경로의 유형
+배정이다. 이미 문서가 있는 경로는 배정하지 않고 그 경로를 알려 준다. 유형을 선언하지 않은 문서를
+배정하면 채택 첫날 검사가 전부 실패하기 때문이다. 명시한 옵션이 언제나 감지보다 우선한다.
+
+감지는 최상위 디렉토리만 본다. `backend/pyproject.toml`처럼 한 단계 아래에 있는 스택은 찾지
+못하므로 `--verify 'cd backend && poe check'`처럼 직접 준다.
+
+`--hooks`는 `pre-push` gate를 프로젝트에 복사하고 `core.hooksPath`가 비어 있을 때만 등록한다.
+그 파일은 프로젝트가 소유하며 표준이 나중에 덮어쓰지 않는다
+([ADR 0008](docs/adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).
 
 `check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —

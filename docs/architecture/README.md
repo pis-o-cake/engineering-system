@@ -33,6 +33,8 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 - `lib/generated-documents.awk` — `documentation.generated`를 항목 단위로 읽는 core parser다.
   `output`·`command` 순서는 자유이며, 누락·중복·지원하지 않는 문법은 오류로 처리한다.
 - `packages/*` — 정책과 Claude Code skill·hook의 정본. 프로젝트에 복사되지 않는다.
+- `templates/project/*` — 프로젝트가 복사해 소유하는 seed. Claude route rule과 `pre-push` gate이며,
+  복사한 뒤에는 프로젝트의 파일이다. 표준이 덮어쓰지 않는다.
 - `profiles/*` — package 조합 선언.
 - `schemas/*` — 프로젝트 계약과 lock 형식의 정본.
 - `tools/*` — 시스템 레포 개발용 도구(python3). 프로젝트는 실행하지 않는다.
@@ -119,3 +121,5 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0006](../adr/0006-document-type-contract-in-posix-sh.md)).
 - 배포 채널은 `origin/main`이고 lock은 실행한 checkout의 revision을 기록한다. `doctor`는 진단만
   하고 고치지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).
+- `init --detect`는 설정하지 않은 선언만 채우고, 이미 문서가 있는 경로에는 유형을 배정하지 않는다
+  ([ADR 0008](../adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).
