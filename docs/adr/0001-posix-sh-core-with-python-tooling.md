@@ -7,6 +7,9 @@ date: 2026-09-07
 
 # 0001. engsys core는 POSIX sh로 두고 개발 도구만 python3를 쓴다
 
+engsys core는 dependency 없는 POSIX sh로 유지하고, python3를 쓰는 도구는 시스템 레포 개발용으로
+한정한다. 표준을 채택하는 프로젝트에는 python3 전제를 두지 않는다.
+
 ## 맥락
 
 `bin/engsys`는 850줄 규모의 POSIX sh이고 YAML을 `sed`·`awk`로 읽는다. 이 파서는 engsys가

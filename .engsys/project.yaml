@@ -17,6 +17,23 @@ documentation:
   generated:
     - output: 'docs/generated/system-catalog.md'
       command: 'python3 tools/generate-catalog.py --check'
+  authoring:
+    assign:
+      - path: 'README.md'
+        type: 'guide'
+      - path: 'docs/adr'
+        type: 'decision-record'
+      - path: 'docs/architecture'
+        type: 'architecture'
+      - path: 'docs/design'
+        type: 'design-proposal'
+    deferred:
+      - 'docs/design/0001-foundation.md'
+      - 'docs/design/0002-document-authoring-contracts.md'
+  review:
+    scopes:
+      - 'docs'
+      - 'README.md'
   lifecycle:
     design:
       path: 'docs/design'

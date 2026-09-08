@@ -1,0 +1,12 @@
+engsys-document-review: 1
+document: docs/adr/0005-individual-document-editorial-review.md
+blob: 4ea7fb80fd213cd91f99eb38da2bf1716855c518
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 문서 편집 검토를 왜 어떻게 강제하는가
+
+도입 문단 두 문장을 추가했다. 검토 단위와 push gate 차단, 그리고 "품질·승인을 증명하지
+않는다"는 보장 범위를 함께 담았다 — 뒤 문장을 빼면 검사 결과를 승인으로 읽을 수 있다.
+문제·결정·대안과 비용·보장 범위 절은 바꾸지 않았다.
+

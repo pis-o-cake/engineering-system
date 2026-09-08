@@ -50,6 +50,40 @@
             }
           }
         },
+        "authoring": {
+          "type": "object",
+          "required": ["assign"],
+          "additionalProperties": false,
+          "properties": {
+            "assign": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["path", "type"],
+                "additionalProperties": false,
+                "properties": {
+                  "path": {"type": "string", "minLength": 1},
+                  "type": {"type": "string", "minLength": 1}
+                }
+              }
+            },
+            "deferred": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "exempt": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "review": {
+          "type": "object",
+          "required": ["scopes"],
+          "additionalProperties": false,
+          "properties": {
+            "scopes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
         "lifecycle": {
           "type": "object",
           "additionalProperties": {

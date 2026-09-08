@@ -7,6 +7,9 @@ date: 2026-09-07
 
 # 0002. 계약 형식의 정본은 JSON Schema로 두고 sh check는 근사로 둔다
 
+프로젝트 계약 형식의 정본은 JSON Schema다. 프로젝트에서 도는 `engsys check`는 dependency 없이
+실행돼야 하므로 필수 항목과 최상위 key만 보는 근사 검사로 남는다.
+
 ## 맥락
 
 `schemas/project.schema.json`과 `schemas/lock.schema.json`은 v0.1 초기부터 있었지만 어떤
@@ -22,9 +25,9 @@ date: 2026-09-07
 - 계약 형식의 **정본은 JSON Schema**다.
 - 프로젝트에서 도는 `engsys check`는 dependency 없이 실행돼야 하므로 schema를 직접 읽지 않고,
   필수 항목과 최상위 key 집합만 검사하는 **근사**로 남는다.
-- 근사와 정본이 갈라지지 않는다는 것은 시스템 레포의 test가 보장한다.
-  `tests/test-schema.sh`는 bootstrap이 만든 계약을 schema로 검증하고, 같은 위반을
-  `engsys check`도 거부하는지 확인한다.
+- 시스템 레포의 test는 지원하는 계약 사례에서 근사와 정본의 일치를 확인한다.
+  `tests/test-schema.sh`는 bootstrap이 만든 계약을 schema로 검증하고, 알 수 없는 최상위 key를
+  `engsys check`도 거부하는지 확인한다. 모든 입력에 대한 동등성을 보장하지는 않는다.
 - schema에 새 keyword를 추가하려면 `tools/lib/jsonschema_min.py`에 구현을 추가해야 한다.
   미구현 keyword를 만나면 검증기는 통과시키지 않고 즉시 실패한다.
 
@@ -39,7 +42,7 @@ date: 2026-09-07
 
 ## 결과
 
-- 계약 형식을 바꾸려면 schema를 먼저 고쳐야 하고, writer나 sh check가 따라오지 않으면
-  `sh tests/test-all.sh`가 실패한다.
+- 계약 형식을 바꾸려면 schema를 먼저 고치고 writer와 sh check의 관련 test를 함께 갱신한다.
+  `sh tests/test-all.sh`는 test에 포함된 사례의 불일치를 검사한다.
 - 프로젝트가 계약을 손으로 고쳤을 때 sh 근사가 놓치는 위반은 여전히 존재한다. 그 범위는
   최상위 key와 필수 항목 밖의 세부 형식이다.

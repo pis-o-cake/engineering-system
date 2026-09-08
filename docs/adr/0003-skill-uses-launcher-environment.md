@@ -7,6 +7,9 @@ date: 2026-09-07
 
 # 0003. skill은 launcher가 export한 ENGSYS_PLUGIN_ROOT만 사용한다
 
+plugin 안의 스크립트를 실행하는 skill은 launcher가 export한 `ENGSYS_PLUGIN_ROOT`만 사용한다.
+`CLAUDE_PLUGIN_ROOT`는 hook process 전용이라 skill에서는 비어 있다.
+
 ## 맥락
 
 v0.1의 skill 5개는 모두 `${CLAUDE_PLUGIN_ROOT}/bin/engsys` 형태로 명령을 실행하도록 적혀

@@ -1,0 +1,18 @@
+engsys-document-review: 1
+document: docs/adr/0006-document-type-contract-in-posix-sh.md
+blob: 5a86f769efdb30d13e5c313081747bed1124b577
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 문서 유형 계약을 누가 소유하고 검사를 어떤 언어로 구현하는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 결정 5항목이 실제 구현과 일치하는지 파일로 대조했다 —
+document-types.yaml(유형 16종·aliases 25), documentation.authoring(assign/exempt/deferred),
+pattern 기반 절 검사, frozen-status 시 순서 미검사, check-structure.sh 와 engsys docs check.
+대안 두 개는 가상이 아니라 실제로 만들어 비교한 것이다: python 검사기는 작성 후 삭제했고,
+heading 문자열 고정안도 구현했다가 유예 목록이 기본값이 되는 문제로 버렸다. 그 사실이 대안
+절에서 검토했다고 읽히도록 배경 절에 두 안이 동시에 만들어졌다고 적었다.
+영향 절에 이 레포의 docs/design 두 편을 deferred 로 둔 사실과 그 사유, 전환 시점을 명시했다.
+남은 미확정: sh 파서가 document-types.yaml 의 선언 깊이에 의존한다는 한계는 적었지만, 어느
+깊이에서 깨지는지는 측정하지 않았다.
+

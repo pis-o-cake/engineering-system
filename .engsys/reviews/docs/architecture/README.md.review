@@ -1,0 +1,15 @@
+engsys-document-review: 1
+document: docs/architecture/README.md
+blob: adccfd6f6d56267b4fe4f08f2e3f4b68bee6065a
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 개발자와 운영자
+purpose: 지금 시스템이 어떤 경계로 동작하는가
+
+"문서별 편집 검토" 절만 고쳤다. review check 가 계약에서 범위를 읽는다는 현재 동작으로
+바꾸고, --revision 이 범위·생성 문서 목록·본문 셋 다 그 commit 에서 읽는다는 것을 명시했다.
+"프로젝트는 native gate 에 필요한 범위를 명시한다"는 문장은 지웠다 — 범위 선언 위치가
+계약으로 확정돼 중복이다.
+다른 절과 강제 지점 표, 제약과 근거의 ADR 링크 6개는 바꾸지 않았다. engsys docs check
+10편 0건과 tools/check-documentation.py 통과로 링크 대상을 다시 확인했다.
+

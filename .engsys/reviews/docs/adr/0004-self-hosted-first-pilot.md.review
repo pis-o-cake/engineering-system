@@ -1,0 +1,13 @@
+engsys-document-review: 1
+document: docs/adr/0004-self-hosted-first-pilot.md
+blob: b26c34cfb98b7a248b27d64a0a1dc713fd81090f
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 왜 이 레포가 표준의 첫 pilot 인가
+
+도입 문단 두 문장을 추가했다. self pilot 채택과 public-ai-qa 가 두 번째 pilot 이라는 것은
+결정·결과 절의 사실이다. 문서 세 구분(design/adr/architecture)의 frozen status 목록은 결정 절에
+있어 도입에 반복하지 않았다. 이 ADR 이 정한 방식대로 이번 유형 계약도 이 레포에서 먼저
+깨지도록 .engsys/project.yaml 에 배정을 넣었고, 그 사실은 ADR 0006 영향 절에 적었다.
+

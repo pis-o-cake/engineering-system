@@ -20,3 +20,6 @@ project guide. Report only affected classes.
 
 Finish with the declared native documentation check. Do not edit files unless the user separately
 asked for the change.
+
+For authored documentation changes, route completion to `review-document`: the final document
+needs an individual editorial review against its intended readers and current content hash.

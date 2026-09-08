@@ -21,6 +21,8 @@ Usage:
   engsys check [--project <directory>]
   engsys sync [--project <directory>]
   engsys verify [--project <directory>]
+  engsys review <status|record|check> [options]
+  engsys docs check [--project <directory>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -663,6 +665,27 @@ init() {
   printf '%s\n' "Initialized Engineering System contract in $project_dir"
 }
 
+docs() {
+  project_dir=$(pwd)
+  action=${1:-check}
+  case "$action" in
+    check) shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "unknown docs action: $action" ;;
+  esac
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown docs option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  ENGSYS_SYSTEM_ROOT="$system_root" \
+    sh "$system_root/packages/docs-gov/bin/check-structure.sh" --project "$project_dir"
+}
+
 check() {
   project_dir=$(pwd)
   while [ "$#" -gt 0 ]; do
@@ -765,6 +788,17 @@ verify() {
       (cd "$project_dir" && sh -c "$generated_command")
     done
   fi
+  if grep -q '^  authoring:' "$contract"; then
+    printf '%s\n' "Running document structure verification"
+    docs check --project "$project_dir"
+  fi
+
+  if grep -q '^  review:' "$contract"; then
+    printf '%s\n' "Running editorial review verification"
+    ENGSYS_SYSTEM_ROOT="$system_root" \
+      sh "$system_root/packages/docs-gov/bin/review-documents.sh" check --project "$project_dir"
+  fi
+
   printf '%s\n' "Engineering System verification passed: $project_dir"
 }
 
@@ -905,6 +939,11 @@ case "$command" in
   check) shift; check "$@" ;;
   sync) shift; sync "$@" ;;
   verify) shift; verify "$@" ;;
+  review)
+    shift
+    ENGSYS_SYSTEM_ROOT="$system_root" sh "$system_root/packages/docs-gov/bin/review-documents.sh" "$@"
+    ;;
+  docs) shift; docs "$@" ;;
   upgrade) shift; upgrade "$@" ;;
   resolve) shift; resolve "$@" ;;
   claude) shift; claude "$@" ;;

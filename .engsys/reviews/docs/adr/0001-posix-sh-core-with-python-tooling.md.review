@@ -1,0 +1,13 @@
+engsys-document-review: 1
+document: docs/adr/0001-posix-sh-core-with-python-tooling.md
+blob: e8a41945a488c6521cf5fd3ffc13800723437de3
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: engsys core 를 왜 POSIX sh 로 두는가
+
+제목 다음에 도입 문단 두 문장을 추가했다. 문장은 이 문서의 결정 절(sh core 유지, tools 는
+python3, 프로젝트에 python3 전제 없음)에서만 가져왔고 새 사실을 넣지 않았다. 맥락·대안·결과와
+date 2026-09-07, status accepted 는 그대로다. ADR 0006 이 이 결정을 근거로 인용하므로 결론이
+문서 첫머리에 드러날 필요가 있었다.
+
