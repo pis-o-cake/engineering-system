@@ -20,6 +20,7 @@
 - historical-record guardrails
 - individual document editorial review and review freshness gate
 - document type contracts and their structural check
+- per-document structure feedback while a session edits
 
 Claude Code skill:
 
@@ -30,6 +31,8 @@ Claude Code skill:
 Claude Code hook:
 
 - `PreToolUse` matcher `Edit|MultiEdit|Write` → `claude-code/hooks/block-generated-edit.sh` (timeout 3s)
+- `PostToolUse` matcher `Edit|MultiEdit|Write` → `claude-code/hooks/check-document-structure.sh` (timeout 10s)
+- `SessionStart` 모든 호출 → `claude-code/hooks/session-status.sh` (timeout 20s)
 
 ### foundation
 

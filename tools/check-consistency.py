@@ -146,7 +146,7 @@ def _check_hook_catalog(packages):
             expected.add(
                 (
                     hook["event"],
-                    hook["matcher"],
+                    hook.get("matcher"),
                     HOOK_COMMAND_TEMPLATE % (name, hook["command"]),
                     hook["timeout"],
                 )

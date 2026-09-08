@@ -15,7 +15,10 @@ fail() { printf 'engsys docs: %s\n' "$*" >&2; exit 2; }
 usage() {
   cat <<'EOF'
 Usage:
-  engsys docs check [--project <directory>]
+  engsys docs check [--project <directory>] [--path <document>]
+
+  --path checks one document and skips the contract check. An unassigned path is not an
+  error: it exits quietly so an editor hook can run on every write.
 
 Types come from the locked docs-gov package. Path assignments, deferrals, and exemptions
 come from documentation.authoring in the project contract.
@@ -23,9 +26,11 @@ EOF
 }
 
 project=$(pwd)
+single_path=
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --project) [ "$#" -ge 2 ] || fail '--project requires a value'; project=$2; shift 2 ;;
+    --path) [ "$#" -ge 2 ] || fail '--path requires a value'; single_path=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) fail "unknown option: $1" ;;
   esac
@@ -121,7 +126,10 @@ awk '
 grep "^assign$tab" "$work/authoring" >"$work/assign" 2>/dev/null || : >"$work/assign"
 grep "^deferred$tab" "$work/authoring" >"$work/deferred" 2>/dev/null || : >"$work/deferred"
 grep "^exempt$tab" "$work/authoring" >"$work/exempt" 2>/dev/null || : >"$work/exempt"
-[ -s "$work/assign" ] || fail 'project contract declares no documentation.authoring.assign entries'
+if [ ! -s "$work/assign" ]; then
+  [ -z "$single_path" ] || exit 0
+  fail 'project contract declares no documentation.authoring.assign entries'
+fi
 # An assignment may name a path that holds no document yet. A path that does not exist at all
 # is a stale declaration, and every such entry means the check is not looking at anything.
 existing_assignments=0
@@ -132,8 +140,10 @@ while IFS="$tab" read -r _ pattern _; do
     *) [ ! -e "$project/$pattern" ] || existing_assignments=$((existing_assignments + 1)) ;;
   esac
 done <"$work/assign"
-[ "$existing_assignments" -gt 0 ] \
-  || fail 'no documentation.authoring.assign path exists; fix the declaration'
+if [ "$existing_assignments" -eq 0 ]; then
+  [ -z "$single_path" ] || exit 0
+  fail 'no documentation.authoring.assign path exists; fix the declaration'
+fi
 if [ -f "$project/.engsys/generated-paths.txt" ]; then
   cp "$project/.engsys/generated-paths.txt" "$work/generated"
 else
@@ -238,8 +248,16 @@ reference_roots='docs/ backend/ frontend/ infra/ spike/ packages/'
 : >"$work/findings"
 checked=0
 cd "$project"
-git -c core.quotePath=false ls-files --cached --others --exclude-standard \
-  | LC_ALL=C sort -u >"$work/paths"
+if [ -n "$single_path" ]; then
+  case "$single_path" in
+    "$project"/*) single_path=${single_path#"$project"/} ;;
+    /*) exit 0 ;;
+  esac
+  printf '%s\n' "$single_path" >"$work/paths"
+else
+  git -c core.quotePath=false ls-files --cached --others --exclude-standard \
+    | LC_ALL=C sort -u >"$work/paths"
+fi
 
 while IFS= read -r path; do
   case "$path" in .engsys/*) continue ;; *.md|*.html) ;; *) continue ;; esac
@@ -247,7 +265,10 @@ while IFS= read -r path; do
   listed "$path" "$work/exempt" && continue
   expected=$(assigned_type "$path" "$work/assign")
   [ -n "$expected" ] || continue
-  [ -f "$path" ] && [ ! -L "$path" ] || fail "document must be a regular file: $path"
+  if [ ! -f "$path" ] || [ -L "$path" ]; then
+    [ -z "$single_path" ] || exit 0
+    fail "document must be a regular file: $path"
+  fi
   checked=$((checked + 1))
   report() { printf '%s: %s\n' "$path" "$1" >>"$work/findings"; }
 

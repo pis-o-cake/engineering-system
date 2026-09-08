@@ -1,5 +1,5 @@
 {
-  "description": "Block Claude from directly editing generated documentation declared by a project contract.",
+  "description": "Documentation guardrails contributed by the docs-gov package.",
   "hooks": {
     "PreToolUse": [
       {
@@ -9,6 +9,29 @@
             "type": "command",
             "command": "sh \"${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/claude-code/hooks/block-generated-edit.sh\"",
             "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/claude-code/hooks/check-document-structure.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/claude-code/hooks/session-status.sh\"",
+            "timeout": 20
           }
         ]
       }
