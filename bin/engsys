@@ -19,6 +19,7 @@ usage() {
 Usage:
   engsys init --verify <command> [options]
   engsys check [--project <directory>]
+  engsys doctor [--project <directory>]
   engsys sync [--project <directory>]
   engsys verify [--project <directory>]
   engsys review <status|record|check> [options]
@@ -686,6 +687,133 @@ docs() {
     sh "$system_root/packages/docs-gov/bin/check-structure.sh" --project "$project_dir"
 }
 
+doctor_report() {
+  case "$1" in
+    ok) printf 'ok    %s\n' "$2" ;;
+    warn) printf 'warn  %s\n' "$2" ;;
+    fail) printf 'FAIL  %s\n' "$2" >&2 ;;
+  esac
+  [ -z "${3:-}" ] || case "$1" in
+    fail) printf '      %s\n' "$3" >&2 ;;
+    *) printf '      %s\n' "$3" ;;
+  esac
+}
+
+same_file() {
+  [ -e "$1" ] && [ -e "$2" ] || return 1
+  first=$(CDPATH= cd -- "$(dirname "$1")" && pwd -P)/$(basename "$1")
+  second=$(CDPATH= cd -- "$(dirname "$2")" && pwd -P)/$(basename "$2")
+  [ "$first" = "$second" ]
+}
+
+doctor() {
+  project_dir=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown doctor option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  failures=0
+
+  printf '%s\n' "Engineering System: $system_root"
+  revision=$(system_revision)
+  if [ "$revision" = unversioned ]; then
+    doctor_report fail 'system checkout is not a Git repository' \
+      "clone the system repository again; a lock cannot record a revision from $system_root"
+    failures=$((failures + 1))
+  else
+    doctor_report ok "system checkout revision $revision"
+    system_is_clean || doctor_report warn 'system checkout has uncommitted changes' \
+      'a lock records the committed revision, not the working tree'
+  fi
+
+  resolved=$(command -v engsys 2>/dev/null || true)
+  if [ -z "$resolved" ]; then
+    doctor_report fail 'engsys is not on PATH' \
+      "add this line to your shell profile: eval \"\$($system_root/bin/engsys shellenv)\""
+    failures=$((failures + 1))
+  elif same_file "$resolved" "$system_root/bin/engsys"; then
+    doctor_report ok "engsys on PATH: $resolved"
+  else
+    doctor_report warn "engsys on PATH is a different checkout: $resolved" \
+      "this run used $system_root/bin/engsys"
+  fi
+
+  if command -v claude >/dev/null 2>&1; then
+    doctor_report ok 'Claude Code is on PATH'
+  else
+    doctor_report warn 'Claude Code is not on PATH' \
+      'engsys claude needs it; every other command works without it'
+  fi
+
+  if [ -d "$system_root/.githooks" ]; then
+    hooks_path=$(git -C "$system_root" config --get core.hooksPath 2>/dev/null || true)
+    if [ "$hooks_path" = .githooks ]; then
+      doctor_report ok 'system push gate is registered'
+    else
+      doctor_report warn 'system push gate is not registered' \
+        "run: git -C $system_root config core.hooksPath .githooks"
+    fi
+  fi
+
+  printf '\n%s\n' "Project: $project_dir"
+  if [ ! -f "$project_dir/.engsys/project.yaml" ]; then
+    doctor_report warn 'project has not adopted Engineering System' \
+      'run: engsys init --verify <native verify command>'
+    printf '\n%s\n' "$failures problem(s) to fix"
+    [ "$failures" -eq 0 ] || exit 1
+    return
+  fi
+
+  if "$system_root/bin/engsys" check --project "$project_dir" >/dev/null 2>&1; then
+    doctor_report ok 'project contract and lock pass engsys check'
+  else
+    doctor_report fail 'project contract or lock does not pass engsys check' \
+      "run: engsys check --project $project_dir"
+    failures=$((failures + 1))
+  fi
+
+  contract="$project_dir/.engsys/project.yaml"
+  lock="$project_dir/.engsys/lock.yaml"
+  profile=$(project_profile "$contract")
+  if [ -f "$system_root/profiles/$profile.yaml" ]; then
+    doctor_report ok "profile $profile exists in this system checkout"
+  else
+    doctor_report fail "profile is unknown in this system checkout: $profile" \
+      'the project needs a system revision that declares this profile'
+    failures=$((failures + 1))
+  fi
+
+  locked=$(lock_system_revision "$lock")
+  if [ -z "$locked" ]; then
+    doctor_report fail 'lock has no system revision' 'run: engsys upgrade --apply'
+    failures=$((failures + 1))
+  elif git -C "$system_root" cat-file -e "$locked^{commit}" 2>/dev/null; then
+    doctor_report ok "locked system revision is available: $locked"
+    if git -C "$system_root" merge-base --is-ancestor "$locked" origin/main 2>/dev/null; then
+      if [ "$locked" = "$(git -C "$system_root" rev-parse origin/main 2>/dev/null)" ]; then
+        doctor_report ok 'lock is at origin/main'
+      else
+        doctor_report warn 'a newer system revision is on origin/main' \
+          "review it first: engsys upgrade --project $project_dir"
+      fi
+    else
+      doctor_report warn 'locked revision is not on origin/main yet' \
+        'push or merge it before a teammate clones this project; their engsys cannot fetch it'
+    fi
+  else
+    doctor_report fail "locked system revision is missing locally: $locked" \
+      "run: git -C $system_root fetch origin"
+    failures=$((failures + 1))
+  fi
+
+  printf '\n%s\n' "$failures problem(s) to fix"
+  [ "$failures" -eq 0 ] || exit 1
+}
+
 check() {
   project_dir=$(pwd)
   while [ "$#" -gt 0 ]; do
@@ -937,6 +1065,7 @@ command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
   check) shift; check "$@" ;;
+  doctor) shift; doctor "$@" ;;
   sync) shift; sync "$@" ;;
   verify) shift; verify "$@" ;;
   review)

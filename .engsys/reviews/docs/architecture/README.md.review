@@ -1,15 +1,14 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: adccfd6f6d56267b4fe4f08f2e3f4b68bee6065a
+blob: 09bd490c2259c088d24aca018cd1bad225297653
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-"문서별 편집 검토" 절만 고쳤다. review check 가 계약에서 범위를 읽는다는 현재 동작으로
-바꾸고, --revision 이 범위·생성 문서 목록·본문 셋 다 그 commit 에서 읽는다는 것을 명시했다.
-"프로젝트는 native gate 에 필요한 범위를 명시한다"는 문장은 지웠다 — 범위 선언 위치가
-계약으로 확정돼 중복이다.
-다른 절과 강제 지점 표, 제약과 근거의 ADR 링크 6개는 바꾸지 않았다. engsys docs check
-10편 0건과 tools/check-documentation.py 통과로 링크 대상을 다시 확인했다.
+구성 요소에 install.sh 를 추가하고, bin/engsys 의 책임 목록에 doctor 를 넣었다. 제약과 근거에
+ADR 0007 한 줄을 추가했다 — 배포 채널이 origin/main 이고 doctor 는 진단만 한다는 두 사실이다.
+doctor 는 gate 가 아니라 진단이라 강제 지점 표에는 넣지 않았다. 표는 "무엇이 위반을 막는가"를
+답하는데 doctor 는 아무것도 막지 않는다.
+다른 절은 바꾸지 않았다. 링크 7개가 실재하는지 확인했다.
 
