@@ -37,7 +37,7 @@ def main(argv):
     errors = []
     packages = _load_packages(catalog, errors)
     errors.extend(_check_profiles(catalog))
-    errors.extend(_check_plugin_manifest(packages))
+    errors.extend(_check_plugin_manifest(catalog, packages))
     errors.extend(_check_hook_catalog(packages))
     errors.extend(_check_skills(packages, budget))
     errors.extend(_check_route_template(budget))
@@ -99,10 +99,18 @@ def _check_profiles(catalog):
     return errors
 
 
-def _check_plugin_manifest(packages):
+def _check_plugin_manifest(catalog, packages):
     manifest_path = os.path.join(SYSTEM_ROOT, ".claude-plugin", "plugin.json")
     with open(manifest_path, "r", encoding="utf-8") as handle:
         manifest = json.load(handle)
+
+    errors = []
+    system_version = (catalog.get("system") or {}).get("version")
+    if manifest.get("version") != system_version:
+        errors.append(
+            "root plugin.json version %r does not match system.yaml version %r"
+            % (manifest.get("version"), system_version)
+        )
 
     expected = set()
     for name, entry in packages.items():
@@ -110,7 +118,6 @@ def _check_plugin_manifest(packages):
             expected.add("./%s/%s" % (entry["path"], skill))
     declared = set(manifest.get("skills") or [])
 
-    errors = []
     for missing in sorted(expected - declared):
         errors.append("root plugin.json is missing a declared skill: %s" % missing)
     for extra in sorted(declared - expected):
