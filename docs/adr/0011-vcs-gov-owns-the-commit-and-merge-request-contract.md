@@ -61,7 +61,9 @@ date: 2026-09-09
 - `engsys`가 PATH에 없으면 커밋을 막지 않고 그 사실을 알린다
   ([ADR 0008](0008-init-detects-declarations-and-seeds-the-project-gate.md)과 같은 이유).
 - 이 레포도 채택했다. 선언 뒤 최근 커밋 20건을 검사해 전부 통과했다.
-- MR 본문과 branch model에는 native 검사가 없다. 규약을 어긴 MR을 기계가 잡지 못한다. 필요해지면
-  MR 본문 검사를 별도로 본다.
+- MR 본문에는 native 검사가 없다. 규약을 어긴 MR을 기계가 잡지 못한다. 필요해지면 별도로 본다.
+- branch 이름은 프로젝트가 `vcs.branch.naming`에 선언할 때만 검사한다. model의 `naming`은 기본값
+  이고, 선언이 없으면 `engsys vcs check-branch`는 아무것도 판정하지 않는다. 정리되지 않은 목록을
+  선언하면 채택 첫날부터 정상 branch가 막힌다.
 - `public-ai-qa`는 자기 `commit-msg`와 그 테스트를 걷어내고 이 계약으로 옮길 수 있다. 이미 만든
   커밋을 다시 검사하지는 않는다.

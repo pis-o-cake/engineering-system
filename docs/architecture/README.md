@@ -69,6 +69,7 @@ engsys verify
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
 | 커밋 메시지 | `write-commit` skill이 계약과 프로젝트 선언을 읽음 | 프로젝트의 `commit-msg` hook이 `engsys vcs check-message` 실행 |
+| branch 이름 | 없음 | 프로젝트가 `vcs.branch.naming`을 선언했을 때만 push gate가 `engsys vcs check-branch` 실행 |
 | 문서 유형·필수 구성 | `write-document` skill이 작성 전 유형과 계약을 읽고, `PostToolUse`가 방금 쓴 문서 하나를 검사해 결과를 세션에 돌려줌 | `engsys docs check`가 선언한 유형·metadata·절·근거 경로 검사 |
 | authored 문서의 편집 검토 | `review-document` skill로 개별 검토 | `engsys review check`가 문서별 검토 기록과 본문 해시 비교 |
 | self lock 신선도 | 없음 | tests가 lock revision과 HEAD의 `packages`·`bin`·`lib` tree 비교 |

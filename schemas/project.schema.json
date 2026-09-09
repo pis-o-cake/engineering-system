@@ -50,7 +50,8 @@
           "additionalProperties": false,
           "properties": {
             "model": {"type": "string", "minLength": 1},
-            "protected": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            "protected": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "naming": {"type": "array", "items": {"type": "string", "minLength": 1}}
           }
         },
         "merge-request": {

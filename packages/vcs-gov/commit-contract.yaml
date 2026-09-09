@@ -85,7 +85,7 @@ branch-models:
     release: 'release 는 tag 다. branch 가 아니다. 최상위 환경 branch 에 deploy 시점마다 semver tag 를 붙인다'
     linear-history: 'feature 는 rebase 한다. shared branch 와 남이 이미 pull 한 branch 는 rebase 하지 않는다'
     cleanup: 'merge 뒤 feature 와 hotfix branch 를 지운다'
-    naming: 'feat/<ticket>-<slug> · fix/<slug> · hotfix/<slug>'
+    naming: 'feat/<ticket>-<slug> · fix/<slug> · hotfix/<slug> — 프로젝트가 vcs.branch.naming 으로 덮는다'
   - name: single-main
     description: 'main 하나. 모든 작업은 short-lived branch 로 한다'
     branches: 'main 하나만 영구. protected 로 두고 직접 push 를 막는다'
@@ -95,4 +95,4 @@ branch-models:
     release: 'release 는 tag 다. main 에 deploy 시점마다 semver tag 를 붙인다'
     linear-history: 'feature 는 rebase 한다. main 과 남이 이미 pull 한 branch 는 rebase 하지 않는다'
     cleanup: 'merge 뒤 branch 를 지운다'
-    naming: 'feat/<slug> · fix/<slug>'
+    naming: 'feat/<slug> · fix/<slug> — 프로젝트가 vcs.branch.naming 으로 덮는다'

@@ -1,17 +1,14 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 659376703a486571049829ff9727abf8f6547284
+blob: 21a2a2adf0c02f24bc15833c80dac0920f1f3906
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-PR #8 병합 뒤 rebase 로 합쳐진 최종본을 다시 읽었다. 제약과 근거 목록에서 ADR 0010(SessionStart)
-과 ADR 0011(vcs-gov) 두 줄이 충돌했고, 서로 다른 사실이라 둘 다 남겼다. ADR 번호 순서대로 놓아
-0001~0011 이 이어진다.
-구성 요소의 packages/* 항목에 docs-gov 와 vcs-gov 가 각각 무엇을 갖는지 적었고, 강제 지점 표에
-커밋 메시지 행을 넣었다. 그 행의 native gate 열은 프로젝트의 commit-msg hook 이다 — 이 시스템의
-다른 gate 와 강제 주체가 다르다는 것이 이 행의 핵심이다.
-검증: engsys docs check 15편 0 findings, tools/check-documentation.py 로 링크 대상 확인.
-남은 것 없음.
+강제 지점 표에 branch 이름 행을 추가했다. Claude 보조 경로는 "없음"이다 — skill 이 branch 를
+만들지 않으므로 지어내지 않았다.
+native gate 열에 조건을 적었다. 프로젝트가 선언했을 때만 도는 검사라, 조건 없이 적으면 항상
+막히는 것으로 읽힌다.
+다른 절은 바꾸지 않았다.
 

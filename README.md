@@ -144,6 +144,10 @@ engsys vcs check-message .git/COMMIT_EDITMSG --project .
 강제는 Claude Code hook이 아니라 native git hook이 맡는다. 작성은 `/engsys:write-commit`과
 `/engsys:write-merge-request`가 돕는다.
 
+branch 이름 규칙은 model의 `naming`이 기본값이고, 프로젝트가 `vcs.branch.naming`에 pattern을
+선언하면 그것이 이긴다. 선언했을 때만 `engsys vcs check-branch`가 판정하며 push gate가 그것을
+부른다. protected branch와 detached HEAD는 대상이 아니다.
+
 기계가 판정할 수 있는 것만 막는다. `·` 나열처럼 커밋을 쪼갤 신호는 경고로 남기고 통과시킨다
 ([ADR 0011](docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).
 

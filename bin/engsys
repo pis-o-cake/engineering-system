@@ -25,6 +25,7 @@ Usage:
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
   engsys vcs check-message <file> [--project <directory>]
+  engsys vcs check-branch [--project <directory>] [--branch <name>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -1249,6 +1250,11 @@ case "$command" in
         shift
         ENGSYS_SYSTEM_ROOT="$system_root" \
           sh "$system_root/packages/vcs-gov/bin/check-commit-message.sh" "$@"
+        ;;
+      check-branch)
+        shift
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/check-branch-name.sh" "$@"
         ;;
       help|-h|--help) usage ;;
       *) die "unknown vcs action: $vcs_action" ;;

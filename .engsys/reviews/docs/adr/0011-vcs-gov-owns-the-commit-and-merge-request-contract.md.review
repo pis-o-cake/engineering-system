@@ -1,22 +1,16 @@
 engsys-document-review: 1
 document: docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md
-blob: 9c4fcfeb57a6c81e21d977bcda94e85d13c23686
+blob: fa7b400caa96dcc67c5459484b7b0b3e98a1afcb
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 기술 책임자와 유지보수자
 purpose: 커밋·MR 규약을 누가 소유하고 무엇이 강제하는가
 
-새로 쓴 기록이라 전문을 다시 읽었다. 결정 6항목을 구현과 대조했다 — 계약 파일이 갖는 항목,
-프로젝트 vcs 블록의 6개 값, native git hook 강제, init --hooks 가 두 훅을 심는 것, 나열 경고,
-imperative 규칙 부재.
-배경의 수치(503 커밋 중 …것 종결 31건 6.2% · · 나열 88건 17.5%)는 public-ai-qa 훅 주석에 기록된
-실측이다. 내가 잰 값이 아니라 인용이므로 출처를 문장에 밝혔다.
-대안 5개 중 두 개는 실제로 만들었다가 버린 것이다. imperative 접미사 규칙은 shared 가 ed 로
-끝나 정상 subject 를 막는 것을 테스트에서 확인하고 제거했다 — 그 반례를 대안 절에 남겼다.
-검증하지 못한 규칙을 두면 훅을 피하게 된다는 것이 이 결정의 기준이다.
-"· 나열을 막는다"를 버린 이유도 같은 계열이다. 막으면 나열만 지우고 통과시킨다.
-영향 절에 native 검사의 실제 범위를 적었다 — v0.1 에서 검사가 있는 것은 커밋 메시지뿐이고 MR
-본문과 branch model 은 기계가 잡지 못한다. 이걸 빼면 계약 전체가 강제되는 것으로 읽힌다.
-자기 채택 결과(최근 커밋 20건 통과)도 적었다.
-남은 미확정: public-ai-qa 로 옮길 때 그 레포의 훅과 테스트를 걷어내는 작업은 아직 안 했다.
+영향 절 한 항목을 둘로 갈랐다. 이전 문장은 "MR 본문과 branch model 에는 native 검사가 없다"였는데
+branch 이름 검사가 생겨 사실과 달라졌다.
+결정 절은 바꾸지 않았다. 계약 항목이 늘어난 것은 결정의 변경이 아니라 그 결정("vcs-gov 가 branch
+model 목록을 갖는다")의 구현이라 새 ADR 을 만들지 않았다.
+새 문장에 선언이 없으면 판정하지 않는다는 것과 그 이유(정리되지 않은 목록을 선언하면 채택 첫날
+정상 branch 가 막힌다)를 함께 적었다. scope 목록과 같은 판단이다.
+날짜와 status 는 그대로다.
 

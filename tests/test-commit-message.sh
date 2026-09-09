@@ -135,4 +135,41 @@ chmod +x "$temporary/bin/engsys"
 ( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
 grep -Fq 'no vcs check-message' "$temporary/err"
 
+# branch 이름 규칙은 프로젝트가 선언한다. 선언이 없으면 검사하지 않는다.
+branch_check() { "$system_root/bin/engsys" vcs check-branch --project "$project" "$@" \
+  >"$temporary/out" 2>"$temporary/err"; }
+branch_check --branch anything/goes
+cat >>"$project/.engsys/project.yaml" <<'EOF'
+  branch:
+    model: 'env-branch'
+    protected:
+      - 'develop'
+      - 'main'
+    naming:
+      - 'feat/*'
+      - 'fix/*'
+      - 'hotfix/*'
+EOF
+python3 "$system_root/tools/validate-contract.py" project "$project/.engsys/project.yaml" >/dev/null
+"$system_root/bin/engsys" check --project "$project" >/dev/null
+
+branch_check --branch feat/G1-1318-commit-contract
+branch_check --branch fix/render-guard
+# protected branch 는 새로 만드는 것이 아니라 이미 있는 것이다.
+branch_check --branch develop
+branch_check --branch main
+if branch_check --branch wip-something; then
+  printf 'Unexpected acceptance of an undeclared branch name\n' >&2
+  exit 1
+fi
+grep -Fq '선언한 이름 규칙에 맞지 않는다: wip-something' "$temporary/err"
+grep -Fq 'feat/*' "$temporary/err"
+
+# 계약이 없는 프로젝트와 detached HEAD 는 판정 대상이 아니다.
+branch_check --branch HEAD
+mkdir -p "$temporary/plain"
+git -C "$temporary/plain" init -q
+"$system_root/bin/engsys" vcs check-branch --project "$temporary/plain" --branch wip-something \
+  >"$temporary/out" 2>&1
+
 printf 'ok commit messages follow the system contract and the project declaration\n'
