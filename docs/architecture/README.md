@@ -17,7 +17,8 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 ## 구조 요약
 
 시스템은 세 층이다. `packages/*`가 정책과 Claude Code skill·hook의 정본을 갖고, `profiles/*`가
-그 조합을 선언하며, 채택 프로젝트는 `.engsys/project.yaml`과 `.engsys/lock.yaml` 두 파일만 갖는다.
+그 조합을 선언하며, 채택 프로젝트는 `.engsys/project.yaml`과 `.engsys/lock.yaml`로 계약을 선언한다.
+이 밖에 프로젝트가 소유하는 hook 사본과 검토 기록 등을 관리한다.
 정책 파일은 프로젝트에 복사되지 않는다.
 
 프로젝트가 실행하는 명령은 `bin/engsys` 하나다. lock이 어느 revision의 어떤 package를 쓸지
@@ -31,6 +32,8 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
   문서 검토(`review`), lock 변경(`upgrade`), Claude Code 실행(`claude`)을 담당한다.
 - `install.sh` — 개발자 활성화. shell profile 한 줄과 이 clone의 `core.hooksPath`만 바꾼다.
   프로젝트에는 쓰지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).
+- `lib/plugin-runtime.sh` — lock revision의 cache와 Claude plugin view 조합.
+- `lib/adoption.sh` — hook 사본 진단·갱신, guided setup, doctor.
 - `lib/generated-documents.awk` — `documentation.generated`를 항목 단위로 읽는 core parser다.
   `output`·`command` 순서는 자유이며, 누락·중복·지원하지 않는 문법은 오류로 처리한다.
 - `packages/*` — 정책과 Claude Code skill·hook의 정본. 프로젝트에 복사되지 않는다.
@@ -52,9 +55,11 @@ engsys claude
 
 ```text
 engsys <check|sync|verify|docs|review|vcs> --project P
-  → P의 lock revision이 이 checkout의 commit과 다르면
-      그 revision의 worktree를 확보하고 그쪽 bin/engsys로 실행을 넘김
+  → P의 lock revision이 이 checkout의 commit과 다르거나 checkout에 미커밋 수정이 있으면
+      그 revision의 clean worktree를 확보하고 그쪽 bin/engsys로 실행을 넘김
+  → locked revision을 준비하지 못하거나 cache가 수정됐으면 실패
   → init·upgrade·doctor·claude는 넘기지 않는다
+  → 자기 레포와 명시적인 ENGSYS_USE_CHECKOUT=1은 개발 중인 코드를 실행
 ```
 
 ```text

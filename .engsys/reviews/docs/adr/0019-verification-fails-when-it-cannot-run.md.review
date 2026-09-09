@@ -1,0 +1,10 @@
+engsys-document-review: 1
+document: docs/adr/0019-verification-fails-when-it-cannot-run.md
+blob: 333a7791bb9bd6e1b53569dc6385a1da23eac493
+decision: pass
+reviewer: Codex (자기 검토)
+audience: 검사 정책을 변경하는 유지보수자
+purpose: 검사 생략과 대체 실행을 왜 실패로 바꾸며 어떤 비용을 감수하는가
+
+문서 전체를 읽고 결정, 배경, 대안, 영향을 대조했다. 기존 ADR 0012 및 0013의 어느 동작을 변경하는지 분명하다. launcher 부재, non-checkout push, 자기 레포 hook, dirty checkout 분리와 cache 실패의 회귀 테스트를 확인했다. dependency와 외부 상태까지 재현성을 보장한다고 쓰지 않았고 기존 프로젝트 hook의 갱신 필요를 남겼다.
+

@@ -2,6 +2,9 @@
 
 set -eu
 
+# 단위 검사는 개발 중인 코드를 실행한다. 버전 고정 검사는 이 변수를 지우고 별도로 검증한다.
+export ENGSYS_USE_CHECKOUT=1
+
 test_root=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 "$test_root/test-block-generated-edit.sh"
 "$test_root/test-engsys.sh"

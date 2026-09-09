@@ -166,14 +166,17 @@ engsys upgrade --project /path/to/project --apply
 
 프로젝트를 검사하는 명령(`check`·`sync`·`verify`·`docs`·`review`·`vcs`)은 **그 프로젝트가 lock한
 revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는 코드는 lock이 가리키는 release에서
-온다. 그래서 팀원이 어느 branch를 checkout해 두었든 같은 결과를 얻는다. `init`·`upgrade`·`doctor`는
-넘기지 않으며, 표준을 고치는 중에는 `ENGSYS_USE_CHECKOUT=1`로 자기 수정을 쓸 수 있다
-([ADR 0012](docs/adr/0012-project-commands-run-at-the-locked-revision.md)).
+온다. 같은 revision의 checkout에 미커밋 수정이 있어도 clean cache에서 실행한다.
+lock revision을 준비하지 못하거나 cache가 수정돼 있으면 현재 checkout으로 대체하지 않고 실패한다.
+`init`·`upgrade`·`doctor`는 넘기지 않는다. 자기 레포 검사는 현재 코드를 쓰며, 다른 프로젝트에서
+표준 수정을 시험할 때는 `ENGSYS_USE_CHECKOUT=1`을 명시한다
+([ADR 0019](docs/adr/0019-verification-fails-when-it-cannot-run.md)).
 
 `engsys verify --revision <commit>`은 working tree가 그 commit과 같은지 먼저 확인하고 다르면
 무엇이 다른지 출력한 뒤 중단한다. 기본 `pre-push`가 이 형태로 부르므로, gate는 검사한 내용과
-전송하는 내용이 같을 때만 통과한다
-([ADR 0013](docs/adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
+전송하는 내용이 같을 때만 통과한다. 다른 내용을 가진 ref를 push하려면 해당 commit을 checkout하고
+다시 실행한다. `engsys`가 PATH에 없어 검사를 시작할 수 없어도 push를 중단한다
+([ADR 0019](docs/adr/0019-verification-fails-when-it-cannot-run.md)).
 
 `--apply`는 새 lock으로 native test와 generated document check까지 실행하고, 실패하면 이전 lock을
 복원한다. `doctor`는 lock이 아직 `origin/main`에 없으면 경고한다. 그 상태로 프로젝트를 push하면

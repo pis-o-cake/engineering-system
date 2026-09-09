@@ -115,7 +115,7 @@ grep -Fq 'kept the existing .githooks/pre-push' "$temporary/result"
 grep -Fq 'left core.hooksPath as .husky' "$temporary/result"
 [ "$(git -C "$project" config --get core.hooksPath)" = .husky ]
 
-# gate 는 launcher 가 없으면 push 를 막지 않고 그 사실을 알린다.
+# gate 는 launcher 가 없으면 원인을 알리고 push 를 막는다.
 new_project gate-project
 printf 'check:\n\techo ok\n' >"$project/Makefile"
 init --detect --hooks
@@ -126,7 +126,10 @@ for tool in git mktemp rm grep cat sed awk; do
   tool_path=$(command -v "$tool" 2>/dev/null) || continue
   ln -sf "$tool_path" "$temporary/bin/$tool"
 done
-( cd "$project" && PATH="$temporary/bin" /bin/sh .githooks/pre-push <"$temporary/refs" ) >"$temporary/result" 2>&1
+if ( cd "$project" && PATH="$temporary/bin" /bin/sh .githooks/pre-push <"$temporary/refs" ) >"$temporary/result" 2>&1; then
+  printf 'a missing launcher must block the push\n' >&2
+  exit 1
+fi
 grep -Fq 'engsys is not on PATH' "$temporary/result"
 
 printf 'ok init detects declarations and installs the project gate\n'
