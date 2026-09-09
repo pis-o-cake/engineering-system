@@ -20,6 +20,7 @@ Usage:
   engsys init [--detect | --verify <command>] [options]
   engsys check [--project <directory>]
   engsys doctor [--project <directory>]
+  engsys hooks <status|update> [--project <directory>] [--force] [--adopt]
   engsys sync [--project <directory>]
   engsys verify [--project <directory>] [--revision <commit>]
   engsys review <status|record|check> [options]
@@ -763,6 +764,8 @@ write_project_hook() {
     else
       cp "$source_hook" "$dir/.githooks/$hook_name"
       chmod +x "$dir/.githooks/$hook_name"
+      hook_seed_hash=$(git hash-object -- "$source_hook")
+      record_hook_baseline "$dir" "$hook_name" "$hook_seed_hash" "$hook_seed_hash"
       printf 'wrote .githooks/%s\n' "$hook_name"
     fi
   done
@@ -941,6 +944,138 @@ exec_locked_revision() {
   ENGSYS_PINNED=1 exec "$locked_root/bin/engsys" "$locked_command" "$@"
 }
 
+# 프로젝트가 복사한 hook 은 그 프로젝트가 소유한다. 표준이 덮어쓰지 않으므로 사본이 template 과
+# 언제 갈라졌는지 알 방법이 필요하다. 기록은 두 해시다 — 사본이 근거한 template, 그리고 기록
+# 시점의 사본. 둘을 함께 두어야 설치 직후와 프로젝트가 고친 뒤 유지하기로 한 것을 구분한다.
+hook_names() { printf '%s\n' commit-msg pre-push; }
+hook_record() { printf '%s/.engsys/hooks.txt' "$1"; }
+
+hook_recorded() {
+  hook_record_file=$(hook_record "$1")
+  [ -f "$hook_record_file" ] || return 0
+  awk -v name="$2" -v column="$3" '$1 == name { print $column; exit }' "$hook_record_file"
+}
+
+hook_state() {
+  hook_project=$1
+  hook_name=$2
+  hook_template="$system_root/templates/project/.githooks/$hook_name"
+  hook_installed="$hook_project/.githooks/$hook_name"
+  [ -f "$hook_template" ] || { printf 'unknown'; return; }
+  [ -f "$hook_installed" ] || { printf 'missing'; return; }
+  template_hash=$(git hash-object -- "$hook_template")
+  installed_hash=$(git hash-object -- "$hook_installed")
+  [ "$installed_hash" != "$template_hash" ] || { printf 'current'; return; }
+
+  recorded_template=$(hook_recorded "$hook_project" "$hook_name" 2)
+  recorded_installed=$(hook_recorded "$hook_project" "$hook_name" 3)
+  [ -n "$recorded_installed" ] || { printf 'modified'; return; }
+  [ "$installed_hash" = "$recorded_installed" ] || { printf 'modified'; return; }
+  [ "$recorded_template" != "$template_hash" ] || { printf 'owned'; return; }
+  [ "$recorded_installed" = "$recorded_template" ] || { printf 'modified'; return; }
+  printf 'outdated'
+}
+
+record_hook_baseline() {
+  hook_project=$1
+  hook_name=$2
+  hook_template_hash=$3
+  hook_installed_hash=$4
+  hook_record_file=$(hook_record "$hook_project")
+  mkdir -p "$(dirname "$hook_record_file")"
+  if [ -f "$hook_record_file" ]; then
+    awk -v name="$hook_name" '$1 != name' "$hook_record_file" >"$hook_record_file.next"
+  else
+    : >"$hook_record_file.next"
+  fi
+  printf '%s\t%s\t%s\n' "$hook_name" "$hook_template_hash" "$hook_installed_hash" \
+    >>"$hook_record_file.next"
+  LC_ALL=C sort -o "$hook_record_file.next" "$hook_record_file.next"
+  mv -f "$hook_record_file.next" "$hook_record_file"
+}
+
+hooks() {
+  project_dir=$(pwd)
+  hooks_action=${1:-status}
+  case "$hooks_action" in
+    status|update) shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "unknown hooks action: $hooks_action" ;;
+  esac
+  hooks_force=false
+  hooks_adopt=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --force) hooks_force=true; shift ;;
+      --adopt) hooks_adopt=true; shift ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown hooks option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  require_worktree "$project_dir"
+  hooks_pending=0
+
+  for hook_name in $(hook_names); do
+    state=$(hook_state "$project_dir" "$hook_name")
+    template="$system_root/templates/project/.githooks/$hook_name"
+    installed="$project_dir/.githooks/$hook_name"
+    # --adopt 는 사본을 그대로 두고 현재 template 을 확인한 것으로만 기록한다.
+    if [ "$hooks_action" = update ] && [ "$hooks_adopt" = true ] \
+      && [ "$state" != missing ] && [ "$state" != current ] && [ "$state" != unknown ]; then
+      record_hook_baseline "$project_dir" "$hook_name" "$(git hash-object -- "$template")" \
+        "$(git hash-object -- "$installed")"
+      printf 'adopted  %s — 현재 사본을 유지한다. 이후 template이 바뀔 때 다시 알린다\n' "$hook_name"
+      continue
+    fi
+    install_hook() {
+      mkdir -p "$project_dir/.githooks"
+      cp "$template" "$installed"
+      chmod +x "$installed"
+      hook_new_hash=$(git hash-object -- "$template")
+      record_hook_baseline "$project_dir" "$hook_name" "$hook_new_hash" "$hook_new_hash"
+    }
+    case "$state" in
+      current) printf 'ok       %s는 현재 template과 같다\n' "$hook_name" ;;
+      owned) printf 'ok       %s는 프로젝트가 소유한 사본이다. 현재 template을 확인한 상태다\n' "$hook_name" ;;
+      missing)
+        if [ "$hooks_action" = update ]; then
+          install_hook
+          printf 'wrote    %s\n' "$hook_name"
+        else
+          printf 'missing  %s — engsys hooks update로 설치한다\n' "$hook_name"
+          hooks_pending=$((hooks_pending + 1))
+        fi
+        ;;
+      outdated)
+        if [ "$hooks_action" = update ]; then
+          install_hook
+          printf 'updated  %s\n' "$hook_name"
+        else
+          printf 'outdated %s — 사본을 고치지 않았고 template이 바뀌었다. engsys hooks update로 갱신한다\n' "$hook_name"
+          hooks_pending=$((hooks_pending + 1))
+        fi
+        ;;
+      modified)
+        if [ "$hooks_action" = update ] && [ "$hooks_force" = true ]; then
+          install_hook
+          printf 'replaced %s — 프로젝트의 수정을 버렸다\n' "$hook_name"
+        else
+          printf 'modified %s — 프로젝트가 고친 사본이다. 갱신하면 그 수정이 사라진다\n' "$hook_name"
+          printf '         차이: diff %s %s\n' "$installed" "$template"
+          printf '         갱신: engsys hooks update --force · 유지: engsys hooks update --adopt\n'
+          hooks_pending=$((hooks_pending + 1))
+        fi
+        ;;
+      *) printf 'unknown  %s — template이 이 revision에 없다\n' "$hook_name" ;;
+    esac
+  done
+
+  [ "$hooks_action" = status ] || return 0
+  [ "$hooks_pending" -eq 0 ] || return 1
+}
+
 doctor_report() {
   case "$1" in
     ok) printf 'ok    %s\n' "$2" ;;
@@ -1039,6 +1174,18 @@ doctor() {
         "run: engsys init --hooks, or point core.hooksPath at your own gate"
     fi
   fi
+
+  for hook_name in $(hook_names); do
+    case "$(hook_state "$project_dir" "$hook_name")" in
+      current|owned|unknown) ;;
+      missing) doctor_report warn "project hook is not installed: $hook_name" \
+        "run: engsys hooks update --project $project_dir" ;;
+      outdated) doctor_report warn "project hook is older than the template: $hook_name" \
+        "run: engsys hooks update --project $project_dir" ;;
+      modified) doctor_report warn "project hook differs from the template: $hook_name" \
+        "the project owns it; engsys hooks status shows the options" ;;
+    esac
+  done
 
   contract="$project_dir/.engsys/project.yaml"
   lock="$project_dir/.engsys/lock.yaml"
@@ -1363,6 +1510,7 @@ case "$command" in
   init) shift; init "$@" ;;
   check) shift; exec_locked_revision check "$@"; check "$@" ;;
   doctor) shift; doctor "$@" ;;
+  hooks) shift; hooks "$@" ;;
   sync) shift; exec_locked_revision sync "$@"; sync "$@" ;;
   verify) shift; exec_locked_revision verify "$@"; verify "$@" ;;
   review)
