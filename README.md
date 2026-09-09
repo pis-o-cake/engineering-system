@@ -62,6 +62,12 @@ engsys upgrade --project /path/to/project            # plan만 출력
 engsys upgrade --project /path/to/project --apply
 ```
 
+프로젝트를 검사하는 명령(`check`·`sync`·`verify`·`docs`·`review`·`vcs`)은 **그 프로젝트가 lock한
+revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는 코드는 lock이 가리키는 release에서
+온다. 그래서 팀원이 어느 branch를 checkout해 두었든 같은 결과를 얻는다. `init`·`upgrade`·`doctor`는
+넘기지 않으며, 표준을 고치는 중에는 `ENGSYS_USE_CHECKOUT=1`로 자기 수정을 쓸 수 있다
+([ADR 0012](docs/adr/0012-project-commands-run-at-the-locked-revision.md)).
+
 `--apply`는 새 lock으로 native test와 generated document check까지 실행하고, 실패하면 이전 lock을
 복원한다. `doctor`는 lock이 아직 `origin/main`에 없으면 경고한다. 그 상태로 프로젝트를 push하면
 팀원의 clone이 그 revision을 fetch하지 못한다.
