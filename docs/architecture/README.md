@@ -2,7 +2,7 @@
 type: current-architecture
 status: active
 scope: engineering-system
-last-reviewed: 2026-09-08
+last-reviewed: 2026-09-09
 ---
 
 # Current architecture

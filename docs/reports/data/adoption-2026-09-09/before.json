@@ -1,0 +1,126 @@
+{
+  "format": 1,
+  "project_revision": "9a1611cf80821945782d82434129a12e71f1084a",
+  "system_revision": "8331e77fbda1d9c289d86499c110f7d70484df03",
+  "system_diff_sha256": "de6eb522bfc751db474ef2f503662a206a5c108213ec882a1de31efa17faba61",
+  "environment": {
+    "os": "Darwin",
+    "arch": "arm64",
+    "python": "3.9.6"
+  },
+  "scope": "cd backend && .venv/bin/poe docs:check",
+  "samples": 5,
+  "human_time_saved": null,
+  "thresholds": {
+    "max_median_added_seconds": 5,
+    "max_clean_failures": 0,
+    "required_managed_mutation_detections": 2
+  },
+  "clean": [
+    {
+      "sample": 1,
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.776917
+      },
+      "managed": {
+        "exit_code": 0,
+        "seconds": 8.978563
+      }
+    },
+    {
+      "sample": 2,
+      "managed": {
+        "exit_code": 0,
+        "seconds": 9.029749
+      },
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.7951
+      }
+    },
+    {
+      "sample": 3,
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.793705
+      },
+      "managed": {
+        "exit_code": 0,
+        "seconds": 8.907882
+      }
+    },
+    {
+      "sample": 4,
+      "managed": {
+        "exit_code": 0,
+        "seconds": 8.946277
+      },
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.780454
+      }
+    },
+    {
+      "sample": 5,
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.785413
+      },
+      "managed": {
+        "exit_code": 0,
+        "seconds": 8.923551
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "scenario": "generated-drift",
+      "native": {
+        "exit_code": 1,
+        "seconds": 0.807327
+      },
+      "managed": {
+        "exit_code": 1,
+        "seconds": 0.924978
+      }
+    },
+    {
+      "scenario": "stale-review",
+      "native": {
+        "exit_code": 0,
+        "seconds": 0.783628
+      },
+      "managed": {
+        "exit_code": 1,
+        "seconds": 8.980205
+      }
+    }
+  ],
+  "implementation_blobs": {
+    "bin/engsys": "8118bac1e61cf44c4e9e4428722647f990be01fcac21ab5fc17e76b26ad92d98",
+    "lib/adoption.sh": "f1381262d811fc09806ebddf3fbf4dd7c846222901a08b9dfb96446c05382b5e",
+    "lib/generated-documents.awk": "1accd688b715af526bceb80178daaec20bf91c0ca0d5bc8bb8540f860f8826fa",
+    "lib/plugin-runtime.sh": "63ea5812ed0780a52158f328f1928fd029a994833ad0718c250cff47438d3f1c",
+    "packages/docs-gov/bin/check-structure.sh": "a03d0f762071d8ba9cee8a9ec85387fc86e9f627d205ceebba04d8c327d989e8",
+    "packages/docs-gov/bin/new-document.sh": "feee2f76a5e0ab6a6561a49137175470e3af83d499cbab3b3066ed4d6fff3009",
+    "packages/docs-gov/bin/review-documents.sh": "af2002318374818e1f8a02dd00e09ba091d57420090d91eb3e19f3c56d23f185",
+    "packages/docs-gov/bin/validate-document.awk": "60021b42ac18f1f732313ce6b58039846d850a381842d2433b813b722552ef0f"
+  },
+  "contract_adjustments": [
+    "native verification scoped to the supplied command",
+    "vcs block omitted for documentation-only measurement"
+  ],
+  "restored": {
+    "exit_code": 0,
+    "seconds": 9.011201
+  },
+  "summary": {
+    "native_median_seconds": 0.785413,
+    "managed_median_seconds": 8.946277,
+    "median_added_seconds": 8.165823,
+    "clean_failures": 0,
+    "managed_mutation_detections": 2,
+    "pass": false
+  }
+}

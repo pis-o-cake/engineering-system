@@ -1,0 +1,30 @@
+engsys-document-review: 1
+document: docs/reports/2026-09-09-adoption-cost.md
+blob: 465342c80b0acd9ce9c430c7eb3f44175c97a419
+decision: pass
+reviewer: Claude Opus 5 (자기 검토)
+audience: 기술 선택을 하는 개발자와 도입 판단을 하는 관리자
+purpose: 문서 검사를 도입하면 실행 비용이 얼마나 늘고 무엇을 더 잡는가
+
+결론은 문서 검사 실행 비용이 managed 중앙값 8.946초에서 4.137초로, native 대비 추가 지연이
+8.166초에서 3.324초로 줄어 사전 기준 5초를 만족했다는 것이다. 본문 수치를 before.json·after.json의
+summary 및 회차별 기록과 하나씩 대조해 모두 일치함을 확인했다. 주입 오류 판정도 원자료와 맞는다.
+generated-drift는 native·managed 모두 exit 1, stale-review는 native exit 0 / managed exit 1이므로
+"native도 잡는 오류는 추가 효과로 세지 않았다"는 서술이 근거와 일치한다.
+
+수정한 것은 결과 절의 마지막 문단이다. 원문은 lib 모듈 분리와 진입 파일 축소를 최적화 결과 옆에
+나란히 두어, 그 분리가 측정된 시간 차이의 원인인 것처럼 읽혔다. 원자료의 implementation_blobs는
+bin/engsys와 lib/* 해시가 전후 동일하고 check-structure.sh만 다르므로, 분리는 두 측정에 모두
+포함돼 있고 시간 차이의 원인이 아니다. 이를 명시하고, 부정확했던 "약 1,800줄"을 실제 값 1,815줄로
+고쳤으며(git show HEAD:bin/engsys 기준), 적용 프로젝트의 docs:check 중복 제거도 이번 비교 대상
+밖임을 밝혔다. 축소·개선 주장은 추가하지 않았고 수치·명령·원자료 링크는 그대로 두었다.
+
+이미 적절했던 부분은 손대지 않았다. 첫 문단이 결과와 적용 범위를 함께 제시하고 실행 시간 개선을
+사람의 시간 절감으로 확대하지 않는다. 실험 조건 절은 clone·warmup·5회·순서 교대·VCS 제외를 적어
+재현 조건을 갖췄고 tools/measure-adoption.py 구현과 일치한다. 한계 절은 1 프로젝트·1 머신·5회라는
+범위, 미측정 항목, 팀 시간 절감률 미확정을 명시한다.
+
+남은 미확정 사항은 문서가 이미 밝힌 대로다. 사람의 작업 시간 비교 기록이 없어 절감률은 판정할 수
+없고, 사내 서버 CI는 권한 문제로 이번 구성에 포함되지 않았다. 해결되지 않은 모순은 없다.
+이 검토는 작성자 본인의 자기 검토이며 독립 검토나 사람의 승인이 아니다.
+

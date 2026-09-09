@@ -18,7 +18,7 @@ status: active
 
 ## v0.1
 
-첫 package는 `foundation`, `docs-gov`, `pipeline`이다. 이 레포 자신이 첫 pilot이며,
+현재 package는 `foundation`, `docs-gov`, `vcs-gov`, `pipeline`이다. 이 레포 자신이 첫 pilot이며,
 `.engsys/`로 자기 표준을 채택하고 있다.
 
 - [Current architecture](docs/architecture/README.md) — 지금 어떻게 되어 있는가
@@ -29,11 +29,12 @@ status: active
 - [Project lock schema](schemas/lock.schema.json)
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
+- [Adoption evaluation](docs/verification/adoption.md) — 효과와 실행 비용을 판단하는 기준
 
 ## 처음 붙일 때
 
-표준은 프로젝트에 복사되지 않는다. 한 번 clone 해 두고, 붙일 프로젝트마다 계약 파일 두 개를
-만드는 것이 전부다.
+표준은 한 번 clone해 두고, 붙일 프로젝트마다 계약 파일 두 개로 사용할 표준과 버전을 선언한다.
+아래 setup이 계약 생성과 프로젝트의 Git hook 연결을 안내한다.
 
 ### 1. 표준을 clone 하고 활성화한다 — 이 컴퓨터에서 한 번
 

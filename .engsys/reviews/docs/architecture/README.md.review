@@ -1,14 +1,10 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: ecc342af07b7ea08235cf1d6c72449001b33f298
+blob: 2c9f1fe8927ca53d72764e94d78d314bc37d7d2a
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 개발자와 운영자
-purpose: 지금 시스템이 어떤 경계로 동작하는가
+reviewer: Codex (자기 검토)
+audience: 시스템 유지보수자
+purpose: 실행 코드와 검사 대상의 경계 및 모듈의 책임은 무엇인가
 
-구성 요소의 bin/engsys 항목에 "setup 만 대화형"을 적었다. 이 시스템의 명령이 전부 비대화형이라는
-전제가 깨진 지점이라 구성 요소 설명에 있어야 한다.
-제약과 근거에 ADR 0018 한 줄을 넣었다.
-강제 지점 표는 손대지 않았다. setup 은 무엇을 막지 않는다.
-다른 절은 바꾸지 않았다.
+현재 전체 구조를 읽고 bin/engsys, 새 lib/adoption.sh 및 lib/plugin-runtime.sh의 함수 이동, validate-document.awk의 입력과 출력을 대조했다. 파일 이동 자체를 비용 절감으로 주장하지 않았다. CI의 OS별 작업과 집계 job, 사내 GitLab의 별도 경계, 로컬 우회 가능성을 구분했다. 문서 내용의 정확성을 형식 검사로 증명한다고 쓰지 않았다.
 
