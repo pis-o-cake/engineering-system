@@ -45,6 +45,15 @@ cd engineering-system
 `--yes`는 모든 단계를 승인한다. 터미널이 없고 `--yes`도 없으면 시작하지 않는다
 ([ADR 0018](docs/adr/0018-adoption-is-a-guided-sequence.md)).
 
+**Windows는 Git Bash에서 실행한다.** `bin/engsys`는 확장자 없는 POSIX sh 스크립트라 PowerShell이나
+CMD에서 열면 Windows가 연결 프로그램을 묻는다. 경로도 `/c/...` 형식을 쓴다.
+
+```sh
+sh bin/engsys setup --project /c/work/myapp      # D 드라이브면 /d/work/myapp
+```
+
+`--project`는 대상 프로젝트의 경로다. 그 디렉토리 안에서 실행하면 생략할 수 있다.
+
 아래 절들은 `setup`이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
 
 ## 활성화
@@ -54,7 +63,7 @@ cd engineering-system
 
 ```sh
 git clone https://github.com/pis-o-cake/engineering-system
-cd engineering-system && ./install.sh
+cd engineering-system && ./install.sh     # Windows: sh install.sh (Git Bash)
 ```
 
 `--print`를 주면 profile에 넣을 줄만 출력한다. profile에 이미 다른 checkout을 가리키는 줄이

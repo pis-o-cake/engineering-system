@@ -1,16 +1,16 @@
 engsys-document-review: 1
 document: README.md
-blob: 27e3bf126e1dda634aa39c361dc5a5996119f873
+blob: c2a70e2aabb57b66548c1b460da47ae06bafdf88
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 이 레포를 처음 여는 팀원
 purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
 
-"처음 붙일 때" 절을 맨 앞에 넣고, 기존 절들은 그것이 부르는 명령의 설명으로 자리를 옮겼다.
-문서 순서가 곧 독자의 순서가 된다 — 처음 오는 사람은 setup 하나만 읽고, 아는 사람은 아래로
-내려간다.
-"--yes 도 터미널도 없으면 시작하지 않는다"를 적었다. 이걸 빼면 CI 에서 조용히 아무것도 안 하고
-성공으로 끝나는 것으로 오해한다.
-프로젝트 채택 절에 --dry-run 한 줄을 넣었다.
+"처음 붙일 때" 절에 Windows 실행 방법을 넣었다. bin/engsys 는 확장자 없는 POSIX sh 라
+PowerShell 이나 CMD 에서 열면 Windows 가 연결 프로그램을 묻는다. 사용자가 실제로 겪은 상황이다.
+Git Bash 와 sh 접두, /c/ 경로 형식, --project 가 대상 프로젝트 경로이며 그 안에서 실행하면
+생략할 수 있다는 것을 적었다. 활성화 절의 install.sh 에도 같은 주석을 달았다.
+자리표시자를 /path/to/project 대신 /c/work/myapp 으로 바꿨다. 앞의 것이 실제 경로로 읽히는 일이
+있었다.
 다른 절은 바꾸지 않았다.
 
