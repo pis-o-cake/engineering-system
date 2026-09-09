@@ -19,6 +19,7 @@ usage() {
 Usage:
   engsys init [--detect | --verify <command>] [options]
   engsys check [--project <directory>] [--revision <commit>]
+  engsys setup [--project <directory>] [--yes]
   engsys doctor [--project <directory>]
   engsys hooks <status|update> [--project <directory>] [--force] [--adopt]
   engsys sync [--project <directory>]
@@ -37,6 +38,7 @@ Usage:
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
   --detect                    Fill unset declarations by inspecting the project
+  --dry-run                   Show what init would write and change nothing
   --hooks                     Write .githooks/pre-push and point core.hooksPath at it
   --name <name>               Project name (default: directory name)
   --profile <profile>         System profile (default: baseline)
@@ -797,11 +799,13 @@ init() {
   vcs_roles=
   detect=false
   hooks=false
+  dry_run=false
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
       --detect) detect=true; shift ;;
+      --dry-run) dry_run=true; shift ;;
       --hooks) hooks=true; shift ;;
       --profile) require_value "$@"; profile=$2; shift 2 ;;
       --name) require_value "$@"; name=$2; shift 2 ;;
@@ -854,6 +858,21 @@ init() {
   [ -n "$verify" ] \
     || die "--verify is required; detection found no native verification command in $project_dir"
   [ -n "$name" ] || name=$(basename "$project_dir")
+
+  if [ "$dry_run" = true ]; then
+    dry_root=$(mktemp -d)
+    mkdir -p "$dry_root/.engsys"
+    write_project_contract "$dry_root" "$profile" "$name" "$verify" "$sources" "$policy" \
+      "$architecture" "$generated" "$lifecycles"
+    printf '\n%s\n' '--- .engsys/project.yaml (미리보기, 쓰지 않음) ---'
+    cat "$dry_root/.engsys/project.yaml"
+    printf '%s\n' '--- 끝 ---'
+    [ "$hooks" = false ] || printf '\n%s\n' \
+      '--hooks: .githooks/commit-msg 와 .githooks/pre-push 를 심고 core.hooksPath 를 설정한다'
+    rm -rf "$dry_root"
+    printf '\n%s\n' "Nothing was written. Re-run without --dry-run to apply."
+    return
+  fi
 
   mkdir -p "$project_dir/.engsys" "$project_dir/.claude/rules"
   write_project_contract "$project_dir" "$profile" "$name" "$verify" "$sources" "$policy" "$architecture" "$generated" "$lifecycles"
@@ -1081,6 +1100,132 @@ hooks() {
 
   [ "$hooks_action" = status ] || return 0
   [ "$hooks_pending" -eq 0 ] || return 1
+}
+
+# 채택은 여러 단계이고 각 단계가 무엇을 바꾸는지 사람이 보고 넘어가야 한다. 다른 명령은
+# 비대화형으로 남기고, 이 명령만 단계마다 확인하고 실행한 뒤 다시 검사한다.
+setup_step=0
+setup_say() {
+  setup_step=$((setup_step + 1))
+  printf '\n[%s] %s\n' "$setup_step" "$1"
+}
+setup_ok() { printf '    ok   %s\n' "$1"; }
+setup_note() { printf '    ·    %s\n' "$1"; }
+setup_warn() { printf '    warn %s\n' "$1"; }
+
+setup_ask() {
+  [ "$setup_yes" = false ] || { printf '    -> %s [자동 예]\n' "$1"; return 0; }
+  printf '    -> %s [y/N] ' "$1"
+  read -r setup_answer || setup_answer=n
+  case "$setup_answer" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
+
+setup() {
+  project_dir=$(pwd)
+  setup_yes=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --yes) setup_yes=true; shift ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown setup option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  # 물어볼 수 없는데 진행하면 조용히 전부 거절한 것과 같아진다. 그 상태로 끝내지 않는다.
+  [ -t 0 ] || [ "$setup_yes" = true ] \
+    || die '터미널이 없어 단계마다 물어볼 수 없다. --yes 를 주거나 각 명령을 직접 실행한다'
+  printf 'Engineering System 채택을 단계별로 진행한다.\n'
+  printf '각 단계는 먼저 확인하고, 바꿀 것을 보여 준 뒤, 동의를 받고 실행한다.\n'
+  printf '시스템: %s\n대상  : %s\n' "$system_root" "$project_dir"
+
+  setup_say '전제 도구'
+  command -v git >/dev/null 2>&1 || die 'git 이 없다. 먼저 설치한다'
+  setup_ok "git $(git --version 2>/dev/null | awk '{print $3}')"
+  if command -v python3 >/dev/null 2>&1; then
+    setup_ok 'python3 (커밋 subject 글자 수를 정확히 센다)'
+  else
+    setup_warn 'python3 없음 — UTF-8 로케일의 wc 로 떨어진다. 동작은 한다'
+  fi
+  command -v claude >/dev/null 2>&1 && setup_ok 'Claude Code' \
+    || setup_warn 'Claude Code 없음 — engsys claude 만 못 쓴다'
+
+  setup_say '시스템 checkout'
+  revision=$(system_revision)
+  [ "$revision" != unversioned ] || die '시스템 checkout 이 Git 저장소가 아니다'
+  setup_ok "revision $revision"
+  system_is_clean || setup_warn '수정된 파일이 있다. lock 은 commit 만 가리킨다'
+  if git -C "$system_root" merge-base --is-ancestor "$revision" origin/main 2>/dev/null; then
+    setup_ok 'origin/main 에서 도달 가능한 revision 이다'
+  else
+    setup_warn 'origin/main 에 없는 revision 이다. 팀원이 이 lock 을 받지 못한다'
+  fi
+
+  setup_say '개발자 활성화 (이 머신에 한 번)'
+  resolved=$(command -v engsys 2>/dev/null || true)
+  if [ -n "$resolved" ] && same_file "$resolved" "$system_root/bin/engsys"; then
+    setup_ok "engsys 가 PATH 에 있다: $resolved"
+  else
+    setup_note 'PATH 에 없다. install.sh 가 shell profile 한 줄과 이 clone 의 hook 경로를 설정한다'
+    if setup_ask 'install.sh 를 실행할까'; then
+      sh "$system_root/install.sh" || die 'install.sh 가 실패했다'
+    else
+      setup_warn '건너뛴다. 새 shell 에서 engsys 를 찾지 못하면 다시 실행한다'
+    fi
+  fi
+
+  setup_say '대상 프로젝트'
+  require_worktree "$project_dir"
+  setup_ok "Git worktree 다: $project_dir"
+  if [ -f "$project_dir/.engsys/project.yaml" ]; then
+    setup_ok '계약이 이미 있다. 새로 만들지 않는다'
+  else
+    setup_note '계약이 없다. 감지 결과를 먼저 보여 준다'
+    printf '\n'
+    "$system_root/bin/engsys" init --project "$project_dir" --detect --hooks --dry-run \
+      || die '감지에 실패했다. --verify 로 검증 명령을 직접 준다'
+    printf '\n'
+    if setup_ask '위 내용으로 계약과 Git hook 을 만들까'; then
+      "$system_root/bin/engsys" init --project "$project_dir" --detect --hooks || return 1
+    else
+      setup_warn '건너뛴다. engsys init 을 직접 실행한 뒤 이 명령을 다시 돌린다'
+      return 0
+    fi
+  fi
+
+  setup_say 'Git hook'
+  for hook_name in $(hook_names); do
+    setup_note "$hook_name: $(hook_state "$project_dir" "$hook_name")"
+  done
+  if "$system_root/bin/engsys" hooks status --project "$project_dir" >/dev/null 2>&1; then
+    setup_ok '사본이 현재 template 과 맞다'
+  elif setup_ask 'hook 을 설치하거나 갱신할까 (고친 사본은 건드리지 않는다)'; then
+    "$system_root/bin/engsys" hooks update --project "$project_dir" || true
+  fi
+  hooks_path=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
+  [ -n "$hooks_path" ] && setup_ok "core.hooksPath = $hooks_path" \
+    || setup_warn 'core.hooksPath 가 없다. hook 이 돌지 않는다'
+
+  setup_say '검사'
+  "$system_root/bin/engsys" check --project "$project_dir" >/dev/null \
+    || die '계약 검사가 실패했다. 위 오류를 먼저 고친다'
+  setup_ok '계약과 lock 이 engsys check 를 통과한다'
+  if setup_ask 'engsys verify 까지 돌릴까 (프로젝트의 native test 를 포함해 시간이 걸린다)'; then
+    "$system_root/bin/engsys" verify --project "$project_dir" || return 1
+  else
+    setup_note '나중에 engsys verify 로 확인한다'
+  fi
+
+  setup_say '남은 것'
+  grep -q '^  authoring:' "$project_dir/.engsys/project.yaml" 2>/dev/null \
+    && setup_ok '문서 유형 배정이 선언돼 있다' \
+    || setup_note '문서 유형 배정이 없다. 문서를 만들 때 documentation.authoring 에 경로를 배정한다'
+  grep -q '^  review:' "$project_dir/.engsys/project.yaml" 2>/dev/null \
+    && setup_ok '편집 검토 범위가 선언돼 있다' \
+    || setup_note '편집 검토 범위가 없다. 실제로 검토한 문서부터 documentation.review.scopes 에 넣는다'
+  setup_note '.engsys/ 와 .githooks/ 를 commit 한다. 그래야 팀원이 같은 계약을 받는다'
+  setup_note '팀원은 각자 install.sh 를 돌리고 engsys hooks update 로 hook 을 켠다'
+  printf '\n%s\n' '상태는 언제든 engsys doctor 로 다시 본다.'
 }
 
 doctor_report() {
@@ -1559,6 +1704,7 @@ command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
   check) shift; exec_locked_revision check "$@"; check "$@" ;;
+  setup) shift; setup "$@" ;;
   doctor) shift; doctor "$@" ;;
   hooks) shift; hooks "$@" ;;
   sync) shift; exec_locked_revision sync "$@"; sync "$@" ;;

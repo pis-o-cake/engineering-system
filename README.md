@@ -30,6 +30,23 @@ status: active
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
 
+## 처음 붙일 때
+
+단계마다 확인하고 진행하려면 `engsys setup` 하나로 시작한다. 전제 도구, 시스템 checkout, 개발자
+활성화, 대상 프로젝트, Git hook, 검사를 차례로 보고, 파일을 바꾸는 단계는 무엇을 바꿀지 보여 준
+뒤 동의를 받는다. 여러 번 돌려도 이미 있는 계약을 다시 만들지 않는다.
+
+```sh
+git clone https://github.com/pis-o-cake/engineering-system
+cd engineering-system
+./bin/engsys setup --project /path/to/project
+```
+
+`--yes`는 모든 단계를 승인한다. 터미널이 없고 `--yes`도 없으면 시작하지 않는다
+([ADR 0018](docs/adr/0018-adoption-is-a-guided-sequence.md)).
+
+아래 절들은 `setup`이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
+
 ## 활성화
 
 팀원은 이 레포를 clone한 뒤 한 번만 실행한다. 개발자 자신의 shell profile과 이 clone의 Git hook
@@ -86,6 +103,8 @@ revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는
 engsys init --project /path/to/project --detect --hooks
 engsys verify --project /path/to/project
 ```
+
+`--dry-run`을 주면 무엇을 쓸지 보여 주고 아무것도 바꾸지 않는다.
 
 `--detect`는 설정하지 않은 선언만 프로젝트에서 읽어 채우고 채운 값을 모두 출력한다 — native 검증
 명령, source-of-truth 디렉토리, 문서 정본 경로, lifecycle, 그리고 아직 문서가 없는 경로의 유형
