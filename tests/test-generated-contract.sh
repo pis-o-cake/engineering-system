@@ -21,7 +21,9 @@ text = contract.read_text().replace(
     "    - output: 'docs/generated.md'\n      command: 'false'",
     "    - command: 'false'\n      output: 'docs/generated.md'",
 )
-contract.write_text(text)
+# CRLF 로 저장하면 engsys 가 계약을 읽기 전에 줄바꿈으로 거부한다.
+with contract.open('w', newline='\n') as handle:
+    handle.write(text)
 PY
 # 어느 단계가 깨졌는지 이름으로 남긴다. 조용히 종료하면 platform 차이를 좁힐 수 없다.
 fail() {
@@ -58,7 +60,9 @@ original = (root / 'original.yaml').read_text()
 start = original.index('  generated:')
 end = original.index('  lifecycle:')
 def write(block):
-    contract.write_text(original[:start] + block + original[end:])
+    # CRLF 로 저장하면 engsys 가 계약을 읽기 전에 줄바꿈으로 거부한다.
+    with contract.open('w', newline='\n') as handle:
+        handle.write(original[:start] + block + original[end:])
 def cli(command):
     return subprocess.run([str(system / 'bin/engsys'), command, '--project', str(root)],
                           text=True, capture_output=True)

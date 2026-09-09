@@ -73,7 +73,8 @@ def main():
                             manifest.read_text(), count=1, flags=re.M)
         # This experiment isolates documentation governance; branch migration is a different check.
         scoped = re.sub(r"^vcs:\n.*?(?=^[A-Za-z]|\Z)", "", scoped, flags=re.M | re.S)
-        manifest.write_text(scoped)
+        with manifest.open('w', newline='\n') as handle:
+            handle.write(scoped)
         result["contract_adjustments"] = ["native verification scoped to the supplied command", "vcs block omitted for documentation-only measurement"]
         native = ["sh", "-c", args.native]
         managed = [str(system / "bin/engsys"), "verify", "--project", str(clone)]
