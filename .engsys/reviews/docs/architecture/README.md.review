@@ -1,15 +1,15 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 96e3eb4b134a9d64c4dc49e896b11f744efa0ade
+blob: 4dd15a4ae7ece53e66dafb4284eddfa2f132be29
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-강제 지점 표에 branch 설정 행을 추가하고 branch 이름 행의 Claude 보조 경로를 채웠다. 이전에는
-"없음"이었는데 write-commit 이 base-branch 를 부르게 되어 사실이 달라졌다.
-제약과 근거에 ADR 0014 한 줄을 넣었다.
-branch 설정 검사는 verify 안에서 돌므로 native gate 열에 조건을 적었다. vcs 선언이 없는
-프로젝트에서는 돌지 않는다.
-다른 절은 바꾸지 않았다. 링크 13개가 실재하는지 확인했다.
+구성 요소의 templates/project 항목을 현재 동작으로 고쳤다. "표준이 덮어쓰지 않는다"만으로는
+그래서 어떻게 아느냐가 빠져 있어 hooks status 를 덧붙였다. pre-push gate 를 Git hook 으로 넓혔다 —
+commit-msg 도 같은 seed 다.
+제약과 근거에 ADR 0015 한 줄을 넣었다.
+강제 지점 표는 손대지 않았다. hooks status 는 무엇을 막지 않는다.
+다른 절은 바꾸지 않았다.
 

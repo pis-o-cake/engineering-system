@@ -34,8 +34,8 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
   `output`·`command` 순서는 자유이며, 누락·중복·지원하지 않는 문법은 오류로 처리한다.
 - `packages/*` — 정책과 Claude Code skill·hook의 정본. 프로젝트에 복사되지 않는다.
   `docs-gov`는 문서 유형과 편집 검토를, `vcs-gov`는 커밋·MR 규약을 갖는다.
-- `templates/project/*` — 프로젝트가 복사해 소유하는 seed. Claude route rule과 `pre-push` gate이며,
-  복사한 뒤에는 프로젝트의 파일이다. 표준이 덮어쓰지 않는다.
+- `templates/project/*` — 프로젝트가 복사해 소유하는 seed. Claude route rule과 Git hook이며,
+  복사한 뒤에는 프로젝트의 파일이다. 표준이 덮어쓰지 않고 `engsys hooks status`가 차이만 알린다.
 - `profiles/*` — package 조합 선언.
 - `schemas/*` — 프로젝트 계약과 lock 형식의 정본.
 - `tools/*` — 시스템 레포 개발용 도구(python3). 프로젝트는 실행하지 않는다.
@@ -154,6 +154,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0013](../adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
 - 프로젝트 명령은 그 프로젝트가 lock한 revision에서 실행한다. 실행한 개발자의 checkout이 판정을
   바꾸지 않는다 ([ADR 0012](../adr/0012-project-commands-run-at-the-locked-revision.md)).
+- 프로젝트가 복사한 hook은 진단하고 덮어쓰지 않는다. 기록은 template 해시와 사본 해시 둘이다
+  ([ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md)).
 - branch model은 역할과 승격 방향만 정의하고 이름은 프로젝트가 선언한다. 도구는 그 선언을 읽고
   이름을 하드코딩하지 않는다 ([ADR 0014](../adr/0014-projects-name-their-branches.md)).
 - 커밋·MR 규약은 `vcs-gov`가 갖고 프로젝트는 값만 선언한다. 커밋은 세션 밖에서도 생기므로 강제는

@@ -95,6 +95,18 @@ engsys verify --project /path/to/project
 감지는 최상위 디렉토리만 본다. `backend/pyproject.toml`처럼 한 단계 아래에 있는 스택은 찾지
 못하므로 `--verify 'cd backend && poe check'`처럼 직접 준다.
 
+복사한 hook은 프로젝트가 소유하므로 표준이 덮어쓰지 않는다. template이 바뀌었는지는
+`engsys hooks status`가 알린다.
+
+```sh
+engsys hooks status --project /path/to/project
+engsys hooks update --project /path/to/project           # 고치지 않은 사본만 갱신
+engsys hooks update --project /path/to/project --adopt   # 사본을 유지하고 확인만 기록
+```
+
+고친 사본은 `--force` 없이 바뀌지 않는다. 기록은 `.engsys/hooks.txt`에 남으며 프로젝트가 commit한다
+([ADR 0015](docs/adr/0015-hook-copies-are-diagnosed-not-overwritten.md)).
+
 `--hooks`는 `pre-push` gate를 프로젝트에 복사하고 `core.hooksPath`가 비어 있을 때만 등록한다.
 그 파일은 프로젝트가 소유하며 표준이 나중에 덮어쓰지 않는다
 ([ADR 0008](docs/adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).

@@ -1,16 +1,15 @@
 engsys-document-review: 1
 document: README.md
-blob: 0d33ed8cbf8ecf1a9d4f7977756d0f0e18d8df13
+blob: 4fcb33134d75505ab7750d3017e3bd0550ae677e
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 이 레포를 처음 여는 팀원
 purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
 
-"커밋과 merge request 규약" 절에 branch 역할 선언 예시와 base-branch·settings 명령을 넣었다.
-YAML 예시를 넣은 이유는 roles 가 목록이고 순서가 뜻을 갖기 때문이다. 산문으로만 적으면 독자가
-mapping 으로 쓴다.
-"이 선언은 로컬 규칙이다. Git 서버의 protected branch 설정은 여기서 적용되지 않는다"를 굵게
-적었다. 이걸 빼면 선언만으로 서버가 막힌다고 읽는다.
-기존 naming 문단은 그대로 두고 그 앞에 배치했다 — 이름을 정하는 것이 먼저고 강제는 선택이다.
+"프로젝트 채택" 절의 --hooks 문단 앞에 hook 갱신 문단을 넣었다. 명령 세 개와 각각이 다루는
+상태를 적고, 고친 사본은 --force 없이 바뀌지 않는다는 것을 명시했다.
+--adopt 설명을 "사본을 유지하고 확인만 기록"으로 적었다. 이 말이 없으면 독자가 adopt 를 갱신으로
+읽는다 — 구현 중 내가 같은 오해로 이 저장소 hook 을 덮어썼다.
+.engsys/hooks.txt 를 프로젝트가 commit 한다는 것도 적었다. 기록이 없으면 진단이 modified 로 남는다.
 다른 절은 바꾸지 않았다.
 
