@@ -57,6 +57,12 @@ engsys <check|sync|verify|docs|review|vcs> --project P
 ```
 
 ```text
+engsys verify --revision <commit>
+  → working tree가 그 commit과 같은지 단언 (다르면 무엇이 다른지 출력하고 중단)
+  → 아래 verify 경로를 실행하고, 판정한 commit과 표준 revision을 출력
+```
+
+```text
 engsys verify
   → engsys check (adapter·lock 구조 검사)
   → commands.verify (프로젝트가 선언한 native 검증)
@@ -142,6 +148,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 - `SessionStart`는 검토 backlog만 센다. 전체 구조 검사를 세션마다 돌 값이 없었다
   ([ADR 0010](../adr/0010-session-start-counts-review-backlog-only.md)).
+- push gate는 전송할 commit을 판정한다. 검사 대상이 그 commit과 다르면 중단한다
+  ([ADR 0013](../adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
 - 프로젝트 명령은 그 프로젝트가 lock한 revision에서 실행한다. 실행한 개발자의 checkout이 판정을
   바꾸지 않는다 ([ADR 0012](../adr/0012-project-commands-run-at-the-locked-revision.md)).
 - 커밋·MR 규약은 `vcs-gov`가 갖고 프로젝트는 값만 선언한다. 커밋은 세션 밖에서도 생기므로 강제는

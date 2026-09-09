@@ -21,7 +21,7 @@ Usage:
   engsys check [--project <directory>]
   engsys doctor [--project <directory>]
   engsys sync [--project <directory>]
-  engsys verify [--project <directory>]
+  engsys verify [--project <directory>] [--revision <commit>]
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
   engsys vcs check-message <file> [--project <directory>]
@@ -875,6 +875,12 @@ exec_locked_revision() {
   [ "$locked_revision" != "$(system_revision)" ] || return 0
 
   if ! locked_root=$(resolve_locked_plugin "$locked_project" 2>/dev/null); then
+    # --revision 은 전송 gate 의 표시다. 그 경로에서 다른 revision 으로 대체 실행하면 gate 가
+    # 무엇을 판정했는지 알 수 없다. 탐색용 실행에서만 현재 checkout 으로 넘어간다.
+    case " $* " in
+      *' --revision '*)
+        die "locked revision $locked_revision is unavailable; fetch it before running a gate" ;;
+    esac
     printf '%s\n' \
       "engsys: warning: locked revision $locked_revision is unavailable; ran this checkout instead" >&2
     return 0
@@ -1104,14 +1110,35 @@ sync() {
 
 verify() {
   project_dir=$(pwd)
+  verify_revision=
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --revision) require_value "$@"; verify_revision=$2; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown verify option: $1" ;;
     esac
   done
   project_dir=$(normalise_project_dir "$project_dir")
+  # commands.verify 와 generator 는 개발 환경(untracked venv·node_modules)을 쓰므로 임의 commit 을
+  # 깨끗한 worktree 로 꺼내 돌릴 수 없다. 대신 검사할 tree 가 그 commit 과 같은지 먼저 단언한다.
+  # 그러지 않으면 working tree 를 검사하고 다른 commit 을 통과시킨다.
+  if [ -n "$verify_revision" ]; then
+    require_worktree "$project_dir"
+    verify_commit=$(git -C "$project_dir" rev-parse --verify "$verify_revision^{commit}" 2>/dev/null) \
+      || die "revision is not a commit: $verify_revision"
+    verify_differs=$(git -C "$project_dir" diff --name-only "$verify_commit" -- | sed -n '1,5p')
+    verify_extra=$(git -C "$project_dir" ls-files --others --exclude-standard | sed -n '1,5p')
+    if [ -n "$verify_differs$verify_extra" ]; then
+      printf '%s\n' "engsys: the working tree is not $verify_commit; these checks would judge other content" >&2
+      [ -z "$verify_differs" ] || printf '%s\n' "$verify_differs" | sed 's/^/  changed  /' >&2
+      [ -z "$verify_extra" ] || printf '%s\n' "$verify_extra" | sed 's/^/  untracked  /' >&2
+      die 'commit or stash the difference, or verify without --revision'
+    fi
+    printf '%s\n' "Verifying commit $verify_commit"
+  fi
+  printf '%s\n' "Engineering System revision: $(system_revision)"
+
   check --project "$project_dir"
 
   contract="$project_dir/.engsys/project.yaml"

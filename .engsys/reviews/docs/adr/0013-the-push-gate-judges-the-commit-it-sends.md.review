@@ -1,0 +1,21 @@
+engsys-document-review: 1
+document: docs/adr/0013-the-push-gate-judges-the-commit-it-sends.md
+blob: ebd87f21d478f9ba494e4beb3998335d2e57d4dd
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: push gate 가 무엇을 판정하는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 배경의 재현은 내가 임시 프로젝트에서 직접 실행한 것이다 —
+commit 의 값 bad, working tree 의 값 good, pre-push exit 0. 인용이 아니라 관측이라 조건과 결과를
+그대로 적었다.
+결정 4항목을 구현과 대조했다 — tree 동일성 단언, revision 출력, ref 마다 판정과 미검사 ref 알림,
+gate 경로에서 대체 실행 금지.
+"임시 worktree 로 꺼내 검사한다"를 대안 첫째로 둔 이유는 그것이 가장 정확한 방법이고 내가 먼저
+시도한 방향이기 때문이다. 버린 이유(.venv 처럼 commit 에 없는 도구)를 제약 절에 사실로 적고
+대안 절에서 판단으로 적었다. 관측과 판단을 같은 문장에 담지 않았다.
+영향 절에 사용자가 실제로 겪을 변화(push 전 commit 또는 stash 한 단계 추가)와 남는 우회
+(--no-verify)를 적었다. 여러 ref push 시 하나만 검사한다는 한계도 남겼다.
+ADR 0012 와의 관계를 배경에 한 줄로 연결했다 — 검사기 revision 은 고정했으나 검사 대상은
+고정하지 않은 상태였다.
+
