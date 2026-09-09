@@ -1,17 +1,17 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 02ef426f9610710eca5026bc35d12da2f868de41
+blob: 659376703a486571049829ff9727abf8f6547284
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-구성 요소의 packages/* 항목에 docs-gov 와 vcs-gov 가 각각 무엇을 갖는지 한 줄 붙였다. package 가
-둘이 되면서 "정책의 정본"만으로는 어느 정책인지 알 수 없다.
-강제 지점 표에 커밋 메시지 행을 추가했다. native gate 열에 Claude hook 이 아니라 프로젝트의
-commit-msg hook 을 적었다 — 이 시스템의 다른 gate 와 강제 주체가 다르다는 것이 이 행의 핵심이다.
-제약과 근거에 ADR 0011 한 줄을 넣고 "커밋은 세션 밖에서도 생긴다"는 이유를 함께 적었다.
-다른 절은 바꾸지 않았다. 링크 11개가 실재하는지 확인했다.
-주의: 이 branch 는 main 에서 땄고 PR #8(SessionStart)이 아직 열려 있어 그 변경은 여기 없다.
-병합 순서에 따라 이 절에서 충돌이 날 수 있다.
+PR #8 병합 뒤 rebase 로 합쳐진 최종본을 다시 읽었다. 제약과 근거 목록에서 ADR 0010(SessionStart)
+과 ADR 0011(vcs-gov) 두 줄이 충돌했고, 서로 다른 사실이라 둘 다 남겼다. ADR 번호 순서대로 놓아
+0001~0011 이 이어진다.
+구성 요소의 packages/* 항목에 docs-gov 와 vcs-gov 가 각각 무엇을 갖는지 적었고, 강제 지점 표에
+커밋 메시지 행을 넣었다. 그 행의 native gate 열은 프로젝트의 commit-msg hook 이다 — 이 시스템의
+다른 gate 와 강제 주체가 다르다는 것이 이 행의 핵심이다.
+검증: engsys docs check 15편 0 findings, tools/check-documentation.py 로 링크 대상 확인.
+남은 것 없음.
 
