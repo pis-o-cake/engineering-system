@@ -32,29 +32,82 @@ status: active
 
 ## 처음 붙일 때
 
-단계마다 확인하고 진행하려면 `engsys setup` 하나로 시작한다. 전제 도구, 시스템 checkout, 개발자
-활성화, 대상 프로젝트, Git hook, 검사를 차례로 보고, 파일을 바꾸는 단계는 무엇을 바꿀지 보여 준
-뒤 동의를 받는다. 여러 번 돌려도 이미 있는 계약을 다시 만들지 않는다.
+표준은 프로젝트에 복사되지 않는다. 한 번 clone 해 두고, 붙일 프로젝트마다 계약 파일 두 개를
+만드는 것이 전부다.
+
+### 1. 표준을 clone 하고 활성화한다 — 이 컴퓨터에서 한 번
 
 ```sh
 git clone https://github.com/pis-o-cake/engineering-system
 cd engineering-system
-./bin/engsys setup --project /path/to/project
+./install.sh
 ```
 
-`--yes`는 모든 단계를 승인한다. 터미널이 없고 `--yes`도 없으면 시작하지 않는다
-([ADR 0018](docs/adr/0018-adoption-is-a-guided-sequence.md)).
+`install.sh` 가 바꾸는 것은 둘이다. shell profile(`~/.zshrc` 등)에 `engsys` 를 PATH 에 넣는 한 줄을
+추가하고, 이 clone 의 Git hook 경로를 설정한다. 다른 프로젝트는 건드리지 않는다. 되돌리려면 그
+줄을 지운다.
 
-**Windows는 Git Bash에서 실행한다.** `bin/engsys`는 확장자 없는 POSIX sh 스크립트라 PowerShell이나
-CMD에서 열면 Windows가 연결 프로그램을 묻는다. 경로도 `/c/...` 형식을 쓴다.
+끝나면 **새 터미널을 연다.** 그래야 `engsys` 가 잡힌다.
+
+### 2. 붙일 프로젝트에서 setup 을 실행한다 — 프로젝트마다 한 번
 
 ```sh
-sh bin/engsys setup --project /c/work/myapp      # D 드라이브면 /d/work/myapp
+cd /내/프로젝트
+engsys setup
 ```
 
-`--project`는 대상 프로젝트의 경로다. 그 디렉토리 안에서 실행하면 생략할 수 있다.
+경로를 적을 필요가 없다. 현재 디렉토리가 대상이다.
 
-아래 절들은 `setup`이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
+`setup` 은 일곱 단계를 차례로 밟는다.
+
+| 단계 | 하는 일 |
+|---|---|
+| 1. 전제 도구 | `git` 이 있는지 본다. `python3` 와 Claude Code 는 없어도 되고, 없으면 무엇이 안 되는지 알려 준다 |
+| 2. 시스템 checkout | 표준이 어느 revision 인지, 팀원이 받을 수 있는 상태인지 확인한다 |
+| 3. 개발자 활성화 | `engsys` 가 PATH 에 있는지 본다. 없으면 `install.sh` 를 실행할지 묻는다 |
+| 4. 대상 프로젝트 | 프로젝트를 훑어 검사 명령·소스 경로·branch 이름을 **감지하고, 만들 계약 전문을 먼저 보여 준 뒤** 만들지 묻는다 |
+| 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
+| 6. 검사 | 계약이 올바른지 확인하고, 프로젝트의 기존 test 까지 돌릴지 묻는다 |
+| 7. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
+
+**파일을 바꾸기 전에는 반드시 먼저 보여 주고 묻는다.** 그냥 진행하려면 `--yes` 를 준다. 반대로
+터미널이 없고 `--yes` 도 없으면 시작하지 않는다 — 물어볼 수 없는데 진행하면 아무것도 안 하고
+성공한 것처럼 끝나기 때문이다.
+
+### 3. 만들어진 파일을 commit 한다
+
+```sh
+git add .engsys .githooks .claude
+git commit -m "build(engsys): Engineering System 계약 추가"
+```
+
+이 파일들이 있어야 팀원이 같은 계약을 받는다. 팀원은 1번(clone + `install.sh`)을 각자 하고,
+프로젝트에서 `engsys hooks update` 로 hook 을 켠다. Git 의 hook 경로 설정은 clone 으로 전달되지
+않기 때문이다.
+
+### 상태 확인과 문제 해결
+
+```sh
+engsys doctor      # 지금 무엇이 빠졌는지, 각각 어떤 명령으로 고치는지
+engsys verify      # 계약·문서·프로젝트 test 를 전부 실행
+```
+
+`doctor` 는 진단만 하고 아무것도 고치지 않는다. 무엇을 실행할지 알려 주면 그것을 직접 실행한다.
+
+### Windows
+
+Git Bash 에서 연다. `bin/engsys` 는 확장자 없는 POSIX sh 라 PowerShell 이나 CMD 에서 실행하면
+Windows 가 연결 프로그램을 묻는다. 활성화 전이라 `engsys` 가 아직 PATH 에 없다면 `sh` 로 부른다.
+
+```sh
+cd /d/dev/engineering-system && sh install.sh
+```
+
+경로는 `D:\work\myapp` 이 아니라 `/d/work/myapp` 형식을 쓴다.
+
+---
+
+아래 절들은 `setup` 이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
 
 ## 활성화
 

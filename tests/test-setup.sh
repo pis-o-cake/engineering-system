@@ -55,6 +55,14 @@ setup --yes
 [ "$(git -C "$project" hash-object -- "$project/.githooks/pre-push")" = "$edited" ]
 expect 'pre-push: modified'
 
+# 시스템 저장소 자신을 대상으로 잡으면 무엇을 해야 하는지 알린다.
+if (cd "$system_root" && "$system_root/bin/engsys" setup --yes) \
+    >"$temporary/out" 2>"$temporary/err"; then
+  printf 'setup must refuse to target the standard repository itself\n' >&2
+  exit 1
+fi
+grep -Fq '대상이 표준 저장소 자신이다' "$temporary/err"
+
 # Git worktree 가 아니면 시작하지 않는다.
 mkdir -p "$temporary/plain"
 if "$system_root/bin/engsys" setup --project "$temporary/plain" --yes \

@@ -1123,15 +1123,21 @@ setup_ask() {
 setup() {
   project_dir=$(pwd)
   setup_yes=false
+  setup_project_given=false
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --project) require_value "$@"; project_dir=$2; setup_project_given=true; shift 2 ;;
       --yes) setup_yes=true; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown setup option: $1" ;;
     esac
   done
   project_dir=$(normalise_project_dir "$project_dir")
+  # 시스템 checkout 안에서 --project 없이 실행하면 표준 자신을 대상으로 잡는다. 거의 언제나
+  # 실수이므로 무엇을 해야 하는지 알린다.
+  if [ "$project_dir" = "$system_root" ] && [ "$setup_project_given" = false ]; then
+    die "대상이 표준 저장소 자신이다. 붙일 프로젝트 디렉토리에서 실행하거나 --project 를 준다"
+  fi
   # 물어볼 수 없는데 진행하면 조용히 전부 거절한 것과 같아진다. 그 상태로 끝내지 않는다.
   [ -t 0 ] || [ "$setup_yes" = true ] \
     || die '터미널이 없어 단계마다 물어볼 수 없다. --yes 를 주거나 각 명령을 직접 실행한다'
