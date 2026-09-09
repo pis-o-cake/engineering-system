@@ -1,0 +1,85 @@
+policy:
+  name: vcs-gov-commit
+  version: 0.1.0-draft
+
+# 시스템이 갖는 것은 포맷과 판정 규칙이다. 프로젝트는 값만 고른다 —
+# subject 언어와 종결 어미, scope 목록, branch model, MR 대상 branch.
+# 기계가 판정할 수 있는 것만 막는다. 「1 커밋 1 목적」과 WHAT·WHY 는 사람이 본다.
+
+commit:
+  header: '<type>(<scope>): <subject>'
+  subject-max-characters: 50
+  body-wrap-columns: 72
+  blank-line-after-header: true
+  types:
+    - feat
+    - fix
+    - perf
+    - refactor
+    - docs
+    - style
+    - test
+    - build
+    - ci
+    - chore
+    - revert
+  forbidden-trailers:
+    - 'Co-Authored-By'
+  # git 이 문안을 정하거나 rebase 가 흡수하는 메시지는 대상이 아니다.
+  skip-headers:
+    - 'Merge '
+    - 'Revert '
+    - 'fixup!'
+    - 'squash!'
+    - 'amend!'
+
+# 종결 어미는 언어를 따라간다. 정규식으로 '명사인가'를 판정할 수 없으므로 목록에 적은
+# 어미만 막는다. 잘못 막으면 규약이 아니라 훅을 피하게 된다.
+subject-ending-noun:
+  guidance: 'subject 는 명사형으로 끝낸다 — 추가·수정·변경·제거'
+  forbidden:
+    - '한다'
+    - '된다'
+    - '했다'
+    - '짓다'
+    - '던 것'
+    - '단 것'
+    - '는 것'
+    - '은 것'
+
+# imperative 에는 forbidden 목록을 두지 않는다. 접미사로 English 의 mood 를 판정하면
+# 'shared' 가 'ed' 로 끝나 정상 subject 가 막힌다. 판정은 skill 과 사람이 한다.
+subject-ending-imperative:
+  guidance: 'use the imperative mood in the subject — Add, Fix, Change, Remove'
+
+# 막지 않고 알리기만 한다. 판정이 아니라 신호다.
+warn-subject-contains:
+  - value: '·'
+    message: 'subject 에 나열이 있다 — 한 줄에 변화 하나. 커밋을 쪼갤 신호다'
+  - value: ' and '
+    message: 'subject joins two changes — one change per commit'
+
+merge-request:
+  sections:
+    - key: conclusion
+      question: '무엇을 바꿨고 왜 바꿨나. 여기만 읽어도 승인 판단이 서야 한다'
+    - key: changes
+      question: '구조와 동작이 달라진 지점. 성격이 다른 변경은 절로 가른다'
+    - key: verification
+      question: '실제로 돌린 명령과 그 출력. 건수와 결과를 적는다'
+    - key: remaining
+      question: '확인하지 못한 사실, 합의 대기 항목, 후속 작업'
+  excluded:
+    - 'commit 목록 복사 — git log 가 이미 보여준다'
+    - '확인하지 않은 것을 확인한 것처럼 적기'
+    - '리뷰어가 물을 것이 뻔한 trade-off 를 빼기'
+
+branch-models:
+  - name: env-branch
+    description: 'branch = environment. 배포 환경마다 영구 branch 를 두고 승격은 위로만 한다'
+    feature: 'base 위로 rebase 한 뒤 fast-forward merge'
+    promotion: '아래 환경에서 위 환경으로 fast-forward. 역방향 금지, hotfix back-merge 만 예외'
+  - name: single-main
+    description: 'main 하나. 모든 작업은 short-lived branch 로 한다'
+    feature: 'main 위로 rebase 한 뒤 fast-forward merge'
+    promotion: '없음. main 이 곧 배포 대상이다'

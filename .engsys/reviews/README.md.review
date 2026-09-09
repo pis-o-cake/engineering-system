@@ -1,14 +1,17 @@
 engsys-document-review: 1
 document: README.md
-blob: 9f71f55d553034bc927ca689212f8f4dd2ad2edb
+blob: 59059fe022e7a13ddb1cf1a32c8f570301f3de01
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 이 레포를 처음 여는 팀원
 purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
 
-"문서 유형과 구조 검사" 절에서 세션 시작 시 주입되는 내용을 현재 동작으로 고쳤다 — "남은
-findings 와 미검토 문서 수"에서 "검토 기록이 없는 문서 수"로. 한 문장 교체이고 다른 절은
-바꾸지 않았다.
-독자가 이 절만 읽고도 세 층(작성 직후·세션 시작·push)이 각각 무엇을 보는지 구분할 수 있는지
-다시 확인했다.
+rebase 자동 병합 결과를 다시 읽었다. "커밋과 merge request 규약" 절과 PR #8 의 SessionStart
+문장이 각각 다른 절이라 충돌 없이 합쳐졌고, 두 절을 이어 읽어도 중복이나 모순이 없다.
+커밋 절은 정본 경로, 프로젝트가 선언하는 값, 검사 명령, 강제 주체, 막지 않는 것 순이다.
+"커밋은 세션 밖에서도 생기므로 강제는 Claude Code hook 이 아니라 native git hook 이 맡는다"가
+이 절에서 가장 중요한 문장이다 — 이 레포의 다른 hook 은 전부 Claude Code hook 이라 독자가 같은
+것으로 읽을 수 있다.
+절 순서는 커밋 → 문서 유형 → 문서 검토다. 커밋이 문서보다 먼저 만나는 규약이라 앞에 뒀다.
+다른 절은 바꾸지 않았다.
 

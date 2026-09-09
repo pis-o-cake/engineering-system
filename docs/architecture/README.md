@@ -33,6 +33,7 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 - `lib/generated-documents.awk` — `documentation.generated`를 항목 단위로 읽는 core parser다.
   `output`·`command` 순서는 자유이며, 누락·중복·지원하지 않는 문법은 오류로 처리한다.
 - `packages/*` — 정책과 Claude Code skill·hook의 정본. 프로젝트에 복사되지 않는다.
+  `docs-gov`는 문서 유형과 편집 검토를, `vcs-gov`는 커밋·MR 규약을 갖는다.
 - `templates/project/*` — 프로젝트가 복사해 소유하는 seed. Claude route rule과 `pre-push` gate이며,
   복사한 뒤에는 프로젝트의 파일이다. 표준이 덮어쓰지 않는다.
 - `profiles/*` — package 조합 선언.
@@ -67,6 +68,7 @@ engsys verify
 | 계약 형식 | 없음 | `engsys check` + `tools/validate-contract.py` |
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
+| 커밋 메시지 | `write-commit` skill이 계약과 프로젝트 선언을 읽음 | 프로젝트의 `commit-msg` hook이 `engsys vcs check-message` 실행 |
 | 문서 유형·필수 구성 | `write-document` skill이 작성 전 유형과 계약을 읽고, `PostToolUse`가 방금 쓴 문서 하나를 검사해 결과를 세션에 돌려줌 | `engsys docs check`가 선언한 유형·metadata·절·근거 경로 검사 |
 | authored 문서의 편집 검토 | `review-document` skill로 개별 검토 | `engsys review check`가 문서별 검토 기록과 본문 해시 비교 |
 | self lock 신선도 | 없음 | tests가 lock revision과 HEAD의 `packages`·`bin`·`lib` tree 비교 |
@@ -133,3 +135,6 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 - `SessionStart`는 검토 backlog만 센다. 전체 구조 검사를 세션마다 돌 값이 없었다
   ([ADR 0010](../adr/0010-session-start-counts-review-backlog-only.md)).
+- 커밋·MR 규약은 `vcs-gov`가 갖고 프로젝트는 값만 선언한다. 커밋은 세션 밖에서도 생기므로 강제는
+  native git hook이 맡는다
+  ([ADR 0011](../adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).

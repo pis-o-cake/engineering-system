@@ -24,6 +24,7 @@ Usage:
   engsys verify [--project <directory>]
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
+  engsys vcs check-message <file> [--project <directory>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -703,16 +704,18 @@ detect_authoring() {
 
 write_project_hook() {
   dir=$1
-  source_hook="$system_root/templates/project/.githooks/pre-push"
-  [ -f "$source_hook" ] || die "hook template is missing: $source_hook"
   mkdir -p "$dir/.githooks"
-  if [ -e "$dir/.githooks/pre-push" ]; then
-    printf '%s\n' 'kept the existing .githooks/pre-push'
-  else
-    cp "$source_hook" "$dir/.githooks/pre-push"
-    chmod +x "$dir/.githooks/pre-push"
-    printf '%s\n' 'wrote .githooks/pre-push'
-  fi
+  for hook_name in commit-msg pre-push; do
+    source_hook="$system_root/templates/project/.githooks/$hook_name"
+    [ -f "$source_hook" ] || die "hook template is missing: $source_hook"
+    if [ -e "$dir/.githooks/$hook_name" ]; then
+      printf 'kept the existing .githooks/%s\n' "$hook_name"
+    else
+      cp "$source_hook" "$dir/.githooks/$hook_name"
+      chmod +x "$dir/.githooks/$hook_name"
+      printf 'wrote .githooks/%s\n' "$hook_name"
+    fi
+  done
   current=$(git -C "$dir" config --get core.hooksPath 2>/dev/null || true)
   if [ -z "$current" ]; then
     git -C "$dir" config core.hooksPath .githooks
@@ -1004,7 +1007,7 @@ check() {
   require_profile_name "$profile"
   # 계약 형식의 정본은 schemas/project.schema.json이다. 프로젝트에서는 dependency 없이 돌아야
   # 하므로 additionalProperties:false를 최상위 key 검사로 근사한다.
-  unknown_key=$(top_level_keys "$contract" | grep -vxE 'system|project|commands|documentation' | sed -n '1p')
+  unknown_key=$(top_level_keys "$contract" | grep -vxE 'system|project|commands|documentation|vcs' | sed -n '1p')
   [ -z "$unknown_key" ] || die "project contract has an unknown top-level key: $unknown_key"
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
@@ -1238,6 +1241,19 @@ case "$command" in
     ENGSYS_SYSTEM_ROOT="$system_root" sh "$system_root/packages/docs-gov/bin/review-documents.sh" "$@"
     ;;
   docs) shift; docs "$@" ;;
+  vcs)
+    shift
+    vcs_action=${1:-help}
+    case "$vcs_action" in
+      check-message)
+        shift
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/check-commit-message.sh" "$@"
+        ;;
+      help|-h|--help) usage ;;
+      *) die "unknown vcs action: $vcs_action" ;;
+    esac
+    ;;
   upgrade) shift; upgrade "$@" ;;
   resolve) shift; resolve "$@" ;;
   claude) shift; claude "$@" ;;

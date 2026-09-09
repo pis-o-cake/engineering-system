@@ -75,6 +75,26 @@ Claude Code hook:
 
 - 없음
 
+### vcs-gov
+
+- version: `0.1.0-draft` (draft)
+- path: `packages/vcs-gov`
+
+소유 책임:
+
+- commit message contract and its native check
+- merge request body contract
+- branch model catalogue
+
+Claude Code skill:
+
+- `write-commit` (`packages/vcs-gov/claude-code/skills/write-commit`)
+- `write-merge-request` (`packages/vcs-gov/claude-code/skills/write-merge-request`)
+
+Claude Code hook:
+
+- 없음
+
 ## Profiles
 
 ### baseline
@@ -85,4 +105,5 @@ package:
 
 - `foundation`
 - `docs-gov`
+- `vcs-gov`
 - `pipeline`

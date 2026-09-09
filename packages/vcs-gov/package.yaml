@@ -1,0 +1,12 @@
+package:
+  name: vcs-gov
+  version: 0.1.0-draft
+  status: draft
+  owns:
+    - commit message contract and its native check
+    - merge request body contract
+    - branch model catalogue
+  claude-code:
+    skills:
+      - claude-code/skills/write-commit
+      - claude-code/skills/write-merge-request

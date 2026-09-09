@@ -32,6 +32,36 @@
       "required": ["verify"],
       "additionalProperties": {"type": "string", "minLength": 1}
     },
+    "vcs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subject-language": {"type": "string", "minLength": 1},
+            "subject-ending": {"type": "string", "enum": ["noun", "imperative"]},
+            "scopes": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "branch": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {"type": "string", "minLength": 1},
+            "protected": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "merge-request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
     "documentation": {
       "type": "object",
       "additionalProperties": false,

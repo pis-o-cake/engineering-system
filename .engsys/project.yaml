@@ -11,6 +11,25 @@ project:
 commands:
   verify: 'sh tests/test-all.sh'
 
+vcs:
+  commit:
+    subject-language: 'ko'
+    subject-ending: 'noun'
+    scopes:
+      - 'adapter'
+      - 'design'
+      - 'docs-gov'
+      - 'foundation'
+      - 'pipeline'
+      - 'system'
+      - 'vcs-gov'
+  branch:
+    model: 'single-main'
+    protected:
+      - 'main'
+  merge-request:
+    target: 'main'
+
 documentation:
   policy: 'packages/docs-gov/policy.yaml'
   architecture: 'docs/architecture/README.md'
