@@ -49,6 +49,11 @@ documentation:
         type: 'architecture'
       - path: 'docs/design'
         type: 'design-proposal'
+    exempt:
+      - '.claude'
+      - '.github'
+      - 'packages'
+      - 'templates'
     deferred:
       - 'docs/design/0001-foundation.md'
       - 'docs/design/0002-document-authoring-contracts.md'

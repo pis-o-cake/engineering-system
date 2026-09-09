@@ -111,6 +111,20 @@ engsys hooks update --project /path/to/project --adopt   # 사본을 유지하�
 그 파일은 프로젝트가 소유하며 표준이 나중에 덮어쓰지 않는다
 ([ADR 0008](docs/adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).
 
+### `engsys check`가 보는 것과 보지 못하는 것
+
+`check`는 dependency 없이 돌아야 하므로 계약을 sed·awk로 읽는다. 지원하는 문법은 2칸 들여쓰기
+mapping과 sequence, single-quoted scalar, `[a, b]` 형태의 inline list다. 그 밖의 문법은 읽지 않는다.
+
+검사하는 것은 최상위 key 집합, 필수 항목의 존재, 그리고 **선언한 block이 실제로 읽혔는지**다.
+`documentation.authoring`·`documentation.review`·`documentation.lifecycle`·`vcs.branch`를 선언했는데
+항목이 하나도 읽히지 않으면 오류로 끝난다. 들여쓰기를 잘못 쓴 계약이 0건으로 조용히 통과하던
+경로다.
+
+검사하지 않는 것은 값의 형식과 중첩 구조 전체다. 계약 형식의 정본은
+[project schema](schemas/project.schema.json)이고, 그 전체 검증은 시스템 레포의 test가 한다
+([ADR 0002](docs/adr/0002-contract-schema-is-canonical.md)).
+
 `check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —
 반영은 위 "표준 버전 올리기"의 `upgrade`가 맡는다.
@@ -213,6 +227,10 @@ engsys docs check --project .
 실패하면 결과가 Claude에게 전달돼 그 자리에서 고친다. 세션을 열 때는 검토 기록이 없는 문서 수가
 한 줄로 주입된다. 사람이 에디터로 직접 고친 문서는 이 층에 걸리지 않으며 push gate가 잡는다
 ([ADR 0009](docs/adr/0009-document-structure-feedback-at-write-time.md)).
+
+출력은 배정된 문서 수와 findings 외에 **절 검사 유예·검사 제외·유형 미배정**의 규모를 함께
+보여 준다. 통과 여부만 보이면 무엇이 검사 밖에 있는지 알 수 없다. 미배정 문서는 경로도 최대
+다섯 개까지 출력한다.
 
 배정된 문서의 유형·status·필수 metadata·근거 경로·도입 문단·필수 절을 검사한다. 유형의
 `frozen-status`에 해당하는 기록은 절의 존재만 보고 순서는 강제하지 않으며, `deferred`로 선언한

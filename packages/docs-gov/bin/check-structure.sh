@@ -247,6 +247,9 @@ reference_roots='docs/ backend/ frontend/ infra/ spike/ packages/'
 
 : >"$work/findings"
 checked=0
+deferred_count=0
+exempt_count=0
+unassigned=0
 cd "$project"
 if [ -n "$single_path" ]; then
   case "$single_path" in
@@ -262,9 +265,16 @@ fi
 while IFS= read -r path; do
   case "$path" in .engsys/*) continue ;; *.md|*.html) ;; *) continue ;; esac
   grep -Fxq -- "$path" "$work/generated" && continue
-  listed "$path" "$work/exempt" && continue
+  if listed "$path" "$work/exempt"; then
+    exempt_count=$((exempt_count + 1))
+    continue
+  fi
   expected=$(assigned_type "$path" "$work/assign")
-  [ -n "$expected" ] || continue
+  if [ -z "$expected" ]; then
+    unassigned=$((unassigned + 1))
+    printf '%s\n' "$path" >>"$work/unassigned"
+    continue
+  fi
   if [ ! -f "$path" ] || [ -L "$path" ]; then
     [ -z "$single_path" ] || exit 0
     fail "document must be a regular file: $path"
@@ -313,6 +323,7 @@ while IFS= read -r path; do
   done
 
   if listed "$path" "$work/deferred"; then
+    deferred_count=$((deferred_count + 1))
     continue
   fi
   [ "$(awk -F"$tab" '$1 == "lead" { print $2; exit }' "$work/facts")" = 1 ] \
@@ -354,7 +365,18 @@ while IFS= read -r path; do
 done <"$work/paths"
 
 findings=$(grep -c . "$work/findings" || true)
-printf 'Document structure: %s assigned documents, %s findings\n' "$checked" "$findings"
+# 통과 여부만 보이면 무엇이 검사 밖에 있는지 알 수 없다. 배정·유예·제외·미배정을 함께 센다.
+if [ -n "$single_path" ]; then
+  printf 'Document structure: %s assigned documents, %s findings\n' "$checked" "$findings"
+else
+  printf 'Document structure: %s assigned documents, %s findings' "$checked" "$findings"
+  printf ' (절 검사 유예 %s · 검사 제외 %s · 유형 미배정 %s)\n' \
+    "$deferred_count" "$exempt_count" "$unassigned"
+  if [ "$unassigned" -gt 0 ]; then
+    sed -n '1,5p' "$work/unassigned" | sed 's/^/  유형 미배정: /'
+    [ "$unassigned" -le 5 ] || printf '  유형 미배정: … 외 %s편\n' "$((unassigned - 5))"
+  fi
+fi
 if [ "$findings" -gt 0 ]; then
   while IFS= read -r finding; do
     printf '  %s\n' "$finding" >&2
