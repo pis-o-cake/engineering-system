@@ -9,7 +9,8 @@ temporary=$(CDPATH= cd -- "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$temporary"' 0
 # 실제 checkout 을 고치지 않고 현재 구현을 깨끗한 fixture revision 으로 만든다.
 system_root="$temporary/system"
-git clone -q --local "$source_root" "$system_root"
+# Windows 는 임시 디렉터리 사이의 hardlink 를 만들지 못한다.
+git clone -q --local --no-hardlinks "$source_root" "$system_root"
 (cd "$source_root" && tar --exclude=.git -cf - .) | (cd "$system_root" && tar -xf -)
 git -C "$system_root" config user.name 'Pinned Fixture'
 git -C "$system_root" config user.email 'fixture@example.test'

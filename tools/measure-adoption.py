@@ -60,7 +60,7 @@ def main():
     env.pop("ENGSYS_SYSTEM_ROOT", None)
     with tempfile.TemporaryDirectory(prefix="engsys-measure-") as directory:
         clone = Path(directory) / "project"
-        subprocess.run(["git", "clone", "-q", "--local", str(project), str(clone)], check=True)
+        subprocess.run(["git", "clone", "-q", "--local", "--no-hardlinks", str(project), str(clone)], check=True)
         # Reuse installed tools. Model and documentation files remain in the disposable clone.
         for relative in (".venv", "backend/.venv", "node_modules", "frontend/chat/node_modules", "frontend/cms/node_modules"):
             original = project / relative
