@@ -145,7 +145,7 @@ setup_note() { printf '    ·    %s\n' "$1"; }
 setup_warn() { printf '    warn %s\n' "$1"; }
 
 setup_ask() {
-  [ "$setup_yes" = false ] || { printf '    -> %s [자동 예]\n' "$1"; return 0; }
+  [ "$setup_yes" = false ] || { printf '    -> %s [자동 승인]\n' "$1"; return 0; }
   printf '    -> %s [y/N] ' "$1"
   read -r setup_answer || setup_answer=n
   case "$setup_answer" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
@@ -239,7 +239,7 @@ setup_body() {
     setup_ok "engsys 가 PATH 에 있다: $resolved"
   else
     setup_note 'PATH 에 없다. install.sh 가 shell profile 한 줄과 이 clone 의 hook 경로를 설정한다'
-    if setup_ask 'install.sh 를 실행할까'; then
+    if setup_ask 'install.sh 실행'; then
       sh "$system_root/install.sh" || die 'install.sh 가 실패했다'
     else
       setup_warn '건너뛴다. 새 shell 에서 engsys 를 찾지 못하면 다시 실행한다'
@@ -257,7 +257,7 @@ setup_body() {
     "$system_root/bin/engsys" init --project "$project_dir" --detect --hooks --dry-run \
       || die '감지에 실패했다. --verify 로 검증 명령을 직접 준다'
     printf '\n'
-    if setup_ask '위 내용으로 계약과 Git hook 을 만들까'; then
+    if setup_ask '위 내용으로 계약과 Git hook 생성'; then
       "$system_root/bin/engsys" init --project "$project_dir" --detect --hooks || return 1
     else
       setup_warn '건너뛴다. engsys init 을 직접 실행한 뒤 이 명령을 다시 돌린다'
@@ -271,7 +271,7 @@ setup_body() {
   done
   if "$system_root/bin/engsys" hooks status --project "$project_dir" >/dev/null 2>&1; then
     setup_ok '사본이 현재 template 과 맞다'
-  elif setup_ask 'hook 을 설치하거나 갱신할까 (고친 사본은 건드리지 않는다)'; then
+  elif setup_ask 'hook 설치·갱신 (고친 사본은 건드리지 않는다)'; then
     "$system_root/bin/engsys" hooks update --project "$project_dir" \
       || setup_warn 'hook 갱신이 끝나지 않았다. 위 출력을 보고 직접 처리한다'
   fi
@@ -283,7 +283,7 @@ setup_body() {
   "$system_root/bin/engsys" check --project "$project_dir" >/dev/null \
     || die '계약 검사가 실패했다. 위 오류를 먼저 고친다'
   setup_ok '계약과 lock 이 engsys check 를 통과한다'
-  if setup_ask 'engsys verify 까지 돌릴까 (프로젝트의 native test 를 포함해 시간이 걸린다)'; then
+  if setup_ask 'engsys verify 실행 (프로젝트의 native test 포함, 시간이 걸린다)'; then
     "$system_root/bin/engsys" verify --project "$project_dir" || return 1
   else
     setup_note '나중에 engsys verify 로 확인한다'
