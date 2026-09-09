@@ -30,12 +30,18 @@ expect_fail() {
   }
 }
 
-# 선언을 추가하지 않은 프로젝트는 계약 기본값으로 동작한다.
-new_project defaults 'vcs:' '  branch:' "    model: 'env-branch'"
+# 이름은 표준이 갖지 않는다. model 만 선언하면 무엇을 선언해야 하는지 알린다.
+new_project no-names 'vcs:' '  branch:' "    model: 'env-branch'"
+expect_fail 'model without role names' 'development 역할을 요구한다'
+if vcs base-branch --branch feat/x; then
+  printf 'base-branch must not answer without declared roles\n' >&2; exit 1
+fi
+grep -Fq '분기 기준을 답할 수 없다' "$temporary/err"
+
+# branch 규약을 채택하지 않은 프로젝트는 판정하지 않는다.
+new_project commit-only 'vcs:' '  commit:' "    subject-ending: 'noun'"
 vcs check-settings
-vcs settings; expect_out 'role	development	develop'; expect_out 'role	production	main'
-vcs base-branch --branch feat/x; grep -Fxq develop "$temporary/out"
-vcs base-branch --branch hotfix/x; grep -Fxq main "$temporary/out"
+[ ! -s "$temporary/out" ]
 
 # 이름을 바꾸면 같은 도구가 그 이름을 쓴다.
 new_project renamed 'vcs:' '  branch:' "    model: 'env-branch'" '    roles:' \
@@ -53,19 +59,28 @@ vcs check-branch --branch anything
 new_project staged 'vcs:' '  branch:' "    model: 'env-branch'" '    roles:' \
   "      - role: 'development'" "        branch: 'develop'" \
   "      - role: 'staging'" "        branch: 'staging'" \
-  "      - role: 'production'" "        branch: 'main'"
+  "      - role: 'production'" "        branch: 'main'" \
+  '    prefixes:' "      hotfix: 'hotfix/'"
 vcs check-settings
 vcs base-branch --branch feat/x; grep -Fxq develop "$temporary/out"
 vcs base-branch --branch hotfix/x; grep -Fxq main "$temporary/out"
 
+# hotfix 접두사를 선언하지 않으면 hotfix branch 도 첫 역할 branch 에서 분기한다. 도구는
+# 선언하지 않은 것을 추측하지 않는다.
+new_project no-hotfix-prefix 'vcs:' '  branch:' "    model: 'env-branch'" '    roles:' \
+  "      - role: 'development'" "        branch: 'develop'" \
+  "      - role: 'production'" "        branch: 'main'"
+vcs base-branch --branch hotfix/x; grep -Fxq develop "$temporary/out"
+
 # single-main 은 development 역할을 요구하지도, 허용하지도 않는다.
-new_project single 'vcs:' '  branch:' "    model: 'single-main'"
+new_project single 'vcs:' '  branch:' "    model: 'single-main'" '    roles:' \
+  "      - role: 'production'" "        branch: 'trunk'"
 vcs check-settings
-vcs settings; expect_out 'role	production	main'
+vcs settings; expect_out 'role	production	trunk'
 if grep -Fq 'development' "$temporary/out"; then
   printf 'single-main must not carry a development role\n' >&2; exit 1
 fi
-vcs base-branch --branch hotfix/x; grep -Fxq main "$temporary/out"
+vcs base-branch --branch hotfix/x; grep -Fxq trunk "$temporary/out"
 
 new_project single-extra 'vcs:' '  branch:' "    model: 'single-main'" '    roles:' \
   "      - role: 'development'" "        branch: 'develop'" \
@@ -85,15 +100,22 @@ new_project duplicate 'vcs:' '  branch:' "    model: 'env-branch'" '    roles:' 
   "      - role: 'production'" "        branch: 'main'"
 expect_fail 'duplicate branch' '같은 branch 를 가리킨다'
 
-new_project unprotected 'vcs:' '  branch:' "    model: 'env-branch'" '    protected:' "      - 'main'"
+roles_block="    roles:
+      - role: 'development'
+        branch: 'develop'
+      - role: 'production'
+        branch: 'main'"
+
+new_project unprotected 'vcs:' '  branch:' "    model: 'env-branch'" "$roles_block" \
+  '    protected:' "      - 'main'"
 expect_fail 'role branch missing from protected' 'protected 에 없다'
 
-new_project bad-target 'vcs:' '  branch:' "    model: 'env-branch'" \
+new_project bad-target 'vcs:' '  branch:' "    model: 'env-branch'" "$roles_block" \
   '  merge-request:' "    target: 'release'"
 expect_fail 'target outside the roles' '역할 branch 가 아니다'
 
-new_project bad-prefix 'vcs:' '  branch:' "    model: 'env-branch'" '    prefixes:' \
-  "      feature: 'feat'"
+new_project bad-prefix 'vcs:' '  branch:' "    model: 'env-branch'" "$roles_block" \
+  '    prefixes:' "      feature: 'feat'"
 expect_fail 'prefix without a slash' '/ 로 끝나야 한다'
 
 printf 'ok branch roles and prefixes come from the project declaration\n'

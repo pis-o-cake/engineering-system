@@ -82,23 +82,6 @@ awk "$unq"'
   }
 ' "$declaration" >"$work/declared"
 
-# 계약 기본값.
-awk "$unq"'
-  /^branch-defaults:$/ { in_defaults = 1; next }
-  /^[a-z-]/ { in_defaults = 0 }
-  in_defaults && /^  [a-z-]+:$/ { group = $0; sub(/^  /, "", group); sub(/:$/, "", group); next }
-  in_defaults && group == "roles" && /^    - role:/ {
-    line = $0; sub(/^    - role:/, "", line); pending = unq(line); next
-  }
-  in_defaults && group == "roles" && /^      branch:/ {
-    line = $0; sub(/^      branch:/, "", line); print "role\t" pending "\t" unq(line); next
-  }
-  in_defaults && group == "prefixes" && /^    [a-z-]+:/ {
-    line = $0; sub(/^    /, "", line); position = index(line, ":")
-    print "prefix\t" substr(line, 1, position - 1) "\t" unq(substr(line, position + 1)); next
-  }
-' "$contract" >"$work/defaults"
-
 model=$(awk -F"$tab" '$1 == "model" { print $2; exit }' "$work/declared")
 target=$(awk -F"$tab" '$1 == "target" { print $2; exit }' "$work/declared")
 awk "$unq"'
@@ -121,21 +104,9 @@ awk -F"$tab" -v want="$model" '$1 == want && $2 == "required" { print $3 }' "$wo
   >"$work/required"
 
 awk -F"$tab" '$1 == "role" { print $2 "\t" $3 }' "$work/declared" >"$work/roles"
-if [ ! -s "$work/roles" ]; then
-  # 선언이 없으면 계약 기본값을 쓰되 model 이 요구하는 역할만 남긴다. 그러지 않으면
-  # single-main 프로젝트가 쓰지 않는 역할 때문에 처음부터 실패한다.
-  if [ -s "$work/required" ]; then
-    while IFS= read -r wanted; do
-      [ -n "$wanted" ] || continue
-      awk -F"$tab" -v want="$wanted" '$1 == "role" && $2 == want { print $2 "\t" $3 }' \
-        "$work/defaults"
-    done <"$work/required" >"$work/roles"
-  else
-    awk -F"$tab" '$1 == "role" { print $2 "\t" $3 }' "$work/defaults" >"$work/roles"
-  fi
-fi
 awk -F"$tab" '$1 == "prefix" { print $2 "\t" $3 }' "$work/declared" >"$work/prefixes"
-[ -s "$work/prefixes" ] || awk -F"$tab" '$1 == "prefix" { print $2 "\t" $3 }' "$work/defaults" >"$work/prefixes"
+# branch block 을 두지 않은 프로젝트는 branch 규약을 채택하지 않은 것이다. 판정하지 않는다.
+[ -n "$model" ] || [ -s "$work/roles" ] || [ -s "$work/prefixes" ] || exit 0
 awk -F"$tab" '$1 == "protected" { print $2 }' "$work/declared" >"$work/protected"
 
 role_branch() { awk -F"$tab" -v want="$1" '$1 == want { print $2; exit }' "$work/roles"; }
@@ -145,13 +116,19 @@ prefix_of() { awk -F"$tab" -v want="$1" '$1 == want { print $2; exit }' "$work/p
 
 if [ "$action" = settings ]; then
   printf 'model\t%s\n' "${model:-<미선언>}"
-  printf 'target\t%s\n' "${target:-$(first_branch)}"
+  if [ -n "$target" ]; then printf 'target\t%s\n' "$target"
+  elif [ -s "$work/roles" ]; then printf 'target\t%s\n' "$(first_branch)"
+  else printf 'target\t%s\n' '<미선언>'; fi
   sed 's/^/role\t/' "$work/roles"
   sed 's/^/prefix\t/' "$work/prefixes"
   exit 0
 fi
 
 if [ "$action" = base-branch ]; then
+  if [ ! -s "$work/roles" ]; then
+    printf '%s\n' 'engsys vcs: vcs.branch.roles 를 선언하지 않아 분기 기준을 답할 수 없다' >&2
+    exit 1
+  fi
   [ -n "$branch" ] || branch=$(git -C "$project" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
   hotfix=$(prefix_of hotfix)
   # single-main 은 역할이 하나라 첫 branch 와 마지막 branch 가 같다. 분기가 필요 없다.
@@ -167,14 +144,14 @@ problems=0
 report() { printf 'FAIL vcs.branch: %s\n' "$1" >&2; problems=$((problems + 1)); }
 
 if [ -z "$model" ]; then
-  report 'model 을 선언하지 않았다'
+  report 'vcs.branch.model 을 선언하지 않았다'
 elif ! grep -q "^$model	" "$work/models"; then
   report "알 수 없는 model 이다: $model (선언된 것: $(cut -f1 "$work/models" | sort -u | tr '\n' ' '))"
 else
   while IFS= read -r required; do
     [ -n "$required" ] || continue
     [ -n "$(role_branch "$required")" ] \
-      || report "model $model 은 $required 역할을 요구한다. vcs.branch.roles 에 선언한다"
+      || report "model $model 은 $required 역할을 요구한다. vcs.branch.roles 에 branch 이름을 선언한다"
   done <"$work/required"
   extra=$(awk -F"$tab" -v want="$model" '$1 == want && $2 == "extra" { print $3; exit }' "$work/models")
   if [ "$extra" = rejected ]; then

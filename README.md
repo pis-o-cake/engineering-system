@@ -197,8 +197,11 @@ vcs:
       hotfix: 'hotfix/'
 ```
 
-선언하지 않으면 계약의 기본값을 쓰되 model이 요구하는 역할만 남는다. `engsys vcs base-branch`가
-분기 기준을 답하고 `engsys vcs settings`가 해석된 값을 보여 준다. hook과 skill은 이 명령을 쓰고
+**표준은 branch 이름을 갖지 않는다.** 선언하지 않으면 `engsys vcs check-settings`가 무엇을
+선언해야 하는지 알리고, `base-branch`는 답하지 않는다. hotfix 분기는 `prefixes.hotfix`를 선언했을
+때만 갈라진다 ([ADR 0017](docs/adr/0017-the-standard-holds-no-branch-names.md)).
+
+`engsys vcs base-branch`가 분기 기준을 답하고 `engsys vcs settings`가 해석된 값을 보여 준다. hook과 skill은 이 명령을 쓰고
 branch 이름을 직접 적지 않는다. 잘못된 선언은 `engsys verify`의 `check-settings`가 잡는다.
 
 이 선언은 로컬 규칙이다. **Git 서버의 protected branch 설정은 여기서 적용되지 않는다.**
