@@ -122,6 +122,16 @@ cd /d/dev/engineering-system && sh install.sh
 
 경로는 `D:\work\myapp` 이 아니라 `/d/work/myapp` 형식을 쓴다.
 
+이 저장소는 `.gitattributes` 로 줄바꿈을 LF 로 고정한다. Git for Windows 의 기본값
+(`core.autocrlf=true`)으로 CRLF 로 checkout 되면 sh 파서가 값 끝의 CR 을 값의 일부로 읽어
+`invalid profile name: 'baseline'` 같은 엉뚱한 오류가 난다. 그 설정이 없던 시점에 clone 했다면
+한 번 정리한다.
+
+```sh
+git pull
+git rm --cached -r -q . && git reset --hard
+```
+
 ---
 
 아래 절들은 `setup` 이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
