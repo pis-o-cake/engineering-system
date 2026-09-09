@@ -21,6 +21,10 @@ packages:
     path: packages/pipeline
     version: 0.1.0-draft
     status: draft
+  vcs-gov:
+    path: packages/vcs-gov
+    version: 0.1.0-draft
+    status: draft
 
 profiles:
   baseline:
@@ -28,4 +32,5 @@ profiles:
     packages:
       - foundation
       - docs-gov
+      - vcs-gov
       - pipeline

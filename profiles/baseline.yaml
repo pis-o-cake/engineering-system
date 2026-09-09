@@ -12,6 +12,7 @@ project-contract:
 packages:
   - foundation
   - docs-gov
+  - vcs-gov
   - pipeline
 
 delivery:

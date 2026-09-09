@@ -14,6 +14,8 @@
     "./packages/docs-gov/claude-code/skills/write-document",
     "./packages/docs-gov/claude-code/skills/documentation-impact",
     "./packages/docs-gov/claude-code/skills/review-document",
+    "./packages/vcs-gov/claude-code/skills/write-commit",
+    "./packages/vcs-gov/claude-code/skills/write-merge-request",
     "./packages/pipeline/claude-code/skills/verify"
   ],
   "hooks": "./adapters/claude-code/hooks/catalog.json"

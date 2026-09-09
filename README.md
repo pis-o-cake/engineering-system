@@ -130,6 +130,23 @@ native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`
 확인한다. 본문을 현행 코드와 비교하거나 외부 URL·heading fragment를 검사하지 않는다.
 다른 프로젝트의 문서 검사는 그 프로젝트의 native command가 맡는다.
 
+## 커밋과 merge request 규약
+
+커밋 헤더 포맷, type 목록, subject 길이, 금지 trailer, MR 본문 필수 절의 정본은
+[commit contract](packages/vcs-gov/commit-contract.yaml)이다. 프로젝트는 `.engsys/project.yaml`의
+`vcs` 블록에 값만 선언한다 — subject 언어와 종결 어미, `scope` 목록, branch model, MR 대상 branch.
+
+```sh
+engsys vcs check-message .git/COMMIT_EDITMSG --project .
+```
+
+`engsys init --hooks`가 심는 `commit-msg` hook이 같은 검사를 한다. 커밋은 세션 밖에서도 생기므로
+강제는 Claude Code hook이 아니라 native git hook이 맡는다. 작성은 `/engsys:write-commit`과
+`/engsys:write-merge-request`가 돕는다.
+
+기계가 판정할 수 있는 것만 막는다. `·` 나열처럼 커밋을 쪼갤 신호는 경고로 남기고 통과시킨다
+([ADR 0011](docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).
+
 ## 문서 유형과 구조 검사
 
 새 문서는 유형을 먼저 정한다. 유형별 독자, 답할 질문, 필수 metadata, 필수 절의 정본은
