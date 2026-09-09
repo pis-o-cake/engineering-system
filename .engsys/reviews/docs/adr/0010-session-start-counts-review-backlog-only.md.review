@@ -1,0 +1,20 @@
+engsys-document-review: 1
+document: docs/adr/0010-session-start-counts-review-backlog-only.md
+blob: c12e87b553516ba2fba1541d8740cb8e21a68c45
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 세션 시작 hook 이 무엇을 세고 무엇을 세지 않는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 이 문서의 근거는 추정이 아니라 실측이다 — public-ai-qa
+77편에서 docs check 5.1초 · review check 2.2초 · 합계 7.2초에 출력 0. 그 수치를 표로 넣고,
+어느 저장소·어느 선언에서 잰 값인지 명시했다.
+결정 4항목을 구현과 대조했다 — 검토 기록 파일 존재만 세는 것, launcher 미사용, scope 를 git 에
+한 번에 넘기는 것, timeout 20→5.
+대안 5개는 전부 실제로 판단했다. "구조를 싸게 근사한다"를 버린 이유가 이 문서에서 가장 중요한
+줄이라 design 0002 의 금지 조항을 직접 인용했다 — 안내와 검사가 서로 다른 필수 구성을 갖는 상태.
+"docs check 자체를 최적화한다"는 남겨 둔 선택지라 왜 지금 안 하는지(backend 검사에 묻힌다)를
+적었다.
+영향 절에 이 층이 놓치는 것(검토 후 본문이 바뀐 문서)과 그것을 누가 잡는지를 적었다. ADR 0009 의
+나머지 결정이 유효하다는 것도 명시했다 — 부분 대체라 전체가 무효로 읽히면 안 된다.
+

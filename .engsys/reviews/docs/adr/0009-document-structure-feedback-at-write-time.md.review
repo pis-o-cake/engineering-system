@@ -1,20 +1,15 @@
 engsys-document-review: 1
 document: docs/adr/0009-document-structure-feedback-at-write-time.md
-blob: 891e5f099e3a2d04ab907936a9aa5c88aa58c5e2
+blob: 5821afa26a8e21b7f69c8b31d8fdaeda5a0927c2
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 기술 책임자와 유지보수자
 purpose: 구조 검사를 언제 돌리고 결과를 누구에게 주는가
 
-새로 쓴 기록이라 전문을 다시 읽었다. 결정 5항목을 구현과 대조했다 — PostToolUse 의 --path 검사와
-exit 2, --path 모드가 미배정·없는 파일·authoring 미선언에서 조용히 끝나는 것, SessionStart 가
-남은 문제가 없으면 아무것도 출력하지 않는 것, 검토 기록을 옮기지 않은 것, Stop 미사용.
-대안 4개는 실제로 비교한 것이다. Stop hook 은 non-goal 을 뒤집는 안이라 왜 유지하는지를 적었다 —
-턴마다 수십 초, 원인 불명, 사용자 대기. route rule 안은 보장이 없다는 한 가지 이유로 충분했다.
-"검토 기록도 작성 시점에 요구한다"를 대안에 넣은 것은, 이 변경이 그 방향으로 확대될 수 있어서
-선을 그어 둘 필요가 있었기 때문이다.
-영향 절에 이 층의 실제 구멍을 적었다 — 쓰기 뒤에 돌아 막지 못하고, 사람이 에디터로 고치면
-걸리지 않는다. 그 경우 push gate 가 잡는다는 것까지 적었다.
-design 0001 의 context budget 과 hook 범위를 배경에서 인용했다. 이 결정이 그 문서의 non-goal 을
-어기지 않는다는 것이 판단의 핵심이라 근거를 명시했다.
+대체 관계 한 줄만 추가했다. 결정·배경·대안·날짜·status 는 그대로다.
+design 0002 는 accepted 이후의 결정 변경을 새 ADR 로 기록하고 기존 기록에 대체 관계를 연결하라고
+정한다. SessionStart 부분만 바뀌었으므로 "나머지 결정은 그대로다"를 같은 문장에 넣었다. 이걸
+빼면 이 ADR 전체가 무효로 읽힌다.
+과거 판단을 고치지 않았다 — SessionStart 를 그렇게 만든 당시 근거는 본문에 남아 있고, 실측으로
+값이 없다고 밝혀졌다는 사실만 뒤에 붙였다.
 

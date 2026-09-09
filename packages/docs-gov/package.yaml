@@ -26,4 +26,4 @@ package:
         timeout: 10
       - event: SessionStart
         command: claude-code/hooks/session-status.sh
-        timeout: 20
+        timeout: 5

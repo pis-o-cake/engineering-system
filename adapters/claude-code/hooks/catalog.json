@@ -31,7 +31,7 @@
           {
             "type": "command",
             "command": "sh \"${CLAUDE_PLUGIN_ROOT}/packages/docs-gov/claude-code/hooks/session-status.sh\"",
-            "timeout": 20
+            "timeout": 5
           }
         ]
       }

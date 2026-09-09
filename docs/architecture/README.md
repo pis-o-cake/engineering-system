@@ -92,9 +92,9 @@ Historical 검사는 `.engsys/project.yaml`의 lifecycle 경로와 docs-gov poli
 순서는 보지 않는다. HTML은 `<meta name="doc-*">`로 같은 metadata를 선언한다.
 
 검사는 세 시점에 돈다. 문서를 쓴 직후 `PostToolUse` hook이 `--path`로 **그 문서 하나만** 보고,
-실패하면 exit 2로 끝내 그 결과가 세션 안의 Claude에게 전달된다. 세션을 열 때 `SessionStart` hook이
-남은 findings와 미검토 문서 수를 한 줄로 주입한다. 마지막으로 `engsys verify`와 push gate가 전체를
-본다. 턴마다 전체를 검증하는 `Stop` hook은 쓰지 않는다
+실패하면 exit 2로 끝내 그 결과가 세션 안의 Claude에게 전달된다. 세션을 열 때 `SessionStart` hook은
+검토 기록이 없는 문서 수만 세고 구조는 다시 보지 않는다. 마지막으로 `engsys verify`와 push gate가
+전체를 본다. 턴마다 전체를 검증하는 `Stop` hook은 쓰지 않는다
 ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 
 이 검사는 구조만 판정한다. 문장의 적절성과 근거의 충분성은 아래 편집 검토가 판단한다.
@@ -131,3 +131,5 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0008](../adr/0008-init-detects-declarations-and-seeds-the-project-gate.md)).
 - 구조 검사는 작성 시점에 문서 하나 단위로 돌고 결과는 Claude가 받는다. 편집 검토는 옮기지 않는다
   ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
+- `SessionStart`는 검토 backlog만 센다. 전체 구조 검사를 세션마다 돌 값이 없었다
+  ([ADR 0010](../adr/0010-session-start-counts-review-backlog-only.md)).

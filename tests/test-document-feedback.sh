@@ -118,24 +118,21 @@ printf '{"tool_name":"Write","cwd":"%s","tool_input":{"file_path":"%s"}}' "$bare
     >"$temporary/out" 2>"$temporary/err"
 [ ! -s "$temporary/out" ] && [ ! -s "$temporary/err" ]
 
-# SessionStart 는 남은 문제만 한 줄로 알린다.
+# SessionStart 는 검토 backlog 만 센다. launcher 없이도 돌고, 구조는 다시 세지 않는다.
 session() {
   printf '{"cwd":"%s"}' "$1" \
-    | CLAUDE_PLUGIN_ROOT="$system_root" CLAUDE_PROJECT_DIR="$1" \
+    | CLAUDE_PROJECT_DIR="$1" \
       sh "$system_root/packages/docs-gov/claude-code/hooks/session-status.sh" >"$temporary/out" 2>&1
 }
-session "$project"
-[ ! -s "$temporary/out" ]
 
+# review.scopes 선언이 없으면 아무것도 말하지 않는다.
 write_runbook '
 ## 적용 상황
 
 정기 배포에 쓴다.
 '
 session "$project"
-grep -Fq '"hookEventName": "SessionStart"' "$temporary/out"
-grep -Fq '구조 검사 findings 4건' "$temporary/out"
-python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$temporary/out"
+[ ! -s "$temporary/out" ]
 
 cat >>"$project/.engsys/project.yaml" <<'EOF'
   review:
@@ -143,7 +140,29 @@ cat >>"$project/.engsys/project.yaml" <<'EOF'
       - 'docs'
 EOF
 session "$project"
-grep -Fq '미검토 문서 1편' "$temporary/out"
+grep -Fq '"hookEventName": "SessionStart"' "$temporary/out"
+grep -Fq '검토 기록이 없는 문서 1편' "$temporary/out"
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$temporary/out"
+
+# 구조 findings 는 세지 않는다. 그건 작성 시점과 push gate 의 일이다.
+if grep -Fq '구조' "$temporary/out"; then
+  printf 'SessionStart must not re-count structure findings\n' >&2
+  exit 1
+fi
+
+# 검토 기록이 있는 문서는 세지 않는다.
+mkdir -p "$project/.engsys/reviews/docs/runbooks"
+printf 'engsys-document-review: 1\n' >"$project/.engsys/reviews/docs/runbooks/deploy.md.review"
+session "$project"
+[ ! -s "$temporary/out" ]
+
+# 생성 문서는 검토 대상이 아니다.
+printf '# Generated\n' >"$project/docs/generated.md"
+printf 'docs/generated.md\n' >"$project/.engsys/generated-paths.txt"
+session "$project"
+[ ! -s "$temporary/out" ]
+rm "$project/docs/generated.md"
+: >"$project/.engsys/generated-paths.txt"
 
 # 계약이 없는 디렉토리에서는 아무것도 출력하지 않는다.
 mkdir -p "$temporary/plain"
