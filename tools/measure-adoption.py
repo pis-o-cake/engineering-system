@@ -70,10 +70,10 @@ def main():
         manifest = clone / ".engsys/project.yaml"
         contract = engsys_yaml.load(manifest)
         scoped = re.sub(r"^  verify:.*$", lambda _: "  verify: '" + args.native.replace("'", "''") + "'",
-                            manifest.read_text(), count=1, flags=re.M)
+                            manifest.read_text(encoding="utf-8"), count=1, flags=re.M)
         # This experiment isolates documentation governance; branch migration is a different check.
         scoped = re.sub(r"^vcs:\n.*?(?=^[A-Za-z]|\Z)", "", scoped, flags=re.M | re.S)
-        with manifest.open('w', newline='\n') as handle:
+        with manifest.open('w', encoding='utf-8', newline='\n') as handle:
             handle.write(scoped)
         result["contract_adjustments"] = ["native verification scoped to the supplied command", "vcs block omitted for documentation-only measurement"]
         native = ["sh", "-c", args.native]
@@ -110,7 +110,7 @@ def main():
                          "managed_mutation_detections": detections,
                          "pass": clean_failures == 0 and detections == 2 and added <= 5 and result["restored"]["exit_code"] == 0}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result["summary"], ensure_ascii=False))
     return 0 if result["summary"]["pass"] else 1
 

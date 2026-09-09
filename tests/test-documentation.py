@@ -14,7 +14,7 @@ spec.loader.exec_module(documentation)
 
 def write(path, text):
     """CRLF 로 저장하면 POSIX sh 와 awk 검사기가 값 끝의 CR 을 값의 일부로 읽는다."""
-    with path.open("w", newline="\n") as handle:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
 
 
@@ -82,7 +82,7 @@ class HistoricalDocumentsTest(unittest.TestCase):
 
     def test_unknown_frozen_status_fails(self):
         contract = self.root / ".engsys/project.yaml"
-        write(contract, contract.read_text().replace("['accepted']", "['typo']"))
+        write(contract, contract.read_text(encoding="utf-8").replace("['accepted']", "['typo']"))
         self.assertIn("unknown frozen-status", self.errors())
 
     def test_check_preserves_historical_prose(self):

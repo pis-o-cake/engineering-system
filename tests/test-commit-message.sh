@@ -107,7 +107,7 @@ grep -Fq '커밋을 쪼갤 신호' "$temporary/err"
 python3 - "$project/.engsys/project.yaml" <<'PY'
 import sys
 path = sys.argv[1]
-text = open(path).read().replace("subject-ending: 'noun'", "subject-ending: 'imperative'")
+text = open(path, encoding="utf-8").read().replace("subject-ending: 'noun'", "subject-ending: 'imperative'")
 open(path, "w").write(text)
 PY
 accept 'fix(chat): drop the stale render guard

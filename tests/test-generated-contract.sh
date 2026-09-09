@@ -17,12 +17,12 @@ import sys
 
 root = Path(sys.argv[1])
 contract = root / '.engsys/project.yaml'
-text = contract.read_text().replace(
+text = contract.read_text(encoding='utf-8').replace(
     "    - output: 'docs/generated.md'\n      command: 'false'",
     "    - command: 'false'\n      output: 'docs/generated.md'",
 )
 # CRLF 로 저장하면 engsys 가 계약을 읽기 전에 줄바꿈으로 거부한다.
-with contract.open('w', newline='\n') as handle:
+with contract.open('w', encoding='utf-8', newline='\n') as handle:
     handle.write(text)
 PY
 # 어느 단계가 깨졌는지 이름으로 남긴다. 조용히 종료하면 platform 차이를 좁힐 수 없다.
@@ -56,12 +56,12 @@ import sys
 
 system, root = map(Path, sys.argv[1:])
 contract = root / '.engsys/project.yaml'
-original = (root / 'original.yaml').read_text()
+original = (root / 'original.yaml').read_text(encoding='utf-8')
 start = original.index('  generated:')
 end = original.index('  lifecycle:')
 def write(block):
     # CRLF 로 저장하면 engsys 가 계약을 읽기 전에 줄바꿈으로 거부한다.
-    with contract.open('w', newline='\n') as handle:
+    with contract.open('w', encoding='utf-8', newline='\n') as handle:
         handle.write(original[:start] + block + original[end:])
 def cli(command):
     # Windows 는 shebang 을 해석하지 않는다. launcher 는 언제나 sh 로 실행한다.
@@ -77,9 +77,9 @@ write('''  generated:
 ''')
 assert cli('sync').returncode == 0
 assert cli('verify').returncode == 0
-assert (root / 'first-marker').read_text() == 'checked'
-assert (root / 'second-marker').read_text() == 'quoted'
-assert (root / '.engsys/generated-paths.txt').read_text().splitlines() == [
+assert (root / 'first-marker').read_text(encoding='utf-8') == 'checked'
+assert (root / 'second-marker').read_text(encoding='utf-8') == 'quoted'
+assert (root / '.engsys/generated-paths.txt').read_text(encoding='utf-8').splitlines() == [
     'docs/first.md', 'docs/second.md']
 
 # Indentless YAML sequences must have the same record semantics.
