@@ -64,7 +64,8 @@ def write(block):
     with contract.open('w', newline='\n') as handle:
         handle.write(original[:start] + block + original[end:])
 def cli(command):
-    return subprocess.run([str(system / 'bin/engsys'), command, '--project', str(root)],
+    # Windows 는 shebang 을 해석하지 않는다. launcher 는 언제나 sh 로 실행한다.
+    return subprocess.run(['sh', str(system / 'bin/engsys'), command, '--project', str(root)],
                           text=True, capture_output=True)
 
 write('''  generated:

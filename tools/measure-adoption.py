@@ -77,7 +77,8 @@ def main():
             handle.write(scoped)
         result["contract_adjustments"] = ["native verification scoped to the supplied command", "vcs block omitted for documentation-only measurement"]
         native = ["sh", "-c", args.native]
-        managed = [str(system / "bin/engsys"), "verify", "--project", str(clone)]
+        # Windows 는 shebang 을 해석하지 않는다. launcher 는 언제나 sh 로 실행한다.
+        managed = ["sh", str(system / "bin/engsys"), "verify", "--project", str(clone)]
         for command in (native, managed):
             warmup = run(command, clone, env)
             if warmup["exit_code"]:
