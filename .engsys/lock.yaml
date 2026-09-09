@@ -1,18 +1,18 @@
 lock-version: 1
 system:
   repository: github.com/pis-o-cake/engineering-system
-  revision: '065292ec8a36978f96e9fb8e8aad0cae4bd33581'
+  revision: 'a31794d4162d9d77c69d16e0a6815fe712fbb18a'
 profile: 'baseline'
 packages:
   foundation:
     version: '0.1.0-draft'
-    revision: '065292ec8a36978f96e9fb8e8aad0cae4bd33581'
+    revision: 'a31794d4162d9d77c69d16e0a6815fe712fbb18a'
   docs-gov:
     version: '0.1.0-draft'
-    revision: '065292ec8a36978f96e9fb8e8aad0cae4bd33581'
+    revision: 'a31794d4162d9d77c69d16e0a6815fe712fbb18a'
   vcs-gov:
     version: '0.1.0-draft'
-    revision: '065292ec8a36978f96e9fb8e8aad0cae4bd33581'
+    revision: 'a31794d4162d9d77c69d16e0a6815fe712fbb18a'
   pipeline:
     version: '0.1.0-draft'
-    revision: '065292ec8a36978f96e9fb8e8aad0cae4bd33581'
+    revision: 'a31794d4162d9d77c69d16e0a6815fe712fbb18a'

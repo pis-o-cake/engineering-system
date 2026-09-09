@@ -1,0 +1,21 @@
+engsys-document-review: 1
+document: docs/adr/0014-projects-name-their-branches.md
+blob: 5828bb391b2129070be99e759050470a344786fd
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: branch 이름을 누가 정하고 도구가 그것을 어떻게 읽는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 결정 7항목을 구현과 대조했다 — required-roles·extra-roles,
+roles 선언 순서가 승격 순서, model 별로 거른 기본값, base-branch 의 hotfix 분기, check-settings 의
+검사 7종, naming 을 선언했을 때만 강제, init 의 실재 branch 기반 감지.
+"기본값 없이 선언을 요구한다"를 버린 이유는 구현 중 실제로 겪었다. 기본값을 model 로 거르지 않은
+첫 판에서 이 레포(single-main)가 development 역할 때문에 바로 실패했다. 그 사실을 대안 절에
+근거로 적었다.
+"역할을 mapping 으로 선언한다"를 버린 이유는 승격 순서다. 환경이 셋 이상일 때 순서가 곧 정책이라
+목록이어야 한다는 것을 명시했다.
+제약 절에 서버 protected 설정이 이 선언으로 적용되지 않는다는 것을 적었다. 영향 절에도 다시
+적었는데 중복이 아니라 제약과 결과라 각각 필요하다고 판단했다.
+미확정: 기존 프로젝트 hook 의 하드코딩을 base-branch 호출로 바꾸는 작업은 그 프로젝트 몫으로
+남겼다.
+

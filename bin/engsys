@@ -25,6 +25,8 @@ Usage:
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
   engsys vcs check-message <file> [--project <directory>]
+  engsys vcs check-branch [--project <directory>] [--branch <name>]
+  engsys vcs <base-branch|check-settings|settings> [--project <directory>] [--branch <name>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -554,6 +556,24 @@ write_project_contract() {
         printf '      - '; yaml_quote "$review_scope"; printf '\n'
       done
     fi
+    if [ -n "${vcs_model:-}" ]; then
+      printf '\n%s\n' 'vcs:'
+      printf '%s\n' '  branch:'
+      printf '    model: '; yaml_quote "$vcs_model"; printf '\n'
+      if [ -n "${vcs_roles:-}" ]; then
+        printf '%s\n' '    roles:'
+        printf '%s\n' "$vcs_roles" | while IFS="$(printf '\t')" read -r role_name role_branch; do
+          [ -n "$role_name" ] || continue
+          printf '      - role: '; yaml_quote "$role_name"; printf '\n'
+          printf '        branch: '; yaml_quote "$role_branch"; printf '\n'
+        done
+        printf '%s\n' '    protected:'
+        printf '%s\n' "$vcs_roles" | while IFS="$(printf '\t')" read -r role_name role_branch; do
+          [ -n "$role_branch" ] || continue
+          printf '      - '; yaml_quote "$role_branch"; printf '\n'
+        done
+      fi
+    fi
   } >"$project_dir/.engsys/project.yaml"
 }
 
@@ -678,6 +698,36 @@ detect_declarations() {
     fi
   fi
   detect_authoring "$dir"
+  detect_vcs "$dir"
+}
+
+detect_vcs() {
+  dir=$1
+  [ -z "$vcs_model" ] || return 0
+  branches=$(git -C "$dir" for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null || true)
+  production=
+  development=
+  for candidate in main master trunk; do
+    case "
+$branches" in *"
+$candidate"*) production=$candidate; break ;; esac
+  done
+  for candidate in develop dev development; do
+    case "
+$branches" in *"
+$candidate"*) development=$candidate; break ;; esac
+  done
+  [ -n "$production" ] || return 0
+  if [ -n "$development" ]; then
+    vcs_model=env-branch
+    vcs_roles="development$(printf '\t')$development
+production$(printf '\t')$production"
+    printf '%s\n' "detected branch model: env-branch ($development -> $production)"
+  else
+    vcs_model=single-main
+    vcs_roles="production$(printf '\t')$production"
+    printf '%s\n' "detected branch model: single-main ($production)"
+  fi
 }
 
 detect_authoring() {
@@ -739,6 +789,8 @@ init() {
   lifecycles=
   authoring_assign=
   review_scopes=
+  vcs_model=
+  vcs_roles=
   detect=false
   hooks=false
 
@@ -1155,6 +1207,12 @@ verify() {
       (cd "$project_dir" && sh -c "$generated_command")
     done
   fi
+  if grep -q '^vcs:' "$contract"; then
+    printf '%s\n' "Running branch settings verification"
+    ENGSYS_SYSTEM_ROOT="$system_root" \
+      sh "$system_root/packages/vcs-gov/bin/branch-settings.sh" check-settings --project "$project_dir"
+  fi
+
   if grep -q '^  authoring:' "$contract"; then
     printf '%s\n' "Running document structure verification"
     docs check --project "$project_dir"
@@ -1322,6 +1380,15 @@ case "$command" in
         shift
         ENGSYS_SYSTEM_ROOT="$system_root" \
           sh "$system_root/packages/vcs-gov/bin/check-commit-message.sh" "$@"
+        ;;
+      check-branch)
+        shift
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/check-branch-name.sh" "$@"
+        ;;
+      base-branch|check-settings|settings)
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/branch-settings.sh" "$@"
         ;;
       help|-h|--help) usage ;;
       *) die "unknown vcs action: $vcs_action" ;;

@@ -26,6 +26,16 @@ The body explains what and why. The code already shows how. Omit the body when t
 its own explanation. Keep the declared wrap width. Breaking changes take `!` after the type and a
 `BREAKING CHANGE:` footer.
 
+When the work needs a new branch, ask the project which branch it is cut from rather than
+assuming `develop` or `main`:
+
+```sh
+"$ENGSYS_PLUGIN_ROOT/bin/engsys" vcs base-branch --project <project> --branch <new-branch>
+```
+
+The answer follows the project's declared roles and prefixes: a hotfix branch is cut from the last
+role branch, everything else from the first.
+
 Verify before committing, from the project root:
 
 ```sh
