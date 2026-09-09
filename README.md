@@ -276,9 +276,12 @@ sh tests/test-all.sh          # 전체 검사 (이 레포의 commands.verify)
 bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 여부
 ```
 
-CI runner가 준비되기 전까지는 push 전 검사를 Git hook으로 강제한다. `pre-push`가
-`sh tests/test-all.sh`와 전송할 commit의 문서 검토 검사를 실행한다. 등록은 `install.sh`가 하며,
-등록 여부는 `engsys doctor`가 보고한다. CI가 열리면 같은 명령을 그대로 옮긴다.
+서버 CI는 아직 없다. push 전 검사는 `.githooks/pre-push`가 강제한다. 삭제를 뺀 전송 ref마다
+`bin/engsys verify --project . --revision <commit>`을 실행하므로 검사한 내용과 전송하는 내용이
+같을 때만 통과한다. 등록은 `install.sh`가 하며 등록 여부는 `engsys doctor`가 보고한다.
+
+로컬 hook은 사람이 우회할 수 있다. 서버 검사가 생기기 전까지 통과는 push한 개발자의 환경에서
+얻은 결과이며 다른 OS의 동작을 보증하지 않는다.
 
 native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`lib/`를 바꾸는 commit 뒤에는
 `bin/engsys upgrade --project . --apply`로 자기 lock을 올리고 그 lock 변경을 커밋한다.
