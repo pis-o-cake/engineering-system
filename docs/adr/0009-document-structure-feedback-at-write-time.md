@@ -53,3 +53,6 @@ v0.1은 모든 검사를 push gate에 뒀다. 그래서 문서를 열 편 쓰고
   matcher를 갖지 않는다.
 - 이 층은 구조만 본다. 문장과 근거의 적절성은 여전히
   [ADR 0005](0005-individual-document-editorial-review.md)의 개별 편집 검토가 판정한다.
+- `SessionStart`가 무엇을 세는지는
+  [ADR 0010](0010-session-start-counts-review-backlog-only.md)이 대체했다. 실측 결과 전체 구조
+  검사를 세션마다 돌 값이 없었다. 나머지 결정은 그대로다.
