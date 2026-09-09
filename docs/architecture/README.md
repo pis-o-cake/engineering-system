@@ -50,6 +50,13 @@ engsys claude
 ```
 
 ```text
+engsys <check|sync|verify|docs|review|vcs> --project P
+  → P의 lock revision이 이 checkout의 commit과 다르면
+      그 revision의 worktree를 확보하고 그쪽 bin/engsys로 실행을 넘김
+  → init·upgrade·doctor·claude는 넘기지 않는다
+```
+
+```text
 engsys verify
   → engsys check (adapter·lock 구조 검사)
   → commands.verify (프로젝트가 선언한 native 검증)
@@ -135,6 +142,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 - `SessionStart`는 검토 backlog만 센다. 전체 구조 검사를 세션마다 돌 값이 없었다
   ([ADR 0010](../adr/0010-session-start-counts-review-backlog-only.md)).
+- 프로젝트 명령은 그 프로젝트가 lock한 revision에서 실행한다. 실행한 개발자의 checkout이 판정을
+  바꾸지 않는다 ([ADR 0012](../adr/0012-project-commands-run-at-the-locked-revision.md)).
 - 커밋·MR 규약은 `vcs-gov`가 갖고 프로젝트는 값만 선언한다. 커밋은 세션 밖에서도 생기므로 강제는
   native git hook이 맡는다
   ([ADR 0011](../adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).

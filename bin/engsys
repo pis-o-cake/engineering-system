@@ -839,6 +839,50 @@ docs() {
     sh "$system_root/packages/docs-gov/bin/check-structure.sh" "$@"
 }
 
+# 프로젝트가 고정한 revision 으로 실행을 넘긴다. PATH 의 engsys 는 실행기이고, 판정하는 코드는
+# 언제나 그 프로젝트의 lock 이 가리키는 release 에서 온다. 그러지 않으면 같은 프로젝트를 검사한
+# 결과가 개발자마다 달라진다.
+project_from_arguments() {
+  argument_project=$(pwd)
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project)
+        if [ "$#" -ge 2 ]; then argument_project=$2; shift 2; else shift; fi
+        ;;
+      *) shift ;;
+    esac
+  done
+  printf '%s' "$argument_project"
+}
+
+exec_locked_revision() {
+  locked_command=$1
+  shift
+  # 재귀 방지, 개발용 탈출구, 그리고 이 레포 자신은 자기 working tree 로 돈다.
+  [ -z "${ENGSYS_PINNED:-}" ] || return 0
+  [ -z "${ENGSYS_USE_CHECKOUT:-}" ] || return 0
+
+  locked_project=$(project_from_arguments "$@")
+  [ -d "$locked_project" ] || return 0
+  locked_project=$(CDPATH= cd -- "$locked_project" && pwd -P)
+  [ "$locked_project" != "$system_root" ] || return 0
+
+  locked_file="$locked_project/.engsys/lock.yaml"
+  [ -f "$locked_file" ] || return 0
+  locked_revision=$(lock_system_revision "$locked_file")
+  [ -n "$locked_revision" ] || return 0
+  # working tree 의 수정은 revision 을 바꾸지 않는다. 같은 commit 이면 그대로 돈다.
+  [ "$locked_revision" != "$(system_revision)" ] || return 0
+
+  if ! locked_root=$(resolve_locked_plugin "$locked_project" 2>/dev/null); then
+    printf '%s\n' \
+      "engsys: warning: locked revision $locked_revision is unavailable; ran this checkout instead" >&2
+    return 0
+  fi
+  [ -x "$locked_root/bin/engsys" ] || return 0
+  ENGSYS_PINNED=1 exec "$locked_root/bin/engsys" "$locked_command" "$@"
+}
+
 doctor_report() {
   case "$1" in
     ok) printf 'ok    %s\n' "$2" ;;
@@ -1232,17 +1276,19 @@ shellenv() {
 command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
-  check) shift; check "$@" ;;
+  check) shift; exec_locked_revision check "$@"; check "$@" ;;
   doctor) shift; doctor "$@" ;;
-  sync) shift; sync "$@" ;;
-  verify) shift; verify "$@" ;;
+  sync) shift; exec_locked_revision sync "$@"; sync "$@" ;;
+  verify) shift; exec_locked_revision verify "$@"; verify "$@" ;;
   review)
     shift
+    exec_locked_revision review "$@"
     ENGSYS_SYSTEM_ROOT="$system_root" sh "$system_root/packages/docs-gov/bin/review-documents.sh" "$@"
     ;;
-  docs) shift; docs "$@" ;;
+  docs) shift; exec_locked_revision docs "$@"; docs "$@" ;;
   vcs)
     shift
+    exec_locked_revision vcs "$@"
     vcs_action=${1:-help}
     case "$vcs_action" in
       check-message)

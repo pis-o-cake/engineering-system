@@ -1,0 +1,20 @@
+engsys-document-review: 1
+document: docs/adr/0012-project-commands-run-at-the-locked-revision.md
+blob: 1917adb63eec15efdd72eb2ecc790a41cea73eef
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 프로젝트 검사가 어느 revision 의 코드로 도는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 결정 5항목을 구현과 대조했다 — 넘기는 명령 6개, 넘기지 않는
+명령 4개와 각각의 이유, revision 이 같으면 안 넘기는 것, 시스템 레포 자신과 ENGSYS_USE_CHECKOUT
+탈출구, 받을 수 없는 revision 에서의 경고 후 진행.
+배경의 사례는 이번 작업에서 실제로 겪은 것이다 — public-ai-qa 문서 검사가 아직 병합되지 않은
+branch 의 검사기로 돌았다. 가상의 시나리오가 아니라 관측한 사실이라 그대로 적었다.
+"working tree 가 더러우면 넘긴다"를 대안에 넣은 이유는 resolve_locked_plugin 이 원래 그렇게
+판정하기 때문이다. 그대로 쓰면 표준을 고치는 사람이 자기 수정으로 검사할 수 없어 revision 비교로
+바꿨다. 기존 함수의 판정을 그대로 쓰지 않은 것이라 근거를 남겨야 했다.
+영향 절에 옛 revision 에서 unknown command 로 끝나는 것이 정확한 동작이라는 것과, 첫 실행의
+worktree 비용을 적었다.
+미확정 없음.
+
