@@ -120,7 +120,9 @@ Historical 검사는 `.engsys/project.yaml`의 lifecycle 경로와 docs-gov poli
 전체를 본다. 턴마다 전체를 검증하는 `Stop` hook은 쓰지 않는다
 ([ADR 0009](../adr/0009-document-structure-feedback-at-write-time.md)).
 
-이 검사는 구조만 판정한다. 문장의 적절성과 근거의 충분성은 아래 편집 검토가 판단한다.
+이 검사는 구조만 판정한다. `validate-document.awk`가 문서 하나의 metadata와 절을 한 번에
+판정하고, shell은 경로와 실제 참조 파일 존재를 확인한다. 문장의 적절성과 근거의 충분성은
+아래 편집 검토가 판단한다.
 
 ## 문서별 편집 검토
 
