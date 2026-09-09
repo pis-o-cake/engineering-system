@@ -26,7 +26,7 @@ if setup </dev/null; then
   printf 'setup must not proceed when it cannot ask\n' >&2
   exit 1
 fi
-grep -Fq '터미널이 없어 단계마다 물어볼 수 없다' "$temporary/err"
+grep -Fq '터미널이 없어 단계마다 물어볼 수 없다' "$temporary/out"
 [ ! -e "$project/.engsys" ]
 
 # --yes 는 모든 단계를 승인한다. 계약을 만들기 전에 먼저 보여 준다.
@@ -61,15 +61,21 @@ if (cd "$system_root" && "$system_root/bin/engsys" setup --yes) \
   printf 'setup must refuse to target the standard repository itself\n' >&2
   exit 1
 fi
-grep -Fq '대상이 표준 저장소 자신이다' "$temporary/err"
+grep -Fq '대상이 표준 저장소 자신이다' "$temporary/out"
 
-# Git worktree 가 아니면 시작하지 않는다.
-mkdir -p "$temporary/plain"
-if "$system_root/bin/engsys" setup --project "$temporary/plain" --yes \
-    >"$temporary/out" 2>"$temporary/err"; then
-  printf 'setup must refuse a directory that is not a Git worktree\n' >&2
+# 실패하면 어디서 멈췄는지와 다음에 무엇을 할지 남긴다. 한 줄만 찍고 끝나지 않는다.
+mkdir -p "$temporary/notgit"
+if "$system_root/bin/engsys" setup --project "$temporary/notgit" --yes \
+    >"$temporary/out" 2>&1; then
+  printf 'setup must fail for a directory that is not a Git worktree\n' >&2
   exit 1
 fi
-grep -Fq 'not a Git worktree' "$temporary/err"
+grep -Fq '멈춘 곳: [4] 대상 프로젝트' "$temporary/out"
+grep -Fq '지금 상태 보기 : engsys doctor' "$temporary/out"
+grep -Fq '다시 실행      : engsys setup' "$temporary/out"
+log=$(sed -n 's/.*전체 기록      : //p' "$temporary/out" | sed -n '1p')
+[ -s "$log" ] || { printf 'setup must leave a transcript at %s\n' "$log" >&2; exit 1; }
+grep -Fq '[1] 전제 도구' "$log"
+rm -f "$log"
 
 printf 'ok setup checks each step before it changes anything\n'

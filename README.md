@@ -85,7 +85,23 @@ git commit -m "build(engsys): Engineering System 계약 추가"
 프로젝트에서 `engsys hooks update` 로 hook 을 켠다. Git 의 hook 경로 설정은 clone 으로 전달되지
 않기 때문이다.
 
-### 상태 확인과 문제 해결
+### 실패했을 때
+
+`setup` 은 실패해도 아무것도 되돌리지 않는다. 멈춘 단계와 다음에 할 일을 마지막에 다시 적어 주고,
+전체 출력을 파일로 남긴다. 터미널이 닫혀도 그 파일에 남아 있다.
+
+```
+멈춘 곳: [4] 대상 프로젝트
+위의 마지막 오류 줄이 이유다. 아무것도 되돌리지 않았으니 고치고 다시 실행하면 된다.
+
+  지금 상태 보기 : engsys doctor --project /내/프로젝트
+  다시 실행      : engsys setup --project /내/프로젝트
+  전체 기록      : /tmp/engsys-setup-4471.log
+```
+
+고친 뒤 `engsys setup` 을 다시 실행한다. 이미 끝난 단계는 그대로 통과한다.
+
+### 상태 확인
 
 ```sh
 engsys doctor      # 지금 무엇이 빠졌는지, 각각 어떤 명령으로 고치는지
