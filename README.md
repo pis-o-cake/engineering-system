@@ -18,7 +18,7 @@ status: active
 
 ## v0.1
 
-첫 package는 `foundation`, `docs-gov`, `pipeline`이다. 이 레포 자신이 첫 pilot이며,
+현재 package는 `foundation`, `docs-gov`, `vcs-gov`, `pipeline`이다. 이 레포 자신이 첫 pilot이며,
 `.engsys/`로 자기 표준을 채택하고 있다.
 
 - [Current architecture](docs/architecture/README.md) — 지금 어떻게 되어 있는가
@@ -29,6 +29,109 @@ status: active
 - [Project lock schema](schemas/lock.schema.json)
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
+- [Adoption evaluation](docs/verification/adoption.md) — 효과와 실행 비용을 판단하는 기준
+
+## 처음 붙일 때
+
+표준은 한 번 clone해 두고, 붙일 프로젝트마다 계약 파일 두 개로 사용할 표준과 버전을 선언한다.
+아래 setup이 계약 생성과 프로젝트의 Git hook 연결을 안내한다.
+
+### 1. 표준을 clone 하고 활성화한다 — 이 컴퓨터에서 한 번
+
+```sh
+git clone https://github.com/pis-o-cake/engineering-system
+cd engineering-system
+./install.sh
+```
+
+`install.sh` 가 바꾸는 것은 둘이다. shell profile(`~/.zshrc` 등)에 `engsys` 를 PATH 에 넣는 한 줄을
+추가하고, 이 clone 의 Git hook 경로를 설정한다. 다른 프로젝트는 건드리지 않는다. 되돌리려면 그
+줄을 지운다.
+
+끝나면 **새 터미널을 연다.** 그래야 `engsys` 가 잡힌다.
+
+### 2. 붙일 프로젝트에서 setup 을 실행한다 — 프로젝트마다 한 번
+
+```sh
+cd /내/프로젝트
+engsys setup
+```
+
+경로를 적을 필요가 없다. 현재 디렉토리가 대상이다.
+
+`setup` 은 여덟 단계를 차례로 밟는다.
+
+| 단계 | 하는 일 |
+|---|---|
+| 1. 전제 도구 | `git` 이 있는지 본다. `python3` 와 Claude Code 는 없어도 되고, 없으면 무엇이 안 되는지 알려 준다 |
+| 2. 시스템 checkout | 표준이 어느 revision 인지, 팀원이 받을 수 있는 상태인지 확인한다 |
+| 3. 개발자 활성화 | `engsys` 가 PATH 에 있는지 본다. 없으면 `install.sh` 를 실행할지 묻는다 |
+| 4. 대상 프로젝트 | 프로젝트를 훑어 검사 명령·소스 경로·branch 이름을 **감지하고, 만들 계약 전문을 먼저 보여 준 뒤** 만들지 묻는다 |
+| 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
+| 6. 검사 | 계약이 올바른지 확인하고, 프로젝트의 기존 test 까지 돌릴지 묻는다 |
+| 7. 최종 진단 | `doctor` 를 한 번 더 돌린다. 남은 문제가 있으면 성공으로 끝내지 않는다 |
+| 8. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
+
+**파일을 바꾸기 전에는 반드시 먼저 보여 주고 묻는다.** 그냥 진행하려면 `--yes` 를 준다. 반대로
+터미널이 없고 `--yes` 도 없으면 시작하지 않는다 — 물어볼 수 없는데 진행하면 아무것도 안 하고
+성공한 것처럼 끝나기 때문이다.
+
+### 3. 만들어진 파일을 commit 한다
+
+```sh
+git add .engsys .githooks .claude
+git commit -m "build(engsys): Engineering System 계약 추가"
+```
+
+이 파일들이 있어야 팀원이 같은 계약을 받는다. 팀원은 1번(clone + `install.sh`)을 각자 하고,
+프로젝트에서 `engsys hooks update` 로 hook 을 켠다. Git 의 hook 경로 설정은 clone 으로 전달되지
+않기 때문이다.
+
+### 실패했을 때
+
+`setup` 은 실패해도 아무것도 되돌리지 않는다. 멈춘 단계와 다음에 할 일을 마지막에 다시 적어 주고,
+전체 출력을 파일로 남긴다. 터미널이 닫혀도 그 파일에 남아 있다.
+
+```
+멈춘 곳: [4] 대상 프로젝트
+위의 마지막 오류 줄이 이유다. 아무것도 되돌리지 않았으니 고치고 다시 실행하면 된다.
+
+  지금 상태 보기 : engsys doctor --project /내/프로젝트
+  다시 실행      : engsys setup --project /내/프로젝트
+  전체 기록      : /tmp/engsys-setup-4471.log
+```
+
+고친 뒤 `engsys setup` 을 다시 실행한다. 이미 끝난 단계는 그대로 통과한다.
+
+### 상태 확인
+
+```sh
+engsys doctor      # 지금 무엇이 빠졌는지, 각각 어떤 명령으로 고치는지
+engsys verify      # 계약·문서·프로젝트 test 를 전부 실행
+```
+
+`doctor` 는 진단만 하고 아무것도 고치지 않는다. 무엇을 실행할지 알려 주면 그것을 직접 실행한다.
+
+### Windows
+
+Git Bash 에서 연다. `bin/engsys` 는 확장자 없는 POSIX sh 라 PowerShell 이나 CMD 에서 실행하면
+Windows 가 연결 프로그램을 묻는다. 활성화 전이라 `engsys` 가 아직 PATH 에 없다면 `sh` 로 부른다.
+
+```sh
+cd /d/dev/engineering-system && sh install.sh
+```
+
+경로는 `D:\work\myapp` 이 아니라 `/d/work/myapp` 형식을 쓴다.
+
+이 저장소는 `.gitattributes` 로 줄바꿈을 LF 로 고정한다. Git for Windows 의 기본값
+(`core.autocrlf=true`)으로 CRLF 로 checkout 되면 sh 파서가 값 끝의 CR 을 값의 일부로 읽어
+`invalid profile name: 'baseline'` 같은 엉뚱한 오류가 난다. 기존 checkout에서 이 문제가 나면
+오류가 가리키는 파일을 편집기로 열어 줄바꿈을 **LF**로 바꾸고 저장한다. 파일 내용은 유지하고
+줄바꿈만 변환한 뒤 다시 검사한다. 저장소 전체를 초기화할 필요는 없다.
+
+---
+
+아래 절들은 `setup` 이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
 
 ## 활성화
 
@@ -37,7 +140,7 @@ status: active
 
 ```sh
 git clone https://github.com/pis-o-cake/engineering-system
-cd engineering-system && ./install.sh
+cd engineering-system && ./install.sh     # Windows: sh install.sh (Git Bash)
 ```
 
 `--print`를 주면 profile에 넣을 줄만 출력한다. profile에 이미 다른 checkout을 가리키는 줄이
@@ -64,14 +167,17 @@ engsys upgrade --project /path/to/project --apply
 
 프로젝트를 검사하는 명령(`check`·`sync`·`verify`·`docs`·`review`·`vcs`)은 **그 프로젝트가 lock한
 revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는 코드는 lock이 가리키는 release에서
-온다. 그래서 팀원이 어느 branch를 checkout해 두었든 같은 결과를 얻는다. `init`·`upgrade`·`doctor`는
-넘기지 않으며, 표준을 고치는 중에는 `ENGSYS_USE_CHECKOUT=1`로 자기 수정을 쓸 수 있다
-([ADR 0012](docs/adr/0012-project-commands-run-at-the-locked-revision.md)).
+온다. 같은 revision의 checkout에 미커밋 수정이 있어도 clean cache에서 실행한다.
+lock revision을 준비하지 못하거나 cache가 수정돼 있으면 현재 checkout으로 대체하지 않고 실패한다.
+`init`·`upgrade`·`doctor`는 넘기지 않는다. 자기 레포 검사는 현재 코드를 쓰며, 다른 프로젝트에서
+표준 수정을 시험할 때는 `ENGSYS_USE_CHECKOUT=1`을 명시한다
+([ADR 0019](docs/adr/0019-verification-fails-when-it-cannot-run.md)).
 
 `engsys verify --revision <commit>`은 working tree가 그 commit과 같은지 먼저 확인하고 다르면
 무엇이 다른지 출력한 뒤 중단한다. 기본 `pre-push`가 이 형태로 부르므로, gate는 검사한 내용과
-전송하는 내용이 같을 때만 통과한다
-([ADR 0013](docs/adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
+전송하는 내용이 같을 때만 통과한다. 다른 내용을 가진 ref를 push하려면 해당 commit을 checkout하고
+다시 실행한다. `engsys`가 PATH에 없어 검사를 시작할 수 없어도 push를 중단한다
+([ADR 0019](docs/adr/0019-verification-fails-when-it-cannot-run.md)).
 
 `--apply`는 새 lock으로 native test와 generated document check까지 실행하고, 실패하면 이전 lock을
 복원한다. `doctor`는 lock이 아직 `origin/main`에 없으면 경고한다. 그 상태로 프로젝트를 push하면
@@ -86,6 +192,8 @@ revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는
 engsys init --project /path/to/project --detect --hooks
 engsys verify --project /path/to/project
 ```
+
+`--dry-run`을 주면 무엇을 쓸지 보여 주고 아무것도 바꾸지 않는다.
 
 `--detect`는 설정하지 않은 선언만 프로젝트에서 읽어 채우고 채운 값을 모두 출력한다 — native 검증
 명령, source-of-truth 디렉토리, 문서 정본 경로, lifecycle, 그리고 아직 문서가 없는 경로의 유형
@@ -129,6 +237,22 @@ mapping과 sequence, single-quoted scalar, `[a, b]` 형태의 inline list다. �
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —
 반영은 위 "표준 버전 올리기"의 `upgrade`가 맡는다.
 
+### OS 마다 명령이 갈릴 때
+
+`npm test`·`go test ./...`·`cargo test`·`./gradlew check`는 어느 OS에서나 같은 문자열이므로 한 줄로
+끝난다. Python venv처럼 실행 경로가 갈리는 경우에만 변형을 선언한다.
+
+```yaml
+commands:
+  verify: 'cd backend && .venv/bin/poe check'          # macOS·Linux
+  verify-windows: 'cd backend && .venv/Scripts/poe check'
+```
+
+`engsys verify`가 `uname`으로 판정해 알아서 고른다. 양쪽 머신에서 치는 명령은 똑같고, 고른 키는
+출력에 찍힌다 — `Running project verification (commands.verify-windows): ...`. 접미사는
+`-macos`·`-linux`·`-windows`뿐이며, 접미사 없는 기본 선언은 그대로 필수다.
+`documentation.generated[].command`도 같은 방식으로 `command-windows`를 갖는다.
+
 `documentation.generated`는 `output`과 `command`의 순서에 관계없이 읽는다. 각 항목은 두 값을
 모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로
 처리한다. 명령에 quote나 escape가 필요하면 single-quoted scalar를 쓴다.
@@ -152,9 +276,12 @@ sh tests/test-all.sh          # 전체 검사 (이 레포의 commands.verify)
 bin/engsys verify --project . # 계약 검사 + 위 test + 생성 문서 최신 여부
 ```
 
-CI runner가 준비되기 전까지는 push 전 검사를 Git hook으로 강제한다. `pre-push`가
-`sh tests/test-all.sh`와 전송할 commit의 문서 검토 검사를 실행한다. 등록은 `install.sh`가 하며,
-등록 여부는 `engsys doctor`가 보고한다. CI가 열리면 같은 명령을 그대로 옮긴다.
+서버 CI는 아직 없다. push 전 검사는 `.githooks/pre-push`가 강제한다. 삭제를 뺀 전송 ref마다
+`bin/engsys verify --project . --revision <commit>`을 실행하므로 검사한 내용과 전송하는 내용이
+같을 때만 통과한다. 등록은 `install.sh`가 하며 등록 여부는 `engsys doctor`가 보고한다.
+
+로컬 hook은 사람이 우회할 수 있다. 서버 검사가 생기기 전까지 통과는 push한 개발자의 환경에서
+얻은 결과이며 다른 OS의 동작을 보증하지 않는다.
 
 native 검사에는 self lock 신선도 확인이 있다. `packages/`·`bin/`·`lib/`를 바꾸는 commit 뒤에는
 `bin/engsys upgrade --project . --apply`로 자기 lock을 올리고 그 lock 변경을 커밋한다.

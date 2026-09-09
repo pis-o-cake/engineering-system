@@ -140,20 +140,21 @@ while IFS="$tab" read -r _ pattern _; do
     *) [ ! -e "$project/$pattern" ] || existing_assignments=$((existing_assignments + 1)) ;;
   esac
 done <"$work/assign"
-if [ "$existing_assignments" -eq 0 ]; then
-  [ -z "$single_path" ] || exit 0
-  fail 'no documentation.authoring.assign path exists; fix the declaration'
-fi
+# 아직 만들지 않은 경로를 배정하는 것은 정상이다 — 그 자리에 문서를 만들면 유형이 정해져 있다.
+# 낡은 선언과 구분할 방법이 없으므로 막지 않고 알린다. 들여쓰기를 잘못 쓴 선언은 engsys check 가
+# 이미 오류로 잡는다.
+stale_assignments=false
+[ "$existing_assignments" -gt 0 ] || stale_assignments=true
 if [ -f "$project/.engsys/generated-paths.txt" ]; then
   cp "$project/.engsys/generated-paths.txt" "$work/generated"
 else
   : >"$work/generated"
 fi
 
-glob_of() {
+set_glob() {
   case "$1" in
-    *[*?]*) printf '%s' "$1" ;;
-    *) printf '%s/*' "${1%/}" ;;
+    *[*?]*) candidate=$1 ;;
+    *) candidate=${1%/}/* ;;
   esac
 }
 listed() {
@@ -161,7 +162,7 @@ listed() {
   while IFS="$tab" read -r _ pattern; do
     [ -n "$pattern" ] || continue
     [ "$1" = "$pattern" ] && return 0
-    candidate=$(glob_of "$pattern")
+    set_glob "$pattern"
     case "$1" in $candidate) return 0 ;; esac
   done <"$2"
   return 1
@@ -175,7 +176,7 @@ assigned_type() {
     if [ "$1" = "$pattern" ]; then
       matched=true
     else
-      candidate=$(glob_of "$pattern")
+      set_glob "$pattern"
       case "$1" in $candidate) matched=true ;; esac
     fi
     if [ "$matched" = true ] && [ "${#pattern}" -gt "$best_length" ]; then
@@ -247,11 +248,6 @@ document_facts() {
   esac
 }
 
-meta_value() { awk -F"$tab" -v key="$2" '$1 == "meta" && $2 == key { print $3; exit }' "$1"; }
-rule_values() {
-  awk -F"$tab" -v type_name="$2" -v field="$3" '$1 == "rule" && $2 == type_name && $3 == field { print $4 }' "$1"
-}
-
 # Reference fields declare the evidence a document depends on. A missing target is a broken record.
 reference_fields='spec source supersedes superseded-by current-progress raw-data prototype policy related-adr criteria'
 reference_roots='docs/ backend/ frontend/ infra/ spike/ packages/'
@@ -294,90 +290,27 @@ while IFS= read -r path; do
   report() { printf '%s: %s\n' "$path" "$1" >>"$work/findings"; }
 
   document_facts "$path" >"$work/facts"
-  declared=$(meta_value "$work/facts" type)
-  if [ -z "$declared" ]; then
-    report 'no declared document type; add frontmatter `type` or a doc-type meta'
-    continue
+  deferred=false
+  if listed "$path" "$work/deferred"; then
+    deferred=true
+    deferred_count=$((deferred_count + 1))
   fi
-  canonical=$(awk -F"$tab" -v declared="$declared" '$1 == "alias" && $2 == declared { print $3; exit }' "$work/types")
-  [ -n "$canonical" ] || canonical=$declared
-  if ! awk -F"$tab" -v want="$canonical" '$1 == "rule" && $2 == want { found = 1 } END { exit found ? 0 : 1 }' "$work/types"; then
-    report "unknown document type: $declared"
-    continue
-  fi
-  if [ "$canonical" != "$expected" ]; then
-    report "declared type $canonical does not match the assigned type $expected"
-  fi
-
-  status=$(meta_value "$work/facts" status)
-  rule_values "$work/types" "$canonical" statuses >"$work/statuses"
-  if ! grep -Fxq -- "$status" "$work/statuses"; then
-    report "status '$status' is not one of $(tr '\n' ' ' <"$work/statuses")"
-  fi
-
-  rule_values "$work/types" "$canonical" required-frontmatter >"$work/required"
-  while IFS= read -r field; do
-    [ -n "$field" ] || continue
-    [ -n "$(meta_value "$work/facts" "$field")" ] \
-      || report "required metadata field is missing or empty: $field"
-  done <"$work/required"
-
-  for field in $reference_fields; do
-    target=$(meta_value "$work/facts" "$field")
-    [ -n "$target" ] || continue
+  awk -v expected="$expected" -v deferred="$deferred" -v reference_fields="$reference_fields" \
+    -f "$system_root/packages/docs-gov/bin/validate-document.awk" \
+    "$work/types" "$work/facts" >"$work/results"
+  while IFS="$tab" read -r kind field target; do
+    if [ "$kind" = finding ]; then
+      report "$field"
+      continue
+    fi
+    [ "$kind" = reference ] || continue
     case "$target" in http://*|https://*|*' '*|*'*'*) continue ;; esac
     base=$(dirname "$path")
     for root in $reference_roots; do
       case "$target" in "$root"*) base=. ;; esac
     done
     [ -e "$base/$target" ] || report "$field points at a missing target: $target"
-  done
-
-  if listed "$path" "$work/deferred"; then
-    deferred_count=$((deferred_count + 1))
-    continue
-  fi
-  [ "$(awk -F"$tab" '$1 == "lead" { print $2; exit }' "$work/facts")" = 1 ] \
-    || report 'no leading summary before the first section'
-
-  awk -F"$tab" -v want="$canonical" '$1 == "section" && $2 == want { print $3 "\t" $4 "\t" $5 }' \
-    "$work/types" >"$work/sections"
-  [ -s "$work/sections" ] || continue
-  awk -F"$tab" '$1 == "head" { print $3 }' "$work/facts" >"$work/heads"
-  awk -F"$tab" '$1 == "head" { print $2 }' "$work/facts" >"$work/filled"
-  rule_values "$work/types" "$canonical" frozen-status >"$work/frozen"
-  frozen=false
-  grep -Fxq -- "$status" "$work/frozen" && frozen=true
-
-  # Match each required section at or after the previous match. Independent first-match would
-  # let an earlier heading satisfy a later section's pattern and report a false order violation.
-  cursor=1
-  out_of_order=
-  while IFS="$tab" read -r _ key pattern; do
-    [ -n "$pattern" ] || continue
-    anywhere=$(awk -v pattern="$pattern" 'match($0, pattern) { print NR; exit }' "$work/heads")
-    if [ -z "$anywhere" ]; then
-      report "missing required section ($key): $pattern"
-      continue
-    fi
-    if [ "$frozen" = true ]; then
-      [ "$(sed -n "${anywhere}p" "$work/filled")" = 1 ] \
-        || report "required section has no content ($key): $(sed -n "${anywhere}p" "$work/heads")"
-      continue
-    fi
-    position=$(awk -v pattern="$pattern" -v from="$cursor" \
-      'NR >= from && match($0, pattern) { print NR; exit }' "$work/heads")
-    if [ -z "$position" ]; then
-      out_of_order="${out_of_order}${out_of_order:+ }$key"
-    else
-      [ "$(sed -n "${position}p" "$work/filled")" = 1 ] \
-        || report "required section has no content ($key): $(sed -n "${position}p" "$work/heads")"
-      cursor=$((position + 1))
-    fi
-  done <"$work/sections"
-  if [ -n "$out_of_order" ]; then
-    report "required sections are out of the declared order: $out_of_order"
-  fi
+  done <"$work/results"
 done <"$work/paths"
 
 findings=$(grep -c . "$work/findings" || true)
@@ -388,6 +321,8 @@ else
   printf 'Document structure: %s assigned documents, %s findings' "$checked" "$findings"
   printf ' (절 검사 유예 %s · 검사 제외 %s · 유형 미배정 %s)\n' \
     "$deferred_count" "$exempt_count" "$unassigned"
+  [ "$stale_assignments" = false ] \
+    || printf '  배정한 경로가 아직 하나도 없다. 문서를 만들면 검사 대상이 된다\n'
   if [ "$unassigned" -gt 0 ]; then
     sed -n '1,5p' "$work/unassigned" | sed 's/^/  유형 미배정: /'
     [ "$unassigned" -le 5 ] || printf '  유형 미배정: … 외 %s편\n' "$((unassigned - 5))"

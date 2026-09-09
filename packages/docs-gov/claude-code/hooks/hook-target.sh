@@ -9,8 +9,10 @@ read_hook_target() {
 
   # Claude가 worktree 또는 하위 디렉터리에서 작업하면 hook input의 cwd가 실제 checkout을
   # 가리킨다. Git으로 root를 찾을 수 있을 때만 그것을 우선한다.
-  if [ -n "$cwd" ] && git -C "$cwd" rev-parse --show-toplevel >/dev/null 2>&1; then
-    project_dir=$(git -C "$cwd" rev-parse --show-toplevel)
+  # git은 OS native path를 돌려준다. Windows에서 그 문자열은 C:/... 형태라 shell이 쓰는
+  # /tmp/... 형태와 접두사 비교가 어긋난다. root를 cwd 기준 상대 경로로 잡아 형태를 맞춘다.
+  if [ -n "$cwd" ] && cdup=$(git -C "$cwd" rev-parse --show-cdup 2>/dev/null); then
+    project_dir=$(CDPATH= cd -- "$cwd/${cdup:-.}" && pwd -P)
     current_dir=$(CDPATH= cd -- "$cwd" && pwd -P)
     case "$file_path" in
       "$cwd"/*) file_path="$current_dir/${file_path#"$cwd"/}" ;;

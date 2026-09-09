@@ -30,7 +30,13 @@
     "commands": {
       "type": "object",
       "required": ["verify"],
-      "additionalProperties": {"type": "string", "minLength": 1}
+      "additionalProperties": false,
+      "properties": {
+        "verify": {"type": "string", "minLength": 1},
+        "verify-macos": {"type": "string", "minLength": 1},
+        "verify-linux": {"type": "string", "minLength": 1},
+        "verify-windows": {"type": "string", "minLength": 1}
+      }
     },
     "vcs": {
       "type": "object",
@@ -99,7 +105,10 @@
             "additionalProperties": false,
             "properties": {
               "output": {"type": "string", "minLength": 1},
-              "command": {"type": "string", "minLength": 1}
+              "command": {"type": "string", "minLength": 1},
+              "command-macos": {"type": "string", "minLength": 1},
+              "command-linux": {"type": "string", "minLength": 1},
+              "command-windows": {"type": "string", "minLength": 1}
             }
           }
         },

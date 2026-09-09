@@ -19,6 +19,7 @@ usage() {
 Usage:
   engsys init [--detect | --verify <command>] [options]
   engsys check [--project <directory>] [--revision <commit>]
+  engsys setup [--project <directory>] [--yes]
   engsys doctor [--project <directory>]
   engsys hooks <status|update> [--project <directory>] [--force] [--adopt]
   engsys sync [--project <directory>]
@@ -37,6 +38,7 @@ Usage:
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
   --detect                    Fill unset declarations by inspecting the project
+  --dry-run                   Show what init would write and change nothing
   --hooks                     Write .githooks/pre-push and point core.hooksPath at it
   --name <name>               Project name (default: directory name)
   --profile <profile>         System profile (default: baseline)
@@ -168,289 +170,7 @@ lock_system_revision() {
   yaml_unquote "$revision"
 }
 
-require_plugin_relative_path() {
-  case "$1" in
-    ''|/*|..|../*|*/../*|*/..) die "path must be plugin-relative: $1" ;;
-  esac
-}
-
-package_adapter_skills() {
-  source_root=$1
-  package=$2
-  manifest="$source_root/packages/$package/package.yaml"
-  [ -f "$manifest" ] || die "package is missing from locked system revision: $package"
-
-  awk '
-    /^  claude-code:$/ { in_adapter = 1; in_skills = 0; next }
-    in_adapter && /^  [A-Za-z0-9_-]+:$/ { exit }
-    in_adapter && /^    skills:$/ { in_skills = 1; next }
-    in_skills && /^    [A-Za-z0-9_-]+:$/ { exit }
-    in_skills && /^      - / {
-      sub(/^      -[[:space:]]*/, "")
-      print
-    }
-  ' "$manifest"
-}
-
-package_adapter_hooks() {
-  source_root=$1
-  package=$2
-  manifest="$source_root/packages/$package/package.yaml"
-  [ -f "$manifest" ] || die "package is missing from locked system revision: $package"
-
-  awk '
-    function emit() {
-      # IFS 로 TAB 을 쓰면 빈 field 가 사라진다. matcher 없는 event 는 '-' 로 표시해 실어 보낸다.
-      if (event != "") print event "\t" (matcher == "" ? "-" : matcher) "\t" command "\t" timeout
-      event = matcher = command = timeout = ""
-    }
-    /^  claude-code:$/ { in_adapter = 1; in_hooks = 0; next }
-    in_adapter && /^  [A-Za-z0-9_-]+:$/ { in_adapter = 0; in_hooks = 0; next }
-    in_adapter && /^    hooks:$/ { in_hooks = 1; next }
-    in_hooks && /^    [A-Za-z0-9_-]+:$/ { in_hooks = 0; next }
-    in_hooks && /^      - event:[[:space:]]*/ {
-      emit()
-      event = $0
-      sub(/^      - event:[[:space:]]*/, "", event)
-      next
-    }
-    in_hooks && /^        matcher:[[:space:]]*/ {
-      matcher = $0
-      sub(/^        matcher:[[:space:]]*/, "", matcher)
-      next
-    }
-    in_hooks && /^        command:[[:space:]]*/ {
-      command = $0
-      sub(/^        command:[[:space:]]*/, "", command)
-      next
-    }
-    in_hooks && /^        timeout:[[:space:]]*/ {
-      timeout = $0
-      sub(/^        timeout:[[:space:]]*/, "", timeout)
-      next
-    }
-    END { emit() }
-  ' "$manifest"
-}
-
-source_plugin_version() {
-  sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    "$1/.claude-plugin/plugin.json" | sed -n '1p'
-}
-
-write_plugin_manifest() {
-  source_root=$1
-  packages=$2
-  destination=$3
-  version=$(source_plugin_version "$source_root")
-  [ -n "$version" ] || die "plugin manifest has no version"
-
-  {
-    cat <<EOF
-{
-  "\$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "engsys",
-  "displayName": "Engineering System",
-  "version": "$version",
-  "description": "Lock-aware Engineering System workflows.",
-  "author": { "name": "pis-o-cake" },
-  "repository": "https://github.com/pis-o-cake/engineering-system",
-  "skills": [
-EOF
-    first=true
-    for package in $packages; do
-      skill_paths=$(package_adapter_skills "$source_root" "$package")
-      for skill_path in $skill_paths; do
-        require_plugin_relative_path "$skill_path"
-        [ -f "$source_root/packages/$package/$skill_path/SKILL.md" ] \
-          || die "package skill is missing: $package/$skill_path"
-        if [ "$first" = true ]; then
-          first=false
-        else
-          printf ',\n'
-        fi
-        printf '    "./packages/%s/%s"' "$package" "$skill_path"
-      done
-    done
-    printf '\n  ],\n'
-    printf '%s\n' '  "hooks": "./hooks/hooks.json"'
-    printf '%s\n' '}'
-  } >"$destination"
-}
-
-write_plugin_hooks() {
-  source_root=$1
-  packages=$2
-  destination=$3
-  entries="$destination.entries.$$"
-  : >"$entries"
-
-  for package in $packages; do
-    package_adapter_hooks "$source_root" "$package" \
-      | while IFS="$(printf '\t')" read -r event matcher command timeout; do
-          [ -n "$event" ] || continue
-          require_plugin_relative_path "$command"
-          case "$event" in ''|*[!A-Za-z]*) die "package hook has invalid event: $event" ;; esac
-          case "$matcher" in ''|*[!A-Za-z'|-']*) die "package hook has invalid matcher: $matcher" ;; esac
-          case "$timeout" in ''|*[!0-9]*) die "package hook has invalid timeout: $timeout" ;; esac
-          [ -f "$source_root/packages/$package/$command" ] \
-            || die "package hook handler is missing: $package/$command"
-          printf '%s\t%s\t%s\t%s\t%s\n' "$package" "$event" "$matcher" "$command" "$timeout" >>"$entries"
-        done
-  done
-
-  {
-    printf '%s\n' '{'
-    printf '%s\n' '  "hooks": {'
-    events=$(cut -f2 "$entries" | LC_ALL=C sort -u)
-    first_event=true
-    for event in $events; do
-      if [ "$first_event" = true ]; then
-        first_event=false
-      else
-        printf ',\n'
-      fi
-      printf '    "%s": [\n' "$event"
-      first_hook=true
-      while IFS="$(printf '\t')" read -r package entry_event matcher command timeout; do
-        [ "$entry_event" = "$event" ] || continue
-        if [ "$first_hook" = true ]; then
-          first_hook=false
-        else
-          printf ',\n'
-        fi
-        printf '%s\n' '      {'
-        [ "$matcher" = - ] || printf '        "matcher": "%s",\n' "$matcher"
-        cat <<EOF
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"\${CLAUDE_PLUGIN_ROOT}/packages/$package/$command\"",
-            "timeout": $timeout
-          }
-        ]
-      }
-EOF
-      done <"$entries"
-      printf '\n    ]'
-    done
-    printf '\n  }\n}\n'
-  } >"$destination"
-  rm -f "$entries"
-}
-
-write_plugin_wrapper() {
-  source_root=$1
-  destination=$2
-  cat >"$destination" <<EOF
-#!/bin/sh
-export ENGSYS_SYSTEM_ROOT=$(shell_quote "$source_root")
-exec $(shell_quote "$source_root/bin/engsys") "\$@"
-EOF
-  chmod +x "$destination"
-}
-
-plugin_view_is_ready() {
-  view=$1
-  revision=$2
-  profile=$3
-  [ -f "$view/.engsys-view" ] && [ -f "$view/.claude-plugin/plugin.json" ] \
-    && [ -f "$view/hooks/hooks.json" ] && [ -x "$view/bin/engsys" ] \
-    && grep -Fxq "revision=$revision" "$view/.engsys-view" \
-    && grep -Fxq "profile=$profile" "$view/.engsys-view"
-}
-
-materialize_plugin_view() {
-  project_dir=$1
-  source_root=$2
-  lock="$project_dir/.engsys/lock.yaml"
-  contract="$project_dir/.engsys/project.yaml"
-  revision=$(lock_system_revision "$lock")
-  profile=$(project_profile "$contract")
-  require_profile_name "$profile"
-  packages=$(lock_package_names "$lock")
-  [ -n "$packages" ] || die "lock has no packages"
-  package_key=$(printf '%s\n' "$packages" | LC_ALL=C sort | cksum | awk '{print $1}')
-  view="$(cache_root)/plugins/$revision/$profile-$package_key"
-
-  if [ -e "$view" ]; then
-    plugin_view_is_ready "$view" "$revision" "$profile" && {
-      printf '%s\n' "$view"
-      return
-    }
-    die "cached plugin view is incomplete or incompatible: $view"
-  fi
-
-  temporary="$view.tmp.$$"
-  cleanup_view_temporary() {
-    view_status=$?
-    rm -rf "$temporary"
-    trap - 0 1 2 15
-    exit "$view_status"
-  }
-  trap cleanup_view_temporary 0 1 2 15
-  mkdir -p "$temporary/.claude-plugin" "$temporary/bin" "$temporary/hooks" "$temporary/packages"
-  for package in $packages; do
-    [ -d "$source_root/packages/$package" ] \
-      || die "package is missing from locked system revision: $package"
-    cp -R "$source_root/packages/$package" "$temporary/packages/$package"
-  done
-  write_plugin_manifest "$source_root" "$packages" "$temporary/.claude-plugin/plugin.json"
-  write_plugin_hooks "$source_root" "$packages" "$temporary/hooks/hooks.json"
-  write_plugin_wrapper "$source_root" "$temporary/bin/engsys"
-  {
-    printf 'revision=%s\n' "$revision"
-    printf 'profile=%s\n' "$profile"
-    printf '%s\n' "$packages"
-  } >"$temporary/.engsys-view"
-  mkdir -p "$(dirname "$view")"
-  if [ -e "$view" ]; then
-    # 동시 실행이 같은 view를 먼저 완성했다. 승자를 쓰고 임시본은 버린다.
-    rm -rf "$temporary"
-    trap - 0 1 2 15
-    plugin_view_is_ready "$view" "$revision" "$profile" \
-      || die "cached plugin view is incomplete or incompatible: $view"
-    printf '%s\n' "$view"
-    return
-  fi
-  mv "$temporary" "$view"
-  trap - 0 1 2 15
-  printf '%s\n' "$view"
-}
-
-resolve_locked_plugin() {
-  project_dir=$1
-  lock="$project_dir/.engsys/lock.yaml"
-  [ -f "$lock" ] || die "missing .engsys/lock.yaml"
-  revision=$(lock_system_revision "$lock")
-  [ -n "$revision" ] || die "lock has no system revision"
-  require_safe_revision "$revision"
-
-  if [ "$(system_revision)" = "$revision" ] && system_is_clean; then
-    printf '%s\n' "$system_root"
-    return
-  fi
-
-  cache_dir="$(cache_root)/releases/$revision"
-  if [ -d "$cache_dir" ]; then
-    cached_revision=$(git -C "$cache_dir" rev-parse HEAD 2>/dev/null || true)
-    [ "$cached_revision" = "$revision" ] || die "cached revision is invalid: $cache_dir"
-    [ -z "$(git -C "$cache_dir" status --porcelain --untracked-files=no 2>/dev/null)" ] \
-      || die "cached revision has local changes: $cache_dir"
-    printf '%s\n' "$cache_dir"
-    return
-  fi
-
-  if ! git -C "$system_root" cat-file -e "$revision^{commit}" 2>/dev/null; then
-    git -C "$system_root" fetch --quiet origin
-  fi
-  git -C "$system_root" cat-file -e "$revision^{commit}" 2>/dev/null \
-    || die "locked revision is unavailable from origin: $revision"
-  mkdir -p "$(cache_root)/releases"
-  git -C "$system_root" worktree add --quiet --detach "$cache_dir" "$revision" \
-    || die "could not prepare cached revision: $revision"
-  printf '%s\n' "$cache_dir"
-}
+. "$system_root/lib/plugin-runtime.sh"
 
 list_contains() {
   printf '%s\n' "$1" | grep -Fxq "$2"
@@ -460,9 +180,34 @@ top_level_keys() {
   sed -n 's/^\([A-Za-z][A-Za-z0-9_-]*\):.*$/\1/p' "$1"
 }
 
-project_verify_command() {
-  command=$(sed -n 's/^  verify:[[:space:]]*//p' "$1" | sed -n '1p')
+# venv 의 실행 경로처럼 OS 마다 갈리는 명령만 platform 변형으로 선언한다. Git Bash 의 uname 은
+# MINGW64_NT-10.0 처럼 답한다.
+current_platform() {
+  case "$(uname -s 2>/dev/null)" in
+    Darwin) printf 'macos' ;;
+    Linux) printf 'linux' ;;
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) printf 'windows' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+contract_command() {
+  command=$(sed -n "s/^  $2:[[:space:]]*//p" "$1" | sed -n '1p')
   yaml_unquote "$command"
+}
+
+# 이 platform 의 변형이 있으면 그것을, 없으면 기본 선언을 쓴다. 고르는 주체는 계약이지 사람이 아니다.
+project_verify_key() {
+  platform=${2:-$(current_platform)}
+  for key in "verify-$platform" verify; do
+    [ -z "$(contract_command "$1" "$key")" ] || { printf '%s' "$key"; return 0; }
+  done
+}
+
+project_verify_command() {
+  key=$(project_verify_key "$1" "${2:-}")
+  [ -n "$key" ] || return 0
+  contract_command "$1" "$key"
 }
 
 write_status_list() {
@@ -613,7 +358,8 @@ extract_generated_paths() {
 }
 
 extract_generated_commands() {
-  awk -v requested=command -f "$system_root/lib/generated-documents.awk" "$1"
+  awk -v requested=command -v platform="${2:-$(current_platform)}" \
+    -f "$system_root/lib/generated-documents.awk" "$1"
 }
 
 sync_generated_paths() {
@@ -797,11 +543,13 @@ init() {
   vcs_roles=
   detect=false
   hooks=false
+  dry_run=false
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
       --detect) detect=true; shift ;;
+      --dry-run) dry_run=true; shift ;;
       --hooks) hooks=true; shift ;;
       --profile) require_value "$@"; profile=$2; shift 2 ;;
       --name) require_value "$@"; name=$2; shift 2 ;;
@@ -854,6 +602,21 @@ init() {
   [ -n "$verify" ] \
     || die "--verify is required; detection found no native verification command in $project_dir"
   [ -n "$name" ] || name=$(basename "$project_dir")
+
+  if [ "$dry_run" = true ]; then
+    dry_root=$(mktemp -d)
+    mkdir -p "$dry_root/.engsys"
+    write_project_contract "$dry_root" "$profile" "$name" "$verify" "$sources" "$policy" \
+      "$architecture" "$generated" "$lifecycles"
+    printf '\n%s\n' '--- .engsys/project.yaml (미리보기, 쓰지 않음) ---'
+    cat "$dry_root/.engsys/project.yaml"
+    printf '%s\n' '--- 끝 ---'
+    [ "$hooks" = false ] || printf '\n%s\n' \
+      '--hooks: .githooks/commit-msg 와 .githooks/pre-push 를 심고 core.hooksPath 를 설정한다'
+    rm -rf "$dry_root"
+    printf '\n%s\n' "Nothing was written. Re-run without --dry-run to apply."
+    return
+  fi
 
   mkdir -p "$project_dir/.engsys" "$project_dir/.claude/rules"
   write_project_contract "$project_dir" "$profile" "$name" "$verify" "$sources" "$policy" "$architecture" "$generated" "$lifecycles"
@@ -933,307 +696,24 @@ exec_locked_revision() {
   [ -f "$locked_file" ] || return 0
   locked_revision=$(lock_system_revision "$locked_file")
   [ -n "$locked_revision" ] || return 0
-  # working tree 의 수정은 revision 을 바꾸지 않는다. 같은 commit 이면 그대로 돈다.
-  [ "$locked_revision" != "$(system_revision)" ] || return 0
-
-  if ! locked_root=$(resolve_locked_plugin "$locked_project" 2>/dev/null); then
-    # --revision 은 전송 gate 의 표시다. 그 경로에서 다른 revision 으로 대체 실행하면 gate 가
-    # 무엇을 판정했는지 알 수 없다. 탐색용 실행에서만 현재 checkout 으로 넘어간다.
-    case " $* " in
-      *' --revision '*)
-        die "locked revision $locked_revision is unavailable; fetch it before running a gate" ;;
-    esac
-    printf '%s\n' \
-      "engsys: warning: locked revision $locked_revision is unavailable; ran this checkout instead" >&2
+  # 같은 commit 이더라도 미커밋 수정은 잠긴 표준이 아니다.
+  if [ "$locked_revision" = "$(system_revision)" ] && system_is_clean; then
     return 0
   fi
-  [ -x "$locked_root/bin/engsys" ] || return 0
+
+  if ! locked_root=$(resolve_locked_plugin "$locked_project"); then
+    die "locked revision $locked_revision could not be prepared; fetch it or repair the cache before retrying"
+  fi
+  [ -x "$locked_root/bin/engsys" ] \
+    || die "locked revision $locked_revision has no executable bin/engsys"
   ENGSYS_PINNED=1 exec "$locked_root/bin/engsys" "$locked_command" "$@"
 }
 
 # 프로젝트가 복사한 hook 은 그 프로젝트가 소유한다. 표준이 덮어쓰지 않으므로 사본이 template 과
 # 언제 갈라졌는지 알 방법이 필요하다. 기록은 두 해시다 — 사본이 근거한 template, 그리고 기록
 # 시점의 사본. 둘을 함께 두어야 설치 직후와 프로젝트가 고친 뒤 유지하기로 한 것을 구분한다.
-hook_names() { printf '%s\n' commit-msg pre-push; }
-hook_record() { printf '%s/.engsys/hooks.txt' "$1"; }
+. "$system_root/lib/adoption.sh"
 
-hook_recorded() {
-  hook_record_file=$(hook_record "$1")
-  [ -f "$hook_record_file" ] || return 0
-  awk -v name="$2" -v column="$3" '$1 == name { print $column; exit }' "$hook_record_file"
-}
-
-hook_state() {
-  hook_project=$1
-  hook_name=$2
-  hook_template="$system_root/templates/project/.githooks/$hook_name"
-  hook_installed="$hook_project/.githooks/$hook_name"
-  [ -f "$hook_template" ] || { printf 'unknown'; return; }
-  [ -f "$hook_installed" ] || { printf 'missing'; return; }
-  template_hash=$(git hash-object -- "$hook_template")
-  installed_hash=$(git hash-object -- "$hook_installed")
-  [ "$installed_hash" != "$template_hash" ] || { printf 'current'; return; }
-
-  recorded_template=$(hook_recorded "$hook_project" "$hook_name" 2)
-  recorded_installed=$(hook_recorded "$hook_project" "$hook_name" 3)
-  [ -n "$recorded_installed" ] || { printf 'modified'; return; }
-  [ "$installed_hash" = "$recorded_installed" ] || { printf 'modified'; return; }
-  [ "$recorded_template" != "$template_hash" ] || { printf 'owned'; return; }
-  [ "$recorded_installed" = "$recorded_template" ] || { printf 'modified'; return; }
-  printf 'outdated'
-}
-
-record_hook_baseline() {
-  hook_project=$1
-  hook_name=$2
-  hook_template_hash=$3
-  hook_installed_hash=$4
-  hook_record_file=$(hook_record "$hook_project")
-  mkdir -p "$(dirname "$hook_record_file")"
-  if [ -f "$hook_record_file" ]; then
-    awk -v name="$hook_name" '$1 != name' "$hook_record_file" >"$hook_record_file.next"
-  else
-    : >"$hook_record_file.next"
-  fi
-  printf '%s\t%s\t%s\n' "$hook_name" "$hook_template_hash" "$hook_installed_hash" \
-    >>"$hook_record_file.next"
-  LC_ALL=C sort -o "$hook_record_file.next" "$hook_record_file.next"
-  mv -f "$hook_record_file.next" "$hook_record_file"
-}
-
-hooks() {
-  project_dir=$(pwd)
-  hooks_action=${1:-status}
-  case "$hooks_action" in
-    status|update) shift ;;
-    -h|--help) usage; exit 0 ;;
-    *) die "unknown hooks action: $hooks_action" ;;
-  esac
-  hooks_force=false
-  hooks_adopt=false
-  while [ "$#" -gt 0 ]; do
-    case "$1" in
-      --project) require_value "$@"; project_dir=$2; shift 2 ;;
-      --force) hooks_force=true; shift ;;
-      --adopt) hooks_adopt=true; shift ;;
-      -h|--help) usage; exit 0 ;;
-      *) die "unknown hooks option: $1" ;;
-    esac
-  done
-  project_dir=$(normalise_project_dir "$project_dir")
-  require_worktree "$project_dir"
-  hooks_pending=0
-
-  for hook_name in $(hook_names); do
-    state=$(hook_state "$project_dir" "$hook_name")
-    template="$system_root/templates/project/.githooks/$hook_name"
-    installed="$project_dir/.githooks/$hook_name"
-    # --adopt 는 사본을 그대로 두고 현재 template 을 확인한 것으로만 기록한다.
-    if [ "$hooks_action" = update ] && [ "$hooks_adopt" = true ] \
-      && [ "$state" != missing ] && [ "$state" != current ] && [ "$state" != unknown ]; then
-      record_hook_baseline "$project_dir" "$hook_name" "$(git hash-object -- "$template")" \
-        "$(git hash-object -- "$installed")"
-      printf 'adopted  %s — 현재 사본을 유지한다. 이후 template이 바뀔 때 다시 알린다\n' "$hook_name"
-      continue
-    fi
-    install_hook() {
-      mkdir -p "$project_dir/.githooks"
-      cp "$template" "$installed"
-      chmod +x "$installed"
-      hook_new_hash=$(git hash-object -- "$template")
-      record_hook_baseline "$project_dir" "$hook_name" "$hook_new_hash" "$hook_new_hash"
-    }
-    case "$state" in
-      current) printf 'ok       %s는 현재 template과 같다\n' "$hook_name" ;;
-      owned) printf 'ok       %s는 프로젝트가 소유한 사본이다. 현재 template을 확인한 상태다\n' "$hook_name" ;;
-      missing)
-        if [ "$hooks_action" = update ]; then
-          install_hook
-          printf 'wrote    %s\n' "$hook_name"
-        else
-          printf 'missing  %s — engsys hooks update로 설치한다\n' "$hook_name"
-          hooks_pending=$((hooks_pending + 1))
-        fi
-        ;;
-      outdated)
-        if [ "$hooks_action" = update ]; then
-          install_hook
-          printf 'updated  %s\n' "$hook_name"
-        else
-          printf 'outdated %s — 사본을 고치지 않았고 template이 바뀌었다. engsys hooks update로 갱신한다\n' "$hook_name"
-          hooks_pending=$((hooks_pending + 1))
-        fi
-        ;;
-      modified)
-        if [ "$hooks_action" = update ] && [ "$hooks_force" = true ]; then
-          install_hook
-          printf 'replaced %s — 프로젝트의 수정을 버렸다\n' "$hook_name"
-        else
-          printf 'modified %s — 프로젝트가 고친 사본이다. 갱신하면 그 수정이 사라진다\n' "$hook_name"
-          printf '         차이: diff %s %s\n' "$installed" "$template"
-          printf '         갱신: engsys hooks update --force · 유지: engsys hooks update --adopt\n'
-          hooks_pending=$((hooks_pending + 1))
-        fi
-        ;;
-      *) printf 'unknown  %s — template이 이 revision에 없다\n' "$hook_name" ;;
-    esac
-  done
-
-  [ "$hooks_action" = status ] || return 0
-  [ "$hooks_pending" -eq 0 ] || return 1
-}
-
-doctor_report() {
-  case "$1" in
-    ok) printf 'ok    %s\n' "$2" ;;
-    warn) printf 'warn  %s\n' "$2" ;;
-    fail) printf 'FAIL  %s\n' "$2" >&2 ;;
-  esac
-  [ -z "${3:-}" ] || case "$1" in
-    fail) printf '      %s\n' "$3" >&2 ;;
-    *) printf '      %s\n' "$3" ;;
-  esac
-}
-
-same_file() {
-  [ -e "$1" ] && [ -e "$2" ] || return 1
-  first=$(CDPATH= cd -- "$(dirname "$1")" && pwd -P)/$(basename "$1")
-  second=$(CDPATH= cd -- "$(dirname "$2")" && pwd -P)/$(basename "$2")
-  [ "$first" = "$second" ]
-}
-
-doctor() {
-  project_dir=$(pwd)
-  while [ "$#" -gt 0 ]; do
-    case "$1" in
-      --project) require_value "$@"; project_dir=$2; shift 2 ;;
-      -h|--help) usage; exit 0 ;;
-      *) die "unknown doctor option: $1" ;;
-    esac
-  done
-  project_dir=$(normalise_project_dir "$project_dir")
-  failures=0
-
-  printf '%s\n' "Engineering System: $system_root"
-  revision=$(system_revision)
-  if [ "$revision" = unversioned ]; then
-    doctor_report fail 'system checkout is not a Git repository' \
-      "clone the system repository again; a lock cannot record a revision from $system_root"
-    failures=$((failures + 1))
-  else
-    doctor_report ok "system checkout revision $revision"
-    system_is_clean || doctor_report warn 'system checkout has uncommitted changes' \
-      'a lock records the committed revision, not the working tree'
-  fi
-
-  resolved=$(command -v engsys 2>/dev/null || true)
-  if [ -z "$resolved" ]; then
-    doctor_report fail 'engsys is not on PATH' \
-      "add this line to your shell profile: eval \"\$($system_root/bin/engsys shellenv)\""
-    failures=$((failures + 1))
-  elif same_file "$resolved" "$system_root/bin/engsys"; then
-    doctor_report ok "engsys on PATH: $resolved"
-  else
-    doctor_report warn "engsys on PATH is a different checkout: $resolved" \
-      "this run used $system_root/bin/engsys"
-  fi
-
-  if command -v claude >/dev/null 2>&1; then
-    doctor_report ok 'Claude Code is on PATH'
-  else
-    doctor_report warn 'Claude Code is not on PATH' \
-      'engsys claude needs it; every other command works without it'
-  fi
-
-  if [ -d "$system_root/.githooks" ]; then
-    hooks_path=$(git -C "$system_root" config --get core.hooksPath 2>/dev/null || true)
-    if [ "$hooks_path" = .githooks ]; then
-      doctor_report ok 'system push gate is registered'
-    else
-      doctor_report warn 'system push gate is not registered' \
-        "run: git -C $system_root config core.hooksPath .githooks"
-    fi
-  fi
-
-  printf '\n%s\n' "Project: $project_dir"
-  if [ ! -f "$project_dir/.engsys/project.yaml" ]; then
-    doctor_report warn 'project has not adopted Engineering System' \
-      'run: engsys init --verify <native verify command>'
-    printf '\n%s\n' "$failures problem(s) to fix"
-    [ "$failures" -eq 0 ] || exit 1
-    return
-  fi
-
-  if "$system_root/bin/engsys" check --project "$project_dir" >/dev/null 2>&1; then
-    doctor_report ok 'project contract and lock pass engsys check'
-  else
-    doctor_report fail 'project contract or lock does not pass engsys check' \
-      "run: engsys check --project $project_dir"
-    failures=$((failures + 1))
-  fi
-
-  if [ "$project_dir" != "$system_root" ]; then
-    project_hooks=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
-    if [ "$project_hooks" = .githooks ] && [ -f "$project_dir/.githooks/pre-push" ]; then
-      doctor_report ok 'project push gate is registered'
-    else
-      doctor_report warn 'project push gate is not registered' \
-        "run: engsys init --hooks, or point core.hooksPath at your own gate"
-    fi
-  fi
-
-  for hook_name in $(hook_names); do
-    case "$(hook_state "$project_dir" "$hook_name")" in
-      current|owned|unknown) ;;
-      missing) doctor_report warn "project hook is not installed: $hook_name" \
-        "run: engsys hooks update --project $project_dir" ;;
-      outdated) doctor_report warn "project hook is older than the template: $hook_name" \
-        "run: engsys hooks update --project $project_dir" ;;
-      modified) doctor_report warn "project hook differs from the template: $hook_name" \
-        "the project owns it; engsys hooks status shows the options" ;;
-    esac
-  done
-
-  contract="$project_dir/.engsys/project.yaml"
-  lock="$project_dir/.engsys/lock.yaml"
-  profile=$(project_profile "$contract")
-  if [ -f "$system_root/profiles/$profile.yaml" ]; then
-    doctor_report ok "profile $profile exists in this system checkout"
-  else
-    doctor_report fail "profile is unknown in this system checkout: $profile" \
-      'the project needs a system revision that declares this profile'
-    failures=$((failures + 1))
-  fi
-
-  locked=$(lock_system_revision "$lock")
-  if [ -z "$locked" ]; then
-    doctor_report fail 'lock has no system revision' 'run: engsys upgrade --apply'
-    failures=$((failures + 1))
-  elif git -C "$system_root" cat-file -e "$locked^{commit}" 2>/dev/null; then
-    doctor_report ok "locked system revision is available: $locked"
-    if git -C "$system_root" merge-base --is-ancestor "$locked" origin/main 2>/dev/null; then
-      if [ "$locked" = "$(git -C "$system_root" rev-parse origin/main 2>/dev/null)" ]; then
-        doctor_report ok 'lock is at origin/main'
-      else
-        doctor_report warn 'a newer system revision is on origin/main' \
-          "review it first: engsys upgrade --project $project_dir"
-      fi
-    else
-      doctor_report warn 'locked revision is not on origin/main yet' \
-        'push or merge it before a teammate clones this project; their engsys cannot fetch it'
-    fi
-  else
-    doctor_report fail "locked system revision is missing locally: $locked" \
-      "run: git -C $system_root fetch origin"
-    failures=$((failures + 1))
-  fi
-
-  printf '\n%s\n' "$failures problem(s) to fix"
-  [ "$failures" -eq 0 ] || exit 1
-}
-
-# 선언한 block 이 파싱되지 않으면 검사는 조용히 0건으로 통과한다. 들여쓰기를 잘못 쓴 계약이
-# 그대로 gate 를 지나가는 것을 막기 위해, 선언했는데 내용이 없는 경우를 오류로 본다.
 contract_block() {
   awk -v top="$1" -v want="$2" '
     $0 == top ":" { in_top = 1; next }
@@ -1277,6 +757,18 @@ require_tree_is_commit() {
   printf '%s commit %s\n' "$tree_label" "$tree_commit"
 }
 
+# CRLF 로 checkout 된 계약은 값 끝에 CR 을 달고 온다. 그 상태의 오류는 원인을 가리키지 않으므로
+# ("invalid profile name: 'baseline'") 먼저 잡아서 무엇을 해야 하는지 말한다.
+require_unix_line_endings() {
+  [ -f "$1" ] || return 0
+  # CR 을 지운 결과가 원본과 같으면 CR 이 없었다는 뜻이다. grep 에 CR 을 넘기는 방법은 shell 마다
+  # 다르게 동작해 쓸 수 없다.
+  tr -d '\r' <"$1" | cmp -s - "$1" && return 0
+  die "$1 has CRLF line endings; the POSIX sh parsers read the carriage return as part of a value
+  편집기에서 위 파일의 줄바꿈을 LF 로 바꾸고 저장한 뒤 다시 실행한다.
+  파일 내용은 유지하고 줄바꿈만 변환한다. .gitattributes 적용 여부도 확인한다."
+}
+
 check() {
   project_dir=$(pwd)
   check_revision=
@@ -1296,6 +788,8 @@ check() {
   lock="$project_dir/.engsys/lock.yaml"
   generated_paths="$project_dir/.engsys/generated-paths.txt"
   route="$project_dir/.claude/rules/engineering-system.md"
+  require_unix_line_endings "$contract" "$project_dir"
+  require_unix_line_endings "$lock" "$project_dir"
   if [ ! -f "$contract" ]; then
     die "no Engineering System contract in $project_dir
   this branch has not adopted the standard, or the adoption lives on another branch
@@ -1323,6 +817,11 @@ check() {
     'the branch block needs "    model:" at that indentation'
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
+  # 오타 난 변형은 아무 platform 에서도 실행되지 않는다. 조용히 무시하면 검사하지 않은 것을 통과시킨다.
+  unknown_key=$(sed -n '/^commands:/,/^[A-Za-z]/p' "$contract" \
+    | sed -n 's/^  \([A-Za-z0-9_-]*\):.*$/\1/p' \
+    | grep -vxE 'verify|verify-(macos|linux|windows)' | sed -n '1p')
+  [ -z "$unknown_key" ] || die "project contract has an unknown commands key: $unknown_key"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
   unknown_key=$(top_level_keys "$lock" | grep -vxE 'lock-version|system|profile|packages' | sed -n '1p')
   [ -z "$unknown_key" ] || die "lock has an unknown top-level key: $unknown_key"
@@ -1391,12 +890,14 @@ verify() {
   check --project "$project_dir"
 
   contract="$project_dir/.engsys/project.yaml"
-  verify_command=$(project_verify_command "$contract")
-  [ -n "$verify_command" ] || die "project contract has no commands.verify"
-  printf '%s\n' "Running project verification: $verify_command"
+  verify_platform=$(current_platform)
+  verify_key=$(project_verify_key "$contract" "$verify_platform")
+  [ -n "$verify_key" ] || die "project contract has no commands.verify"
+  verify_command=$(contract_command "$contract" "$verify_key")
+  printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
   (cd "$project_dir" && sh -c "$verify_command")
 
-  generated_commands=$(extract_generated_commands "$contract")
+  generated_commands=$(extract_generated_commands "$contract" "$verify_platform")
   if [ -n "$generated_commands" ]; then
     printf '%s\n' "$generated_commands" | while IFS= read -r generated_command; do
       [ -n "$generated_command" ] || continue
@@ -1559,6 +1060,7 @@ command=${1:-help}
 case "$command" in
   init) shift; init "$@" ;;
   check) shift; exec_locked_revision check "$@"; check "$@" ;;
+  setup) shift; setup "$@" ;;
   doctor) shift; doctor "$@" ;;
   hooks) shift; hooks "$@" ;;
   sync) shift; exec_locked_revision sync "$@"; sync "$@" ;;

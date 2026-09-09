@@ -62,7 +62,7 @@ python3 - "$project/.engsys/hooks.txt" <<'PY'
 import sys
 path = sys.argv[1]
 lines = []
-for line in open(path):
+for line in open(path, encoding="utf-8"):
     name = line.split("\t")[0]
     lines.append("%s\t%s\n" % (name, "0" * 40))
 open(path, "w").writelines(lines)

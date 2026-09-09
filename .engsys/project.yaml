@@ -47,6 +47,10 @@ documentation:
         type: 'decision-record'
       - path: 'docs/architecture'
         type: 'architecture'
+      - path: 'docs/verification'
+        type: 'verification-spec'
+      - path: 'docs/reports'
+        type: 'experiment-report'
       - path: 'docs/design'
         type: 'design-proposal'
     exempt:

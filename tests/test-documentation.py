@@ -12,6 +12,12 @@ documentation = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(documentation)
 
 
+def write(path, text):
+    """CRLF 로 저장하면 POSIX sh 와 awk 검사기가 값 끝의 CR 을 값의 일부로 읽는다."""
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+
+
 class HistoricalDocumentsTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -20,7 +26,7 @@ class HistoricalDocumentsTest(unittest.TestCase):
         (self.root / ".engsys").mkdir()
         (self.root / "docs/adr").mkdir(parents=True)
         shutil.copyfile(SYSTEM_ROOT / "packages/docs-gov/policy.yaml", self.root / "policy.yaml")
-        (self.root / ".engsys/project.yaml").write_text("""documentation:
+        write(self.root / ".engsys/project.yaml", """documentation:
   policy: 'policy.yaml'
   lifecycle:
     adr:
@@ -29,35 +35,35 @@ class HistoricalDocumentsTest(unittest.TestCase):
 """)
         self.record = self.root / "docs/adr/0001-example.md"
         self.valid = "---\ntype: adr\nstatus: accepted\n---\n\n# Decision\n"
-        self.record.write_text(self.valid)
+        write(self.record, self.valid)
 
     def errors(self):
         return "\n".join(documentation.check(self.root))
 
     def test_valid_record_and_local_links(self):
-        (self.root / "docs/with space.md").write_text("# Context\n")
-        self.record.write_text(self.valid + "\n[context](../with%20space.md#context)\n"
+        write(self.root / "docs/with space.md", "# Context\n")
+        write(self.record, self.valid + "\n[context](../with%20space.md#context)\n"
                                "[same][record]\n\n[record]: 0001-example.md\n")
         self.assertEqual(self.errors(), "")
 
     def test_unknown_status_fails(self):
-        self.record.write_text(self.valid.replace("accepted", "typo-accepted"))
+        write(self.record, self.valid.replace("accepted", "typo-accepted"))
         self.assertIn("unknown status", self.errors())
 
     def test_frontmatter_is_required(self):
         for text in ("# No metadata\n", "---\ntype: adr\n", self.valid.replace("type: adr\n", "")):
             with self.subTest(text=text):
-                self.record.write_text(text)
+                write(self.record, text)
                 self.assertIn("frontmatter", self.errors())
 
     def test_broken_inline_and_reference_links_fail(self):
         for link in ("[missing](missing.md)", "[missing]: missing.md"):
             with self.subTest(link=link):
-                self.record.write_text(self.valid + "\n" + link + "\n")
+                write(self.record, self.valid + "\n" + link + "\n")
                 self.assertIn("broken local link: missing.md", self.errors())
 
     def test_code_examples_and_external_links_are_not_followed(self):
-        self.record.write_text(self.valid + """
+        write(self.record, self.valid + """
 ```md
 [example](not-a-real-file.md)
 ```
@@ -76,11 +82,11 @@ class HistoricalDocumentsTest(unittest.TestCase):
 
     def test_unknown_frozen_status_fails(self):
         contract = self.root / ".engsys/project.yaml"
-        contract.write_text(contract.read_text().replace("['accepted']", "['typo']"))
+        write(contract, contract.read_text(encoding="utf-8").replace("['accepted']", "['typo']"))
         self.assertIn("unknown frozen-status", self.errors())
 
     def test_check_preserves_historical_prose(self):
-        self.record.write_text(self.valid + "\nAn old decision can differ from current code.\n")
+        write(self.record, self.valid + "\nAn old decision can differ from current code.\n")
         before = self.record.read_bytes()
         self.assertEqual(self.errors(), "")
         self.assertEqual(self.record.read_bytes(), before)

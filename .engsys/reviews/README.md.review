@@ -1,14 +1,27 @@
 engsys-document-review: 1
 document: README.md
-blob: e32258b4517af30472074da0482801a5abdc138b
+blob: 10cc0f4b9119db7640b096cd472255c71e41be82
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 이 레포를 처음 여는 팀원
-purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
+reviewer: Claude Opus 5 (자기 검토)
+audience: 표준을 채택하는 개발자와 이 레포를 고치는 기여자
+purpose: 표준을 어떻게 붙이고 무엇이 강제되며 무엇이 아직 아닌가
 
-"표준은 branch 이름을 갖지 않는다"를 굵게 적고 선언하지 않았을 때의 동작을 뒤에 붙였다.
-이전 문장은 "선언하지 않으면 계약의 기본값을 쓴다"였고 이제 사실이 아니다.
-hotfix 분기가 prefixes.hotfix 선언에 달렸다는 것을 함께 적었다. 이걸 빼면 hotfix 가 자동으로
-갈라진다고 읽는다.
-다른 절은 바꾸지 않았다.
+문서 전체를 다시 읽고 현재 구현과 대조했다. 채택 3단계, setup 8단계 표, 실패 시 출력 예시,
+upgrade·init·hooks·docs·review 절의 명령과 옵션, platform 변형 예시가 bin/engsys 와 lib/adoption.sh 의
+현재 동작과 일치한다.
+
+이번에 고친 것은 시스템 레포 개발 절의 push 전 강제 설명이다. 이전 문장은 pre-push 가
+sh tests/test-all.sh 와 문서 검토 검사를 실행한다고 했는데, hook 은 이제 전송 ref 마다
+bin/engsys verify --project . --revision <commit> 하나를 실행한다. 실제 .githooks/pre-push 와 맞도록
+바꾸고, 검사한 내용과 전송하는 내용이 같을 때만 통과한다는 조건을 함께 적었다.
+
+서버 CI 는 구성하지 않기로 해 이 문서에서 CI 관련 서술을 모두 없앴다. 대신 서버 검사가 없다는
+사실과 그로 인한 한계를 한 문단으로 남겼다. 로컬 hook 은 우회할 수 있고, 통과는 push 한 개발자의
+환경에서 얻은 결과이며 다른 OS 의 동작을 보증하지 않는다. 보증 범위를 넓게 읽지 않도록 명시했다.
+
+이미 적절했던 부분은 손대지 않았다. 첫 절이 경계를 먼저 밝히고, 채택 절차가 명령과 그 명령이 바꾸는
+것을 함께 적으며, 각 규칙의 근거를 ADR 링크로 연결한다. 명령·경로·옵션·출력 예시를 축약하지 않았다.
+
+미확정으로 남은 것은 서버 검사와 Windows 동작이며 본문에 그렇게 적었다. 해결되지 않은 모순은 없다.
+이 검토는 작성자 본인의 자기 검토이며 독립 검토나 사람의 승인이 아니다.
 

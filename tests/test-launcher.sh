@@ -16,7 +16,8 @@ system_copy="$test_dir/system"
 project_dir="$test_dir/project"
 fake_bin="$test_dir/fake-bin"
 cache_dir="$test_dir/cache"
-git clone -q "$source_root" "$system_copy"
+# Windows 는 임시 디렉터리 사이의 hardlink 를 만들지 못한다.
+git clone -q --no-hardlinks "$source_root" "$system_copy"
 
 # The source checkout can contain the change being tested. Copy it into an isolated Git history so
 # resolver and launcher tests always exercise the same clean, revision-locked tree.

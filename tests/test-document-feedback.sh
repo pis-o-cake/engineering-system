@@ -142,7 +142,7 @@ EOF
 session "$project"
 grep -Fq '"hookEventName": "SessionStart"' "$temporary/out"
 grep -Fq '검토 기록이 없는 문서 1편' "$temporary/out"
-python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$temporary/out"
+python3 -c 'import json,sys; json.load(open(sys.argv[1], encoding="utf-8"))' "$temporary/out"
 
 # 구조 findings 는 세지 않는다. 그건 작성 시점과 push gate 의 일이다.
 if grep -Fq '구조' "$temporary/out"; then

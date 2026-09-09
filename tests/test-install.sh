@@ -7,12 +7,14 @@ temporary=$(CDPATH= cd -- "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$temporary"' 0
 
 clone="$temporary/clone"
-git clone -q --local "$system_root" "$clone"
+# Windows 는 임시 디렉터리 사이의 hardlink 를 만들지 못한다.
+git clone -q --local --no-hardlinks "$system_root" "$clone"
 git -C "$clone" config user.name 'Install Fixture'
 git -C "$clone" config user.email 'fixture@example.test'
 # clone 은 commit 만 갖는다. 검사 대상은 working tree 의 install 과 launcher 다.
 cp "$system_root/install.sh" "$clone/install.sh"
 cp "$system_root/bin/engsys" "$clone/bin/engsys"
+cp "$system_root/lib/"*.sh "$clone/lib/"
 profile="$temporary/profile"
 
 install() { (cd "$clone" && ./install.sh --profile-file "$profile" "$@") >"$temporary/result" 2>&1 || true; }

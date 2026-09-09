@@ -3,6 +3,7 @@
 # gate 는 전송할 commit 을 판정해야 한다. working tree 를 검사하고 다른 commit 을 통과시키면
 # gate 가 있으나 없으나 같다.
 set -eu
+export ENGSYS_USE_CHECKOUT=1
 system_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 temporary=$(CDPATH= cd -- "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$temporary"' 0
@@ -83,5 +84,28 @@ git -C "$project" checkout -q -- value.txt
 check_only --revision "$head"
 grep -Fq "Checking commit $head" "$temporary/out"
 grep -Fq 'adapter checks passed' "$temporary/out"
+
+# checkout 하지 않은 commit 을 push 해도 생략하지 않고 실패해야 한다.
+other=$(git -C "$project" rev-parse HEAD^)
+printf 'refs/heads/other %s refs/heads/other 0000000000000000000000000000000000000000\n' "$other" \
+  >"$temporary/refs"
+if (cd "$project" && PATH="$system_root/bin:$PATH" /bin/sh .githooks/pre-push <"$temporary/refs") \
+    >"$temporary/out" 2>"$temporary/err"; then
+  printf 'a non-checkout commit must not skip verification\n' >&2; exit 1
+fi
+grep -Fq 'the working tree is not' "$temporary/err"
+
+# 자기 레포용 hook 도 native 검사를 시작하기 전에 전송 내용의 차이를 잡는다.
+mkdir -p "$project/bin"
+cat >"$project/bin/engsys" <<EOF
+#!/bin/sh
+exec "$system_root/bin/engsys" "\$@"
+EOF
+chmod +x "$project/bin/engsys"
+if (cd "$project" && /bin/sh "$system_root/.githooks/pre-push" <"$temporary/refs") \
+    >"$temporary/out" 2>"$temporary/err"; then
+  printf 'the self push gate must check the pushed commit\n' >&2; exit 1
+fi
+grep -Fq 'the working tree is not' "$temporary/err"
 
 printf 'ok the push gate judges the commit it sends\n'
