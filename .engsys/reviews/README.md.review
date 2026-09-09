@@ -1,13 +1,14 @@
 engsys-document-review: 1
 document: README.md
-blob: 6030d736683a33a2ee91b33b292aebec1c6c807e
+blob: e32258b4517af30472074da0482801a5abdc138b
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 이 레포를 처음 여는 팀원
 purpose: 무엇을 활성화하고 어떻게 프로젝트에 적용하는가
 
-"표준 버전 올리기" 절에 check --revision 문단을 넣었다. verify --revision 문단 바로 앞이다 —
-자체 검사를 직접 부르는 hook 이 verify 전체를 다시 돌리지 않고 대상 단언만 받는 경로가 필요했다.
-public-ai-qa 의 pre-push 가 그 경우다.
+"표준은 branch 이름을 갖지 않는다"를 굵게 적고 선언하지 않았을 때의 동작을 뒤에 붙였다.
+이전 문장은 "선언하지 않으면 계약의 기본값을 쓴다"였고 이제 사실이 아니다.
+hotfix 분기가 prefixes.hotfix 선언에 달렸다는 것을 함께 적었다. 이걸 빼면 hotfix 가 자동으로
+갈라진다고 읽는다.
 다른 절은 바꾸지 않았다.
 

@@ -1,0 +1,18 @@
+engsys-document-review: 1
+document: docs/adr/0017-the-standard-holds-no-branch-names.md
+blob: cb5a547e0c4bf85e0d4bdf3d85ef9e0cb8b07612
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 표준이 branch 이름을 갖는가
+
+새로 쓴 기록이라 전문을 다시 읽었다. 결정 5항목을 구현과 대조했다 — branch-defaults 제거,
+roles 미선언 시 check-settings 실패, base-branch 가 답하지 않는 것, branch block 없는 프로젝트를
+판정하지 않는 것, hotfix 접두사 선언 여부에 따른 분기.
+배경에 public-ai-qa 가 그 상태였다는 사실을 적었다. 가상의 위험이 아니라 관측이다.
+"기본값을 남기고 doctor 가 경고한다"를 첫 대안으로 둔 이유는 그것이 내가 먼저 제안한 절충이기
+때문이다. 버린 근거(경고를 읽기 전까지 남의 팀 이름으로 동작한다)를 적었다.
+영향 절에 동작이 바뀌는 지점을 명시했다 — prefixes.hotfix 를 선언하지 않으면 hotfix 분기 기준이
+일반 작업과 같아진다. 이전에는 기본값 때문에 갈라졌으므로 이건 실제 변화다.
+ADR 0014 의 어느 부분을 대체하는지 첫 문단에 적었다. 나머지 결정은 유효하다.
+

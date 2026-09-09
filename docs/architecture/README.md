@@ -158,6 +158,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0016](../adr/0016-a-scaffold-fills-the-form-not-the-writing.md)).
 - 프로젝트가 복사한 hook은 진단하고 덮어쓰지 않는다. 기록은 template 해시와 사본 해시 둘이다
   ([ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md)).
+- 표준은 branch 이름을 갖지 않는다. 선언하지 않으면 도구가 답하지 않는다
+  ([ADR 0017](../adr/0017-the-standard-holds-no-branch-names.md)).
 - branch model은 역할과 승격 방향만 정의하고 이름은 프로젝트가 선언한다. 도구는 그 선언을 읽고
   이름을 하드코딩하지 않는다 ([ADR 0014](../adr/0014-projects-name-their-branches.md)).
 - 커밋·MR 규약은 `vcs-gov`가 갖고 프로젝트는 값만 선언한다. 커밋은 세션 밖에서도 생기므로 강제는

@@ -93,18 +93,10 @@ merge-request:
     - '자동 생성 서명과 홍보 문구'
     - '리뷰어가 물을 것이 뻔한 trade-off 를 빼기'
 
-# 실제 branch 이름과 접두사는 프로젝트가 선언한다. 선언하지 않으면 아래 기본값을 쓴다.
+# branch 이름과 접두사는 표준이 갖지 않는다. 팀마다 다른 값이므로 프로젝트가 vcs.branch 에
+# 선언하고, 선언하지 않으면 도구는 답하지 않는다. 기본값을 두면 선언을 빠뜨린 프로젝트가
+# 남의 팀 이름을 물려받는다.
 # 이 선언은 로컬 규칙이다. Git 서버의 protected branch 설정은 여기서 적용되지 않는다.
-branch-defaults:
-  roles:
-    - role: development
-      branch: 'develop'
-    - role: production
-      branch: 'main'
-  prefixes:
-    feature: 'feat/'
-    fix: 'fix/'
-    hotfix: 'hotfix/'
 
 # model 은 역할과 분기·승격 방향을 정의한다. branch 이름은 정의하지 않는다.
 branch-models:
