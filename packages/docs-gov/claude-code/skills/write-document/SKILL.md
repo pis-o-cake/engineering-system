@@ -20,6 +20,13 @@ The project's `.engsys/project.yaml` assigns paths to types under `documentation
 Put the document where its assigned type says, or add the assignment when a genuinely new
 location is needed. Do not copy the common type rules into the project.
 
+Create the file with the scaffold rather than typing the form by hand. It fills the metadata,
+the filename, and the required headings from the same declaration:
+
+```sh
+"$ENGSYS_PLUGIN_ROOT/bin/engsys" docs new --type <type> --project <project> <slug>
+```
+
 Write the required sections in the declared order and answer each section's question with
 what the reader needs. Omit optional sections that do not apply rather than filling them
 with "not applicable". Never invent an alternative, an approval, an owner, or a deadline to

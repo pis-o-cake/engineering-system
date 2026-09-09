@@ -1,13 +1,14 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: f381172477a3c6a5dee828326b2d64af1674209b
+blob: 6e9065bc880d6900759a1b2c2074d526c38b1756
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-강제 지점 표의 계약 형식 행에서 native gate 열을 나눴다. engsys check 가 무엇을 보는지와 전체
-형식 검증이 어디에 있는지가 한 칸에 뭉쳐 있었다.
-다른 절과 표는 바꾸지 않았다. 검사 범위 규모 표시는 무엇을 막는 장치가 아니라 출력이라 표에
-넣지 않았다.
+제약과 근거에 ADR 0016 한 줄을 넣었다. 뼈대가 서식만 채운다는 것과 빈 절은 검사가 잡는다는
+두 사실을 한 줄에 담았다 — 둘이 한 쌍이라 나누면 각각 불완전하다.
+강제 지점 표는 손대지 않았다. docs new 는 무엇을 막지 않는다. 빈 절 검사는 이미 표의 문서 유형
+행이 덮는다.
+다른 절은 바꾸지 않았다.
 
