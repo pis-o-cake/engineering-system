@@ -5,6 +5,11 @@ set -eu
 system_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 temporary=$(CDPATH= cd -- "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$temporary"' 0
+# doctor 는 활성화한 개발자를 전제한다. fixture 도 launcher 를 PATH 에 두어
+# 개발자가 install.sh 를 돌렸는지에 결과가 달라지지 않게 한다.
+PATH="$system_root/bin:$PATH"
+export PATH
+
 project="$temporary/project"
 mkdir -p "$project/backend"
 git -C "$project" init -q
