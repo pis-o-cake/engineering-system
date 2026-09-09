@@ -1225,6 +1225,30 @@ doctor() {
   [ "$failures" -eq 0 ] || exit 1
 }
 
+# 선언한 block 이 파싱되지 않으면 검사는 조용히 0건으로 통과한다. 들여쓰기를 잘못 쓴 계약이
+# 그대로 gate 를 지나가는 것을 막기 위해, 선언했는데 내용이 없는 경우를 오류로 본다.
+contract_block() {
+  awk -v top="$1" -v want="$2" '
+    $0 == top ":" { in_top = 1; next }
+    /^[A-Za-z]/ { in_top = 0 }
+    in_top && $0 == "  " want ":" { in_block = 1; next }
+    in_top && /^  [a-z-]+:/ { in_block = 0 }
+    in_block { print }
+  ' "$3"
+}
+
+require_block_entries() {
+  block_contract=$1
+  block_top=$2
+  block_name=$3
+  block_pattern=$4
+  block_hint=$5
+  grep -q "^  $block_name:\$" "$block_contract" || return 0
+  contract_block "$block_top" "$block_name" "$block_contract" \
+    | grep -Eq "$block_pattern" \
+    || die "$block_top.$block_name is declared but no entry was read; $block_hint"
+}
+
 check() {
   project_dir=$(pwd)
   while [ "$#" -gt 0 ]; do
@@ -1258,6 +1282,14 @@ check() {
   # 하므로 additionalProperties:false를 최상위 key 검사로 근사한다.
   unknown_key=$(top_level_keys "$contract" | grep -vxE 'system|project|commands|documentation|vcs' | sed -n '1p')
   [ -z "$unknown_key" ] || die "project contract has an unknown top-level key: $unknown_key"
+  require_block_entries "$contract" documentation authoring '^      - path:' \
+    'each assignment needs "      - path:" and "        type:" at that indentation'
+  require_block_entries "$contract" documentation review '^      - ' \
+    'each scope needs "      - " at that indentation'
+  require_block_entries "$contract" documentation lifecycle '^    [a-z0-9_-]+:' \
+    'each lifecycle needs "    <name>:" at that indentation'
+  require_block_entries "$contract" vcs branch '^    [a-z-]+:' \
+    'the branch block needs "    model:" at that indentation'
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"

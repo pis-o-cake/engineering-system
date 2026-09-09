@@ -78,7 +78,7 @@ engsys verify
 | 대상 | Claude 보조 경로 | Native gate |
 |---|---|---|
 | 생성 문서 직접 수정 | `PreToolUse`에서 차단 | `engsys verify`가 generator 결과와 비교 |
-| 계약 형식 | 없음 | `engsys check` + `tools/validate-contract.py` |
+| 계약 형식 | 없음 | `engsys check`가 최상위 key·필수 항목·선언한 block이 읽혔는지 검사. 전체 형식은 `tools/validate-contract.py` |
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
 | 커밋 메시지 | `write-commit` skill이 계약과 프로젝트 선언을 읽음 | 프로젝트의 `commit-msg` hook이 `engsys vcs check-message` 실행 |

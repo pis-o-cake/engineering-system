@@ -1,15 +1,13 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 4dd15a4ae7ece53e66dafb4284eddfa2f132be29
+blob: f381172477a3c6a5dee828326b2d64af1674209b
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-구성 요소의 templates/project 항목을 현재 동작으로 고쳤다. "표준이 덮어쓰지 않는다"만으로는
-그래서 어떻게 아느냐가 빠져 있어 hooks status 를 덧붙였다. pre-push gate 를 Git hook 으로 넓혔다 —
-commit-msg 도 같은 seed 다.
-제약과 근거에 ADR 0015 한 줄을 넣었다.
-강제 지점 표는 손대지 않았다. hooks status 는 무엇을 막지 않는다.
-다른 절은 바꾸지 않았다.
+강제 지점 표의 계약 형식 행에서 native gate 열을 나눴다. engsys check 가 무엇을 보는지와 전체
+형식 검증이 어디에 있는지가 한 칸에 뭉쳐 있었다.
+다른 절과 표는 바꾸지 않았다. 검사 범위 규모 표시는 무엇을 막는 장치가 아니라 출력이라 표에
+넣지 않았다.
 
