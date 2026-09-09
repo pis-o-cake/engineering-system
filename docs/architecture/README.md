@@ -154,6 +154,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0013](../adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
 - 프로젝트 명령은 그 프로젝트가 lock한 revision에서 실행한다. 실행한 개발자의 checkout이 판정을
   바꾸지 않는다 ([ADR 0012](../adr/0012-project-commands-run-at-the-locked-revision.md)).
+- 문서 뼈대는 서식만 채운다. 빈 절은 구조 검사가 잡는다
+  ([ADR 0016](../adr/0016-a-scaffold-fills-the-form-not-the-writing.md)).
 - 프로젝트가 복사한 hook은 진단하고 덮어쓰지 않는다. 기록은 template 해시와 사본 해시 둘이다
   ([ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md)).
 - branch model은 역할과 승격 방향만 정의하고 이름은 프로젝트가 선언한다. 도구는 그 선언을 읽고

@@ -25,6 +25,7 @@ Usage:
   engsys verify [--project <directory>] [--revision <commit>]
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
+  engsys docs new --type <type> <slug> [--project <directory>] [--path <directory>]
   engsys vcs check-message <file> [--project <directory>]
   engsys vcs check-branch [--project <directory>] [--branch <name>]
   engsys vcs <base-branch|check-settings|settings> [--project <directory>] [--branch <name>]
@@ -871,12 +872,18 @@ init() {
 
 docs() {
   project_dir=$(pwd)
-  action=${1:-check}
+  docs_action=${1:-check}
+  action=$docs_action
   case "$action" in
-    check) shift ;;
+    check|new) shift ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown docs action: $action" ;;
   esac
+  if [ "$docs_action" = new ]; then
+    ENGSYS_SYSTEM_ROOT="$system_root" \
+      sh "$system_root/packages/docs-gov/bin/new-document.sh" "$@"
+    return
+  fi
   docs_path=
   while [ "$#" -gt 0 ]; do
     case "$1" in

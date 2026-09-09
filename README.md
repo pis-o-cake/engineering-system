@@ -218,8 +218,14 @@ branch 이름 규칙은 model의 `naming`이 기본값이고, 프로젝트가 `v
 계약을 읽는 절차를 제공한다.
 
 ```sh
+engsys docs new --type decision-record --project . cache-strategy
 engsys docs check --project .
 ```
+
+`docs new`는 배정된 경로에 metadata와 필수 절 제목을 만든다. 번호와 날짜도 유형이 정한 형식으로
+붙인다. **절의 내용은 만들지 않으므로 생성 직후의 파일은 검사를 통과하지 않는다** — 뼈대는
+타이핑을 줄이고 글은 작성자가 쓴다
+([ADR 0016](docs/adr/0016-a-scaffold-fills-the-form-not-the-writing.md)).
 
 `--path <문서>`를 주면 그 문서 하나만 본다. 배정되지 않은 경로와 없는 파일은 오류가 아니다.
 

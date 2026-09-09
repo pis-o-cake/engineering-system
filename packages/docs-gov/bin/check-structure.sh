@@ -203,10 +203,19 @@ document_facts() {
           next
         }
         /^# / && !seen_title { seen_title = 1; next }
-        /^## / { in_body = 1; title = substr($0, 4); gsub(/^[ \t]+|[ \t]+$/, "", title); print "head\t" title; next }
+        /^ {0,3}(`{3,}|~{3,})/ { fence = !fence; if (title != "") filled = 1; next }
+        fence { if (title != "") filled = 1; next }
+        /^## / {
+          if (title != "") print "head\t" filled "\t" title
+          in_body = 1; title = substr($0, 4); gsub(/^[ \t]+|[ \t]+$/, "", title); filled = 0; next
+        }
         /^#{1,6} / { next }
         !in_body && /[^ \t]/ { lead = 1 }
-        END { print "lead\t" (lead ? 1 : 0) }
+        title != "" && /[^ \t]/ { filled = 1 }
+        END {
+          if (title != "") print "head\t" filled "\t" title
+          print "lead\t" (lead ? 1 : 0)
+        }
       ' "$1" ;;
     *.html) awk '
         { document = document " " $0 }
@@ -227,8 +236,10 @@ document_facts() {
             close_at = index(chunk, "</h2>")
             if (close_at == 0) continue
             title = substr(chunk, 1, close_at - 1)
+            body = substr(chunk, close_at + 5)
             gsub(/<[^>]*>/, "", title); gsub(/^[ \t]+|[ \t]+$/, "", title)
-            print "head\t" title
+            gsub(/<[^>]*>/, "", body)
+            print "head\t" (body ~ /[^ \t]/ ? 1 : 0) "\t" title
           }
           print "lead\t" (document ~ /<h1[^>]*>[^<]*[^ \t<][^<]*<\/h1>/ ? 1 : 0)
         }
@@ -332,7 +343,8 @@ while IFS= read -r path; do
   awk -F"$tab" -v want="$canonical" '$1 == "section" && $2 == want { print $3 "\t" $4 "\t" $5 }' \
     "$work/types" >"$work/sections"
   [ -s "$work/sections" ] || continue
-  awk -F"$tab" '$1 == "head" { print $2 }' "$work/facts" >"$work/heads"
+  awk -F"$tab" '$1 == "head" { print $3 }' "$work/facts" >"$work/heads"
+  awk -F"$tab" '$1 == "head" { print $2 }' "$work/facts" >"$work/filled"
   rule_values "$work/types" "$canonical" frozen-status >"$work/frozen"
   frozen=false
   grep -Fxq -- "$status" "$work/frozen" && frozen=true
@@ -349,6 +361,8 @@ while IFS= read -r path; do
       continue
     fi
     if [ "$frozen" = true ]; then
+      [ "$(sed -n "${anywhere}p" "$work/filled")" = 1 ] \
+        || report "required section has no content ($key): $(sed -n "${anywhere}p" "$work/heads")"
       continue
     fi
     position=$(awk -v pattern="$pattern" -v from="$cursor" \
@@ -356,6 +370,8 @@ while IFS= read -r path; do
     if [ -z "$position" ]; then
       out_of_order="${out_of_order}${out_of_order:+ }$key"
     else
+      [ "$(sed -n "${position}p" "$work/filled")" = 1 ] \
+        || report "required section has no content ($key): $(sed -n "${position}p" "$work/heads")"
       cursor=$((position + 1))
     fi
   done <"$work/sections"
