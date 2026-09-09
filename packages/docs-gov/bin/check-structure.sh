@@ -140,10 +140,11 @@ while IFS="$tab" read -r _ pattern _; do
     *) [ ! -e "$project/$pattern" ] || existing_assignments=$((existing_assignments + 1)) ;;
   esac
 done <"$work/assign"
-if [ "$existing_assignments" -eq 0 ]; then
-  [ -z "$single_path" ] || exit 0
-  fail 'no documentation.authoring.assign path exists; fix the declaration'
-fi
+# 아직 만들지 않은 경로를 배정하는 것은 정상이다 — 그 자리에 문서를 만들면 유형이 정해져 있다.
+# 낡은 선언과 구분할 방법이 없으므로 막지 않고 알린다. 들여쓰기를 잘못 쓴 선언은 engsys check 가
+# 이미 오류로 잡는다.
+stale_assignments=false
+[ "$existing_assignments" -gt 0 ] || stale_assignments=true
 if [ -f "$project/.engsys/generated-paths.txt" ]; then
   cp "$project/.engsys/generated-paths.txt" "$work/generated"
 else
@@ -388,6 +389,8 @@ else
   printf 'Document structure: %s assigned documents, %s findings' "$checked" "$findings"
   printf ' (절 검사 유예 %s · 검사 제외 %s · 유형 미배정 %s)\n' \
     "$deferred_count" "$exempt_count" "$unassigned"
+  [ "$stale_assignments" = false ] \
+    || printf '  배정한 경로가 아직 하나도 없다. 문서를 만들면 검사 대상이 된다\n'
   if [ "$unassigned" -gt 0 ]; then
     sed -n '1,5p' "$work/unassigned" | sed 's/^/  유형 미배정: /'
     [ "$unassigned" -le 5 ] || printf '  유형 미배정: … 외 %s편\n' "$((unassigned - 5))"

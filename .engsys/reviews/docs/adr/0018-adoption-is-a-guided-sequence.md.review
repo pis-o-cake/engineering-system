@@ -1,0 +1,14 @@
+engsys-document-review: 1
+document: docs/adr/0018-adoption-is-a-guided-sequence.md
+blob: 4500765039adec44f69d0ad9b5d0ff216fabd7c5
+decision: pass
+reviewer: claude-opus-5 (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: 채택 절차를 어떻게 안내하는가
+
+결정 절에 최종 진단 항목을 추가했다. 마지막에 doctor 를 다시 돌리고 남은 문제가 있으면 성공으로
+끝내지 않는다는 것과, 그 이유(중간 단계가 경고만 내고 넘어갈 수 있다)를 함께 적었다.
+같은 결정("단계마다 확인하고 진행한다")의 빠진 항목을 채운 것이라 새 ADR 을 만들지 않았다.
+단계별 진행은 마지막에 무엇이 남았는지 말할 수 있어야 성립한다.
+날짜와 status 는 그대로다.
+

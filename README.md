@@ -30,6 +30,102 @@ status: active
 - [Baseline profile](profiles/baseline.yaml)
 - [Bootstrap workflow](workflows/bootstrap.yaml)
 
+## 처음 붙일 때
+
+표준은 프로젝트에 복사되지 않는다. 한 번 clone 해 두고, 붙일 프로젝트마다 계약 파일 두 개를
+만드는 것이 전부다.
+
+### 1. 표준을 clone 하고 활성화한다 — 이 컴퓨터에서 한 번
+
+```sh
+git clone https://github.com/pis-o-cake/engineering-system
+cd engineering-system
+./install.sh
+```
+
+`install.sh` 가 바꾸는 것은 둘이다. shell profile(`~/.zshrc` 등)에 `engsys` 를 PATH 에 넣는 한 줄을
+추가하고, 이 clone 의 Git hook 경로를 설정한다. 다른 프로젝트는 건드리지 않는다. 되돌리려면 그
+줄을 지운다.
+
+끝나면 **새 터미널을 연다.** 그래야 `engsys` 가 잡힌다.
+
+### 2. 붙일 프로젝트에서 setup 을 실행한다 — 프로젝트마다 한 번
+
+```sh
+cd /내/프로젝트
+engsys setup
+```
+
+경로를 적을 필요가 없다. 현재 디렉토리가 대상이다.
+
+`setup` 은 여덟 단계를 차례로 밟는다.
+
+| 단계 | 하는 일 |
+|---|---|
+| 1. 전제 도구 | `git` 이 있는지 본다. `python3` 와 Claude Code 는 없어도 되고, 없으면 무엇이 안 되는지 알려 준다 |
+| 2. 시스템 checkout | 표준이 어느 revision 인지, 팀원이 받을 수 있는 상태인지 확인한다 |
+| 3. 개발자 활성화 | `engsys` 가 PATH 에 있는지 본다. 없으면 `install.sh` 를 실행할지 묻는다 |
+| 4. 대상 프로젝트 | 프로젝트를 훑어 검사 명령·소스 경로·branch 이름을 **감지하고, 만들 계약 전문을 먼저 보여 준 뒤** 만들지 묻는다 |
+| 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
+| 6. 검사 | 계약이 올바른지 확인하고, 프로젝트의 기존 test 까지 돌릴지 묻는다 |
+| 7. 최종 진단 | `doctor` 를 한 번 더 돌린다. 남은 문제가 있으면 성공으로 끝내지 않는다 |
+| 8. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
+
+**파일을 바꾸기 전에는 반드시 먼저 보여 주고 묻는다.** 그냥 진행하려면 `--yes` 를 준다. 반대로
+터미널이 없고 `--yes` 도 없으면 시작하지 않는다 — 물어볼 수 없는데 진행하면 아무것도 안 하고
+성공한 것처럼 끝나기 때문이다.
+
+### 3. 만들어진 파일을 commit 한다
+
+```sh
+git add .engsys .githooks .claude
+git commit -m "build(engsys): Engineering System 계약 추가"
+```
+
+이 파일들이 있어야 팀원이 같은 계약을 받는다. 팀원은 1번(clone + `install.sh`)을 각자 하고,
+프로젝트에서 `engsys hooks update` 로 hook 을 켠다. Git 의 hook 경로 설정은 clone 으로 전달되지
+않기 때문이다.
+
+### 실패했을 때
+
+`setup` 은 실패해도 아무것도 되돌리지 않는다. 멈춘 단계와 다음에 할 일을 마지막에 다시 적어 주고,
+전체 출력을 파일로 남긴다. 터미널이 닫혀도 그 파일에 남아 있다.
+
+```
+멈춘 곳: [4] 대상 프로젝트
+위의 마지막 오류 줄이 이유다. 아무것도 되돌리지 않았으니 고치고 다시 실행하면 된다.
+
+  지금 상태 보기 : engsys doctor --project /내/프로젝트
+  다시 실행      : engsys setup --project /내/프로젝트
+  전체 기록      : /tmp/engsys-setup-4471.log
+```
+
+고친 뒤 `engsys setup` 을 다시 실행한다. 이미 끝난 단계는 그대로 통과한다.
+
+### 상태 확인
+
+```sh
+engsys doctor      # 지금 무엇이 빠졌는지, 각각 어떤 명령으로 고치는지
+engsys verify      # 계약·문서·프로젝트 test 를 전부 실행
+```
+
+`doctor` 는 진단만 하고 아무것도 고치지 않는다. 무엇을 실행할지 알려 주면 그것을 직접 실행한다.
+
+### Windows
+
+Git Bash 에서 연다. `bin/engsys` 는 확장자 없는 POSIX sh 라 PowerShell 이나 CMD 에서 실행하면
+Windows 가 연결 프로그램을 묻는다. 활성화 전이라 `engsys` 가 아직 PATH 에 없다면 `sh` 로 부른다.
+
+```sh
+cd /d/dev/engineering-system && sh install.sh
+```
+
+경로는 `D:\work\myapp` 이 아니라 `/d/work/myapp` 형식을 쓴다.
+
+---
+
+아래 절들은 `setup` 이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
+
 ## 활성화
 
 팀원은 이 레포를 clone한 뒤 한 번만 실행한다. 개발자 자신의 shell profile과 이 clone의 Git hook
@@ -37,7 +133,7 @@ status: active
 
 ```sh
 git clone https://github.com/pis-o-cake/engineering-system
-cd engineering-system && ./install.sh
+cd engineering-system && ./install.sh     # Windows: sh install.sh (Git Bash)
 ```
 
 `--print`를 주면 profile에 넣을 줄만 출력한다. profile에 이미 다른 checkout을 가리키는 줄이
@@ -86,6 +182,8 @@ revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는
 engsys init --project /path/to/project --detect --hooks
 engsys verify --project /path/to/project
 ```
+
+`--dry-run`을 주면 무엇을 쓸지 보여 주고 아무것도 바꾸지 않는다.
 
 `--detect`는 설정하지 않은 선언만 프로젝트에서 읽어 채우고 채운 값을 모두 출력한다 — native 검증
 명령, source-of-truth 디렉토리, 문서 정본 경로, lifecycle, 그리고 아직 문서가 없는 경로의 유형

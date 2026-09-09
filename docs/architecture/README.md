@@ -26,6 +26,7 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 ## 구성 요소
 
 - `bin/engsys` — 프로젝트가 실행하는 유일한 진입점. dependency 없는 POSIX sh다.
+  `setup`만 대화형이며, 나머지는 CI와 script가 부를 수 있도록 비대화형으로 둔다.
   계약 생성(`init`), 검사(`check`), 진단(`doctor`), 프로젝트 검증(`verify`), 문서 구조 검사(`docs`),
   문서 검토(`review`), lock 변경(`upgrade`), Claude Code 실행(`claude`)을 담당한다.
 - `install.sh` — 개발자 활성화. shell profile 한 줄과 이 clone의 `core.hooksPath`만 바꾼다.
@@ -158,6 +159,8 @@ Markdown·HTML 중 생성 문서를 제외하고 검토 기록을 대조한다. 
   ([ADR 0016](../adr/0016-a-scaffold-fills-the-form-not-the-writing.md)).
 - 프로젝트가 복사한 hook은 진단하고 덮어쓰지 않는다. 기록은 template 해시와 사본 해시 둘이다
   ([ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md)).
+- 채택은 `setup`이 단계마다 확인하고 진행한다. 파일을 바꾸기 전에 무엇을 바꿀지 보여 준다
+  ([ADR 0018](../adr/0018-adoption-is-a-guided-sequence.md)).
 - 표준은 branch 이름을 갖지 않는다. 선언하지 않으면 도구가 답하지 않는다
   ([ADR 0017](../adr/0017-the-standard-holds-no-branch-names.md)).
 - branch model은 역할과 승격 방향만 정의하고 이름은 프로젝트가 선언한다. 도구는 그 선언을 읽고
