@@ -118,4 +118,21 @@ accept 'fix(chat): rename the guard to shared
 reject 'fix(chat): drop the stale render guard.
 ' 'imperative'
 
+# gate 는 launcher 가 없거나 이 subcommand 를 모르는 engsys 를 만나면 commit 을 막지 않는다.
+hook="$temporary/commit-msg"
+cp "$system_root/templates/project/.githooks/commit-msg" "$hook"
+mkdir -p "$temporary/bin"
+for tool in git printf; do
+  tool_path=$(command -v "$tool" 2>/dev/null) || continue
+  ln -sf "$tool_path" "$temporary/bin/$tool"
+done
+printf 'fix(chat): 렌더링 누락 수정\n' >"$message"
+( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
+grep -Fq 'engsys is not on PATH' "$temporary/err"
+
+printf '#!/bin/sh\nexit 1\n' >"$temporary/bin/engsys"
+chmod +x "$temporary/bin/engsys"
+( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
+grep -Fq 'no vcs check-message' "$temporary/err"
+
 printf 'ok commit messages follow the system contract and the project declaration\n'
