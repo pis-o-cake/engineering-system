@@ -1243,7 +1243,8 @@ setup_body() {
   if "$system_root/bin/engsys" hooks status --project "$project_dir" >/dev/null 2>&1; then
     setup_ok '사본이 현재 template 과 맞다'
   elif setup_ask 'hook 을 설치하거나 갱신할까 (고친 사본은 건드리지 않는다)'; then
-    "$system_root/bin/engsys" hooks update --project "$project_dir" || true
+    "$system_root/bin/engsys" hooks update --project "$project_dir" \
+      || setup_warn 'hook 갱신이 끝나지 않았다. 위 출력을 보고 직접 처리한다'
   fi
   hooks_path=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
   [ -n "$hooks_path" ] && setup_ok "core.hooksPath = $hooks_path" \
@@ -1257,6 +1258,16 @@ setup_body() {
     "$system_root/bin/engsys" verify --project "$project_dir" || return 1
   else
     setup_note '나중에 engsys verify 로 확인한다'
+  fi
+
+  setup_say '최종 진단'
+  # 중간 단계가 경고만 내고 넘어갔을 수 있다. 마지막에 한 번 더 전체를 보고, 남은 문제가 있으면
+  # 성공으로 끝내지 않는다. 그러지 않으면 FAIL 을 본 사람이 무엇이 남았는지 알 수 없다.
+  if "$system_root/bin/engsys" doctor --project "$project_dir"; then
+    setup_ok 'doctor 가 고칠 문제를 찾지 못했다'
+  else
+    setup_warn '위 FAIL 항목이 남아 있다. 각 줄이 실행할 명령을 알려 준다'
+    return 1
   fi
 
   setup_say '남은 것'

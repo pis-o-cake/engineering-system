@@ -37,7 +37,8 @@ expect '미리보기, 쓰지 않음'
 expect 'detected verify command: make check'
 expect 'detected branch model: env-branch'
 expect 'Nothing was written'
-expect '[7] 남은 것'
+expect '[7] 최종 진단'
+expect '[8] 남은 것'
 [ -f "$project/.engsys/project.yaml" ]
 [ -x "$project/.githooks/commit-msg" ]
 [ "$(git -C "$project" config --get core.hooksPath)" = .githooks ]
@@ -77,5 +78,17 @@ log=$(sed -n 's/.*전체 기록      : //p' "$temporary/out" | sed -n '1p')
 [ -s "$log" ] || { printf 'setup must leave a transcript at %s\n' "$log" >&2; exit 1; }
 grep -Fq '[1] 전제 도구' "$log"
 rm -f "$log"
+
+# 마지막 진단에서 남은 문제가 있으면 성공으로 끝내지 않는다.
+sed "s/^\\( *\\)revision: .*/\\1revision: '0000000000000000000000000000000000000000'/" \
+  "$project/.engsys/lock.yaml" >"$temporary/lock"
+cp "$temporary/lock" "$project/.engsys/lock.yaml"
+if "$system_root/bin/engsys" setup --project "$project" --yes >"$temporary/out" 2>&1; then
+  printf 'setup must not report success while doctor still reports a failure\n' >&2
+  cat "$temporary/out" >&2
+  exit 1
+fi
+grep -Fq '멈춘 곳: [7] 최종 진단' "$temporary/out"
+grep -Fq '위 FAIL 항목이 남아 있다' "$temporary/out"
 
 printf 'ok setup checks each step before it changes anything\n'
