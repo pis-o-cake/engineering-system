@@ -5,6 +5,7 @@ set -eu
 test_root=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 "$test_root/test-block-generated-edit.sh"
 "$test_root/test-engsys.sh"
+sh "$test_root/test-line-endings.sh"
 sh "$test_root/test-generated-contract.sh"
 sh "$test_root/test-upgrade.sh"
 sh "$test_root/test-editorial-review.sh"

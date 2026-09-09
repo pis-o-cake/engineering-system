@@ -1476,6 +1476,18 @@ require_tree_is_commit() {
   printf '%s commit %s\n' "$tree_label" "$tree_commit"
 }
 
+# CRLF 로 checkout 된 계약은 값 끝에 CR 을 달고 온다. 그 상태의 오류는 원인을 가리키지 않으므로
+# ("invalid profile name: 'baseline'") 먼저 잡아서 무엇을 해야 하는지 말한다.
+require_unix_line_endings() {
+  [ -f "$1" ] || return 0
+  # CR 을 지운 결과가 원본과 같으면 CR 이 없었다는 뜻이다. grep 에 CR 을 넘기는 방법은 shell 마다
+  # 다르게 동작해 쓸 수 없다.
+  tr -d '\r' <"$1" | cmp -s - "$1" && return 0
+  die "$1 has CRLF line endings; the POSIX sh parsers read the carriage return as part of a value
+  편집기에서 위 파일의 줄바꿈을 LF 로 바꾸고 저장한 뒤 다시 실행한다.
+  파일 내용은 유지하고 줄바꿈만 변환한다. .gitattributes 적용 여부도 확인한다."
+}
+
 check() {
   project_dir=$(pwd)
   check_revision=
@@ -1495,6 +1507,8 @@ check() {
   lock="$project_dir/.engsys/lock.yaml"
   generated_paths="$project_dir/.engsys/generated-paths.txt"
   route="$project_dir/.claude/rules/engineering-system.md"
+  require_unix_line_endings "$contract" "$project_dir"
+  require_unix_line_endings "$lock" "$project_dir"
   if [ ! -f "$contract" ]; then
     die "no Engineering System contract in $project_dir
   this branch has not adopted the standard, or the adoption lives on another branch

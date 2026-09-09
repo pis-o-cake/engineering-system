@@ -1,0 +1,9 @@
+# 이 저장소의 script 와 계약은 POSIX sh·awk·sed 가 읽는다. CRLF 로 checkout 되면 값 끝에 \r 이
+# 붙어 'baseline' 이 'baseline\r' 이 되고, 파싱이 조용히 어긋나거나 알 수 없는 오류로 끝난다.
+# Windows 의 core.autocrlf 설정과 무관하게 LF 로 고정한다.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary

@@ -122,6 +122,12 @@ cd /d/dev/engineering-system && sh install.sh
 
 경로는 `D:\work\myapp` 이 아니라 `/d/work/myapp` 형식을 쓴다.
 
+이 저장소는 `.gitattributes` 로 줄바꿈을 LF 로 고정한다. Git for Windows 의 기본값
+(`core.autocrlf=true`)으로 CRLF 로 checkout 되면 sh 파서가 값 끝의 CR 을 값의 일부로 읽어
+`invalid profile name: 'baseline'` 같은 엉뚱한 오류가 난다. 기존 checkout에서 이 문제가 나면
+오류가 가리키는 파일을 편집기로 열어 줄바꿈을 **LF**로 바꾸고 저장한다. 파일 내용은 유지하고
+줄바꿈만 변환한 뒤 다시 검사한다. 저장소 전체를 초기화할 필요는 없다.
+
 ---
 
 아래 절들은 `setup` 이 부르는 명령을 하나씩 설명한다. 이미 익숙하면 직접 써도 된다.
