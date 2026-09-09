@@ -1,15 +1,15 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 3db241cb5eec5b44a78abdc3d4fb7ce0edf59211
+blob: 4d47aee3b08377b338cde1a7e8d03e841eec6965
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-실행 경로 절에 고정 실행 흐름을 blocktext 로 추가했다. 그 절에 engsys claude 와 engsys verify 의
-흐름은 있었지만 나머지 명령이 어느 코드로 도는지는 이 문서에 없었다.
-제약과 근거에 ADR 0012 한 줄을 넣었다.
-강제 지점 표는 손대지 않았다. 고정 실행은 무엇을 막는 장치가 아니라 어느 코드가 판정하는지의
+실행 경로 절에 verify --revision 흐름을 추가하고, 제약과 근거에 ADR 0013 한 줄을 넣었다.
+기존 verify 흐름 blocktext 는 그대로 두고 그 앞에 놓았다. --revision 은 그 경로를 대체하는 것이
+아니라 앞에 단언을 붙이는 것이라 순서가 뜻을 갖는다.
+강제 지점 표는 손대지 않았다. 이 변경은 무엇을 막느냐가 아니라 무엇을 대상으로 판정하느냐의
 문제다.
-다른 절은 바꾸지 않았다. 링크 12개가 실재하는지 확인했다.
+다른 절은 바꾸지 않았다.
 

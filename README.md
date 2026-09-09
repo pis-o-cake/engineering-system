@@ -68,6 +68,11 @@ revision에서 실행된다.** PATH의 `engsys`는 실행기이고, 판정하는
 넘기지 않으며, 표준을 고치는 중에는 `ENGSYS_USE_CHECKOUT=1`로 자기 수정을 쓸 수 있다
 ([ADR 0012](docs/adr/0012-project-commands-run-at-the-locked-revision.md)).
 
+`engsys verify --revision <commit>`은 working tree가 그 commit과 같은지 먼저 확인하고 다르면
+무엇이 다른지 출력한 뒤 중단한다. 기본 `pre-push`가 이 형태로 부르므로, gate는 검사한 내용과
+전송하는 내용이 같을 때만 통과한다
+([ADR 0013](docs/adr/0013-the-push-gate-judges-the-commit-it-sends.md)).
+
 `--apply`는 새 lock으로 native test와 generated document check까지 실행하고, 실패하면 이전 lock을
 복원한다. `doctor`는 lock이 아직 `origin/main`에 없으면 경고한다. 그 상태로 프로젝트를 push하면
 팀원의 clone이 그 revision을 fetch하지 못한다.
