@@ -1,0 +1,10 @@
+engsys-document-review: 1
+document: docs/adr/0020-platform-splits-belong-to-the-project.md
+blob: d1ff00b6e5576b6961300ba389ff85b1732d3091
+decision: pass
+reviewer: Claude (자기 검토)
+audience: 기술 책임자와 유지보수자
+purpose: native command 가 OS 마다 갈릴 때 무엇을 실행할지 누가 정하는가
+
+결정 다섯 줄이 구현과 일치하는지 코드와 대조했다. 접미사 목록은 bin/engsys 의 check 정규식과 schema 의 properties, awk 파서의 field 정규식 세 곳에 같은 값으로 들어가 있다. 기본 선언 필수는 emit 의 record 검사가 지킨다. 근거 절이 인용한 test 는 실재하며 네 경우를 모두 검사한다. 대안 세 가지는 각각 기각 이유가 다르므로 합치지 않았다. 영향 절에서 dependency 보장 범위를 ADR 0019 와 연결해 이 변경이 무엇을 해결하지 않는지 남겼다.
+

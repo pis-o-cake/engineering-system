@@ -1,10 +1,10 @@
 engsys-document-review: 1
 document: README.md
-blob: 52624314317c74ea801be8875f64a48e70da8741
+blob: 4e17daad89b1cef0d003bd27fa7781a44738a670
 decision: pass
-reviewer: Codex (자기 검토)
+reviewer: Claude (자기 검토)
 audience: 표준 도입자와 유지보수자
 purpose: 검사 실패와 버전 갱신 및 서버 CI를 어떻게 운영하는가
 
-문서 전체를 앞선 수정본과 대조했다. CI workflow의 세 OS와 Required verification job, 검증 명령, GitLab과 GitHub 검사 범위 구분을 확인했다. CRLF 복구는 LF 변환으로 한정하고 pinning 실패와 자기 레포 예외를 유지했다. 서버에서의 실제 통과 여부는 별도의 실행 결과로 확인하며, 이 기록은 그 실행을 대신하지 않는다.
+새로 넣은 "OS 마다 명령이 갈릴 때" 절만 읽었다. 분기가 필요 없는 경우를 먼저 보여 이 기능이 예외라는 것을 앞세웠다. 예시 YAML 의 두 경로는 실제 venv 구조와 맞고, 출력 문자열은 구현이 찍는 형식 그대로다. 사람이 고르는 절차가 없다는 점을 문장으로 명시했다. 접미사 목록과 기본 선언 필수 조건을 한 문장에 두어 계약 검사가 무엇을 막는지 읽는 사람이 알 수 있게 했다.
 

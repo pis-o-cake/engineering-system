@@ -1,10 +1,10 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 2c9f1fe8927ca53d72764e94d78d314bc37d7d2a
+blob: d6667cfe7b251bf171b7a61f04682fed898be4a0
 decision: pass
-reviewer: Codex (자기 검토)
+reviewer: Claude (자기 검토)
 audience: 시스템 유지보수자
 purpose: 실행 코드와 검사 대상의 경계 및 모듈의 책임은 무엇인가
 
-현재 전체 구조를 읽고 bin/engsys, 새 lib/adoption.sh 및 lib/plugin-runtime.sh의 함수 이동, validate-document.awk의 입력과 출력을 대조했다. 파일 이동 자체를 비용 절감으로 주장하지 않았다. CI의 OS별 작업과 집계 job, 사내 GitLab의 별도 경계, 로컬 우회 가능성을 구분했다. 문서 내용의 정확성을 형식 검사로 증명한다고 쓰지 않았다.
+verify 경로 코드블록 아래 문단만 읽었다. 판정 주체가 engsys 이고 판정 근거가 uname 이라는 사실, 실행한 키를 출력한다는 사실, 선언하지 않은 접미사를 check 가 막는다는 사실 세 가지를 담고 ADR 0020 으로 넘겼다. 이 문서는 구조를 설명하므로 예시 YAML 은 README 에만 두고 중복하지 않았다.
 

@@ -75,6 +75,11 @@ engsys verify
   → documentation.generated[].command (생성 문서 최신 여부)
 ```
 
+두 명령 모두 `-macos`·`-linux`·`-windows` 접미사를 붙인 변형을 선언할 수 있다. engsys가 `uname`으로
+platform을 판정해 변형이 있으면 그것을, 없으면 기본 선언을 실행한다. 실행한 키는 출력에 찍힌다.
+선언하지 않은 접미사는 어느 platform에서도 실행되지 않으므로 `engsys check`가 막는다
+([ADR 0020](../adr/0020-platform-splits-belong-to-the-project.md)).
+
 `engsys upgrade --apply`는 새 lock으로 위 verify 경로를 실행한다. 성공하면 새 lock을 유지하고,
 실패하거나 중단되면 이전 lock을 복원한다. native command가 바꾼 프로젝트 파일은 그 command의
 책임이며 lock 복원의 대상이 아니다.

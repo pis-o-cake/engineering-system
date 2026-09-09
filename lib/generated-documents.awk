@@ -46,7 +46,8 @@ function scalar(value,    quote, result, i, character, tail) {
 }
 
 function field(text,    key, value) {
-    if (text !~ /^(output|command):[ \t]/) fail("expected output or command scalar")
+    if (text !~ /^(output|command|command-(macos|linux|windows)):[ \t]/)
+        fail("expected output, command, or command-<macos|linux|windows> scalar")
     key = text
     sub(/:.*/, "", key)
     value = text
@@ -59,7 +60,11 @@ function emit(    key) {
     if (!entry) return
     if (!("output" in record) || !("command" in record))
         fail("each generated record requires output and command")
-    print record[requested]
+    # platform 변형은 기본 선언을 대체한다. 기본 선언은 어느 record 에나 있어야 한다.
+    if (requested == "command" && ("command-" platform) in record)
+        print record["command-" platform]
+    else
+        print record[requested]
     for (key in record) delete record[key]
     entry = 0
 }

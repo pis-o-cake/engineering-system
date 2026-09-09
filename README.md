@@ -237,6 +237,22 @@ mapping과 sequence, single-quoted scalar, `[a, b]` 형태의 inline list다. �
 generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —
 반영은 위 "표준 버전 올리기"의 `upgrade`가 맡는다.
 
+### OS 마다 명령이 갈릴 때
+
+`npm test`·`go test ./...`·`cargo test`·`./gradlew check`는 어느 OS에서나 같은 문자열이므로 한 줄로
+끝난다. Python venv처럼 실행 경로가 갈리는 경우에만 변형을 선언한다.
+
+```yaml
+commands:
+  verify: 'cd backend && .venv/bin/poe check'          # macOS·Linux
+  verify-windows: 'cd backend && .venv/Scripts/poe check'
+```
+
+`engsys verify`가 `uname`으로 판정해 알아서 고른다. 양쪽 머신에서 치는 명령은 똑같고, 고른 키는
+출력에 찍힌다 — `Running project verification (commands.verify-windows): ...`. 접미사는
+`-macos`·`-linux`·`-windows`뿐이며, 접미사 없는 기본 선언은 그대로 필수다.
+`documentation.generated[].command`도 같은 방식으로 `command-windows`를 갖는다.
+
 `documentation.generated`는 `output`과 `command`의 순서에 관계없이 읽는다. 각 항목은 두 값을
 모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로
 처리한다. 명령에 quote나 escape가 필요하면 single-quoted scalar를 쓴다.

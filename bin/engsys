@@ -180,9 +180,34 @@ top_level_keys() {
   sed -n 's/^\([A-Za-z][A-Za-z0-9_-]*\):.*$/\1/p' "$1"
 }
 
-project_verify_command() {
-  command=$(sed -n 's/^  verify:[[:space:]]*//p' "$1" | sed -n '1p')
+# venv 의 실행 경로처럼 OS 마다 갈리는 명령만 platform 변형으로 선언한다. Git Bash 의 uname 은
+# MINGW64_NT-10.0 처럼 답한다.
+current_platform() {
+  case "$(uname -s 2>/dev/null)" in
+    Darwin) printf 'macos' ;;
+    Linux) printf 'linux' ;;
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) printf 'windows' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+contract_command() {
+  command=$(sed -n "s/^  $2:[[:space:]]*//p" "$1" | sed -n '1p')
   yaml_unquote "$command"
+}
+
+# 이 platform 의 변형이 있으면 그것을, 없으면 기본 선언을 쓴다. 고르는 주체는 계약이지 사람이 아니다.
+project_verify_key() {
+  platform=${2:-$(current_platform)}
+  for key in "verify-$platform" verify; do
+    [ -z "$(contract_command "$1" "$key")" ] || { printf '%s' "$key"; return 0; }
+  done
+}
+
+project_verify_command() {
+  key=$(project_verify_key "$1" "${2:-}")
+  [ -n "$key" ] || return 0
+  contract_command "$1" "$key"
 }
 
 write_status_list() {
@@ -333,7 +358,8 @@ extract_generated_paths() {
 }
 
 extract_generated_commands() {
-  awk -v requested=command -f "$system_root/lib/generated-documents.awk" "$1"
+  awk -v requested=command -v platform="${2:-$(current_platform)}" \
+    -f "$system_root/lib/generated-documents.awk" "$1"
 }
 
 sync_generated_paths() {
@@ -791,6 +817,11 @@ check() {
     'the branch block needs "    model:" at that indentation'
   grep -Eq '^  name:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no project.name"
   grep -Eq '^  verify:[[:space:]]*[^[:space:]]' "$contract" || die "project contract has no commands.verify"
+  # 오타 난 변형은 아무 platform 에서도 실행되지 않는다. 조용히 무시하면 검사하지 않은 것을 통과시킨다.
+  unknown_key=$(sed -n '/^commands:/,/^[A-Za-z]/p' "$contract" \
+    | sed -n 's/^  \([A-Za-z0-9_-]*\):.*$/\1/p' \
+    | grep -vxE 'verify|verify-(macos|linux|windows)' | sed -n '1p')
+  [ -z "$unknown_key" ] || die "project contract has an unknown commands key: $unknown_key"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
   unknown_key=$(top_level_keys "$lock" | grep -vxE 'lock-version|system|profile|packages' | sed -n '1p')
   [ -z "$unknown_key" ] || die "lock has an unknown top-level key: $unknown_key"
@@ -859,12 +890,14 @@ verify() {
   check --project "$project_dir"
 
   contract="$project_dir/.engsys/project.yaml"
-  verify_command=$(project_verify_command "$contract")
-  [ -n "$verify_command" ] || die "project contract has no commands.verify"
-  printf '%s\n' "Running project verification: $verify_command"
+  verify_platform=$(current_platform)
+  verify_key=$(project_verify_key "$contract" "$verify_platform")
+  [ -n "$verify_key" ] || die "project contract has no commands.verify"
+  verify_command=$(contract_command "$contract" "$verify_key")
+  printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
   (cd "$project_dir" && sh -c "$verify_command")
 
-  generated_commands=$(extract_generated_commands "$contract")
+  generated_commands=$(extract_generated_commands "$contract" "$verify_platform")
   if [ -n "$generated_commands" ]; then
     printf '%s\n' "$generated_commands" | while IFS= read -r generated_command; do
       [ -n "$generated_command" ] || continue
