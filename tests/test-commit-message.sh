@@ -135,4 +135,27 @@ chmod +x "$temporary/bin/engsys"
 ( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
 grep -Fq 'no vcs check-message' "$temporary/err"
 
+# MR 본문 절 제목은 계약이 정본이다. template 이 그것과 어긋나면 작성자가 둘 중 하나를 고른다.
+contract="$system_root/packages/vcs-gov/commit-contract.yaml"
+awk '
+  /^merge-request:$/ { in_mr = 1; next }
+  /^[a-z-]/ { in_mr = 0 }
+  in_mr && /^      heading:/ {
+    line = $0; sub(/^      heading:[ \t]*/, "", line)
+    gsub(/^\047|\047$/, "", line)
+    if (line != "") print "## " line
+  }
+' "$contract" >"$temporary/headings"
+[ -s "$temporary/headings" ]
+for template in "$system_root/.github/pull_request_template.md" \
+                "$system_root/templates/project/.github/pull_request_template.md" \
+                "$system_root/templates/project/.gitlab/merge_request_templates/default.md"; do
+  grep '^## ' "$template" >"$temporary/template-headings"
+  if ! diff -q "$temporary/headings" "$temporary/template-headings" >/dev/null; then
+    printf 'Template headings differ from the contract: %s\n' "$template" >&2
+    diff "$temporary/headings" "$temporary/template-headings" >&2 || true
+    exit 1
+  fi
+done
+
 printf 'ok commit messages follow the system contract and the project declaration\n'
