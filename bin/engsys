@@ -18,7 +18,7 @@ usage() {
   cat <<'EOF'
 Usage:
   engsys init [--detect | --verify <command>] [options]
-  engsys check [--project <directory>]
+  engsys check [--project <directory>] [--revision <commit>]
   engsys doctor [--project <directory>]
   engsys hooks <status|update> [--project <directory>] [--force] [--adopt]
   engsys sync [--project <directory>]
@@ -1256,17 +1256,41 @@ require_block_entries() {
     || die "$block_top.$block_name is declared but no entry was read; $block_hint"
 }
 
+# 검사 대상이 전송할 commit 과 같은지 단언한다. commands.verify 와 generator 는 개발 환경
+# (untracked venv·node_modules)을 쓰므로 임의 commit 을 깨끗한 worktree 로 꺼내 돌릴 수 없다.
+# 그래서 실행하기 전에 tree 가 그 commit 인지 확인한다.
+require_tree_is_commit() {
+  tree_project=$1
+  tree_revision=$2
+  tree_label=$3
+  require_worktree "$tree_project"
+  tree_commit=$(git -C "$tree_project" rev-parse --verify "$tree_revision^{commit}" 2>/dev/null) \
+    || die "revision is not a commit: $tree_revision"
+  tree_differs=$(git -C "$tree_project" diff --name-only "$tree_commit" -- | sed -n '1,5p')
+  tree_extra=$(git -C "$tree_project" ls-files --others --exclude-standard | sed -n '1,5p')
+  if [ -n "$tree_differs$tree_extra" ]; then
+    printf '%s\n' "engsys: the working tree is not $tree_commit; these checks would judge other content" >&2
+    [ -z "$tree_differs" ] || printf '%s\n' "$tree_differs" | sed 's/^/  changed  /' >&2
+    [ -z "$tree_extra" ] || printf '%s\n' "$tree_extra" | sed 's/^/  untracked  /' >&2
+    die 'commit or stash the difference, or run without --revision'
+  fi
+  printf '%s commit %s\n' "$tree_label" "$tree_commit"
+}
+
 check() {
   project_dir=$(pwd)
+  check_revision=
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --revision) require_value "$@"; check_revision=$2; shift 2 ;;
       -h|--help) usage; exit 0 ;;
       *) die "unknown check option: $1" ;;
     esac
   done
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
+  [ -z "$check_revision" ] || require_tree_is_commit "$project_dir" "$check_revision" Checking
 
   contract="$project_dir/.engsys/project.yaml"
   lock="$project_dir/.engsys/lock.yaml"
@@ -1361,20 +1385,7 @@ verify() {
   # commands.verify 와 generator 는 개발 환경(untracked venv·node_modules)을 쓰므로 임의 commit 을
   # 깨끗한 worktree 로 꺼내 돌릴 수 없다. 대신 검사할 tree 가 그 commit 과 같은지 먼저 단언한다.
   # 그러지 않으면 working tree 를 검사하고 다른 commit 을 통과시킨다.
-  if [ -n "$verify_revision" ]; then
-    require_worktree "$project_dir"
-    verify_commit=$(git -C "$project_dir" rev-parse --verify "$verify_revision^{commit}" 2>/dev/null) \
-      || die "revision is not a commit: $verify_revision"
-    verify_differs=$(git -C "$project_dir" diff --name-only "$verify_commit" -- | sed -n '1,5p')
-    verify_extra=$(git -C "$project_dir" ls-files --others --exclude-standard | sed -n '1,5p')
-    if [ -n "$verify_differs$verify_extra" ]; then
-      printf '%s\n' "engsys: the working tree is not $verify_commit; these checks would judge other content" >&2
-      [ -z "$verify_differs" ] || printf '%s\n' "$verify_differs" | sed 's/^/  changed  /' >&2
-      [ -z "$verify_extra" ] || printf '%s\n' "$verify_extra" | sed 's/^/  untracked  /' >&2
-      die 'commit or stash the difference, or verify without --revision'
-    fi
-    printf '%s\n' "Verifying commit $verify_commit"
-  fi
+  [ -z "$verify_revision" ] || require_tree_is_commit "$project_dir" "$verify_revision" Verifying
   printf '%s\n' "Engineering System revision: $(system_revision)"
 
   check --project "$project_dir"
