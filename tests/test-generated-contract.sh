@@ -23,17 +23,28 @@ text = contract.read_text().replace(
 )
 contract.write_text(text)
 PY
-python3 "$system_root/tools/validate-contract.py" --project-dir "$test_dir"
-"$system_root/bin/engsys" sync --project "$test_dir" >/dev/null
-grep -Fxq 'docs/generated.md' "$test_dir/.engsys/generated-paths.txt"
-if "$system_root/bin/engsys" verify --project "$test_dir" >"$test_dir/verify.log" 2>&1; then
-  printf '%s\n' 'verify skipped a reordered generated command' >&2
+# 어느 단계가 깨졌는지 이름으로 남긴다. 조용히 종료하면 platform 차이를 좁힐 수 없다.
+fail() {
+  printf '%s\n' "$1" >&2
+  shift
+  [ "$#" -eq 0 ] || cat "$@" >&2
   exit 1
+}
+
+python3 "$system_root/tools/validate-contract.py" --project-dir "$test_dir"
+"$system_root/bin/engsys" sync --project "$test_dir" >"$test_dir/sync.log" 2>&1 \
+  || fail 'sync rejected a reordered generated record' "$test_dir/sync.log"
+grep -Fxq 'docs/generated.md' "$test_dir/.engsys/generated-paths.txt" \
+  || fail 'sync did not record the generated output' "$test_dir/.engsys/generated-paths.txt"
+if "$system_root/bin/engsys" verify --project "$test_dir" >"$test_dir/verify.log" 2>&1; then
+  fail 'verify skipped a reordered generated command' "$test_dir/verify.log"
 fi
-grep -Fq 'Running generated-document verification: false' "$test_dir/verify.log"
+grep -Fq 'Running generated-document verification: false' "$test_dir/verify.log" \
+  || fail 'verify did not name the generated command it ran' "$test_dir/verify.log"
 denied=$(printf '%s' '{"tool_input":{"file_path":"docs/generated.md"}}' \
   | CLAUDE_PROJECT_DIR="$test_dir" sh "$system_root/packages/docs-gov/claude-code/hooks/block-generated-edit.sh")
-printf '%s\n' "$denied" | grep -Fq '"permissionDecision": "deny"'
+printf '%s\n' "$denied" | grep -Fq '"permissionDecision": "deny"' \
+  || fail "generated output was not denied: [$denied]"
 
 # Exercise record pairing, scalar quoting and unsupported input against the CLI.
 python3 - "$system_root" "$test_dir" <<'PY'
