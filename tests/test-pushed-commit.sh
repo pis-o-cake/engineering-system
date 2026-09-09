@@ -69,4 +69,19 @@ grep -Fq 'untracked  extra.txt' "$temporary/err"
 rm "$project/extra.txt"
 verify --revision "$head" || true
 
+# check 도 같은 단언을 제공한다. 자체 검사를 직접 부르는 프로젝트 hook 이 verify 전체를 다시
+# 돌리지 않고 대상만 확인할 수 있어야 한다.
+check_only() { "$system_root/bin/engsys" check --project "$project" "$@" \
+  >"$temporary/out" 2>"$temporary/err"; }
+printf 'good\n' >"$project/value.txt"
+if check_only --revision "$head"; then
+  printf 'check --revision must refuse a working tree that is not the commit\n' >&2
+  exit 1
+fi
+grep -Fq 'the working tree is not' "$temporary/err"
+git -C "$project" checkout -q -- value.txt
+check_only --revision "$head"
+grep -Fq "Checking commit $head" "$temporary/out"
+grep -Fq 'adapter checks passed' "$temporary/out"
+
 printf 'ok the push gate judges the commit it sends\n'
