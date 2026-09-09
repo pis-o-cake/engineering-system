@@ -59,15 +59,21 @@ warn-subject-contains:
   - value: ' and '
     message: 'subject joins two changes — one change per commit'
 
+# heading 은 기본값이다. 매번 지어내면 MR 마다 제목이 달라져 읽는 사람이 구조를 다시 파악한다.
+# conclusion 은 제목 없이 첫 문단으로 쓴다.
 merge-request:
   sections:
     - key: conclusion
+      heading: ''
       question: '무엇을 바꿨고 왜 바꿨나. 여기만 읽어도 승인 판단이 서야 한다'
     - key: changes
+      heading: '변경'
       question: '구조와 동작이 달라진 지점. 성격이 다른 변경은 절로 가른다'
     - key: verification
+      heading: '검증'
       question: '실제로 돌린 명령과 그 출력. 건수와 결과를 적는다'
     - key: remaining
+      heading: '남은 것'
       question: '확인하지 못한 사실, 합의 대기 항목, 후속 작업'
   excluded:
     - 'commit 목록 복사 — git log 가 이미 보여준다'

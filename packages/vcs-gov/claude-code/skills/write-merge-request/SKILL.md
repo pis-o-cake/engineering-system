@@ -12,8 +12,13 @@ Read `merge-request` in `packages/vcs-gov/commit-contract.yaml` under the plugin
 required sections and what each one must answer. Read `vcs.merge-request` in the project's
 `.engsys/project.yaml` for the target branch. The title follows the same rule as a commit header.
 
-Answer each required section in the declared order. A section with nothing to report is dropped,
-not filled with "해당 없음". The excluded list in the contract names what does not belong.
+Answer each required section in the declared order, under the heading the contract declares.
+Use those headings verbatim — inventing a new phrasing per merge request makes every body read
+differently and forces the reviewer to work out the structure again. The section whose heading is
+empty carries no heading: it is the opening paragraph.
+
+A section with nothing to report is dropped, not filled with "해당 없음". The excluded list in the
+contract names what does not belong.
 
 State the conclusion first. A reviewer who reads only the first paragraph should know what changed
 and why. Put the background after it, or leave it out when the change explains itself.
