@@ -1,15 +1,15 @@
 engsys-document-review: 1
 document: docs/architecture/README.md
-blob: 4d47aee3b08377b338cde1a7e8d03e841eec6965
+blob: 96e3eb4b134a9d64c4dc49e896b11f744efa0ade
 decision: pass
 reviewer: claude-opus-5 (자기 검토)
 audience: 개발자와 운영자
 purpose: 지금 시스템이 어떤 경계로 동작하는가
 
-실행 경로 절에 verify --revision 흐름을 추가하고, 제약과 근거에 ADR 0013 한 줄을 넣었다.
-기존 verify 흐름 blocktext 는 그대로 두고 그 앞에 놓았다. --revision 은 그 경로를 대체하는 것이
-아니라 앞에 단언을 붙이는 것이라 순서가 뜻을 갖는다.
-강제 지점 표는 손대지 않았다. 이 변경은 무엇을 막느냐가 아니라 무엇을 대상으로 판정하느냐의
-문제다.
-다른 절은 바꾸지 않았다.
+강제 지점 표에 branch 설정 행을 추가하고 branch 이름 행의 Claude 보조 경로를 채웠다. 이전에는
+"없음"이었는데 write-commit 이 base-branch 를 부르게 되어 사실이 달라졌다.
+제약과 근거에 ADR 0014 한 줄을 넣었다.
+branch 설정 검사는 verify 안에서 돌므로 native gate 열에 조건을 적었다. vcs 선언이 없는
+프로젝트에서는 돌지 않는다.
+다른 절은 바꾸지 않았다. 링크 13개가 실재하는지 확인했다.
 

@@ -155,6 +155,32 @@ engsys vcs check-message .git/COMMIT_EDITMSG --project .
 강제는 Claude Code hook이 아니라 native git hook이 맡는다. 작성은 `/engsys:write-commit`과
 `/engsys:write-merge-request`가 돕는다.
 
+branch model은 역할과 분기·승격 방향만 정의한다. 실제 이름은 프로젝트가 정한다.
+
+```yaml
+vcs:
+  branch:
+    model: 'env-branch'
+    roles:                    # 선언 순서가 승격 순서다
+      - role: 'development'
+        branch: 'develop'
+      - role: 'production'
+        branch: 'main'
+    prefixes:
+      feature: 'feat/'
+      hotfix: 'hotfix/'
+```
+
+선언하지 않으면 계약의 기본값을 쓰되 model이 요구하는 역할만 남는다. `engsys vcs base-branch`가
+분기 기준을 답하고 `engsys vcs settings`가 해석된 값을 보여 준다. hook과 skill은 이 명령을 쓰고
+branch 이름을 직접 적지 않는다. 잘못된 선언은 `engsys verify`의 `check-settings`가 잡는다.
+
+이 선언은 로컬 규칙이다. **Git 서버의 protected branch 설정은 여기서 적용되지 않는다.**
+
+branch 이름 규칙은 model의 `naming`이 기본값이고, 프로젝트가 `vcs.branch.naming`에 pattern을
+선언하면 그것이 이긴다. 선언했을 때만 `engsys vcs check-branch`가 판정하며 push gate가 그것을
+부른다. protected branch와 detached HEAD는 대상이 아니다.
+
 기계가 판정할 수 있는 것만 막는다. `·` 나열처럼 커밋을 쪼갤 신호는 경고로 남기고 통과시킨다
 ([ADR 0011](docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).
 

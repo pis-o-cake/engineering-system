@@ -93,12 +93,46 @@ merge-request:
     - '자동 생성 서명과 홍보 문구'
     - '리뷰어가 물을 것이 뻔한 trade-off 를 빼기'
 
+# 실제 branch 이름과 접두사는 프로젝트가 선언한다. 선언하지 않으면 아래 기본값을 쓴다.
+# 이 선언은 로컬 규칙이다. Git 서버의 protected branch 설정은 여기서 적용되지 않는다.
+branch-defaults:
+  roles:
+    - role: development
+      branch: 'develop'
+    - role: production
+      branch: 'main'
+  prefixes:
+    feature: 'feat/'
+    fix: 'fix/'
+    hotfix: 'hotfix/'
+
+# model 은 역할과 분기·승격 방향을 정의한다. branch 이름은 정의하지 않는다.
 branch-models:
   - name: env-branch
     description: 'branch = environment. 배포 환경마다 영구 branch 를 두고 승격은 위로만 한다'
-    feature: 'base 위로 rebase 한 뒤 fast-forward merge'
-    promotion: '아래 환경에서 위 환경으로 fast-forward. 역방향 금지, hotfix back-merge 만 예외'
+    required-roles: ['development', 'production']
+    extra-roles: allowed
+    roles: '환경마다 하나. 선언 순서가 승격 순서다. development 와 production 사이에 staging 같은 환경을 넣을 수 있다'
+    base: '일반 작업은 첫 역할 branch 에서, hotfix 는 마지막 역할 branch 에서 분기한다'
+    branches: '환경마다 영구 branch 하나. 모두 protected 로 두고 직접 push 를 막는다'
+    feature: 'base 에서 분기해 base 위로 rebase 한 뒤 fast-forward merge. merge commit 을 만들지 않는다'
+    promotion: '아래 환경에서 위 환경으로 fast-forward 만. 역방향 금지, hotfix back-merge 가 유일한 예외'
+    hotfix: '마지막 역할 branch 에서 분기해 그 branch 에 fast-forward 하고 tag 를 붙인 뒤 아래 환경으로 back-merge 한다. back-merge 를 빠뜨리면 다음 승격에서 수정분이 사라진다'
+    release: 'release 는 tag 다. branch 가 아니다. 마지막 역할 branch 에 deploy 시점마다 semver tag 를 붙인다'
+    linear-history: 'feature 는 rebase 한다. 역할 branch 와 남이 이미 pull 한 branch 는 rebase 하지 않는다'
+    cleanup: 'merge 뒤 feature 와 hotfix branch 를 지운다'
+    naming: '<prefix><ticket>-<slug>. 접두사는 프로젝트의 vcs.branch.prefixes 가 정하고, 강제는 vcs.branch.naming 을 선언했을 때만 한다'
   - name: single-main
-    description: 'main 하나. 모든 작업은 short-lived branch 로 한다'
-    feature: 'main 위로 rebase 한 뒤 fast-forward merge'
-    promotion: '없음. main 이 곧 배포 대상이다'
+    description: '영구 branch 하나. 모든 작업은 short-lived branch 로 한다'
+    required-roles: ['production']
+    extra-roles: rejected
+    roles: 'production 하나. 배포 대상이 곧 base 다'
+    base: '일반 작업과 hotfix 모두 production 역할 branch 에서 분기한다'
+    branches: 'production 역할 branch 하나만 영구. protected 로 두고 직접 push 를 막는다'
+    feature: 'base 에서 분기해 base 위로 rebase 한 뒤 fast-forward merge'
+    promotion: '없음. production 역할 branch 가 곧 배포 대상이다'
+    hotfix: 'feature 와 같은 흐름을 쓴다. 별도 경로를 두지 않는다'
+    release: 'release 는 tag 다. production 역할 branch 에 deploy 시점마다 semver tag 를 붙인다'
+    linear-history: 'feature 는 rebase 한다. 역할 branch 와 남이 이미 pull 한 branch 는 rebase 하지 않는다'
+    cleanup: 'merge 뒤 branch 를 지운다'
+    naming: '<prefix><slug>. 접두사는 프로젝트의 vcs.branch.prefixes 가 정한다'

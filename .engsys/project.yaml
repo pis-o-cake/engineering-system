@@ -25,6 +25,9 @@ vcs:
       - 'vcs-gov'
   branch:
     model: 'single-main'
+    roles:
+      - role: 'production'
+        branch: 'main'
     protected:
       - 'main'
   merge-request:

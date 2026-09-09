@@ -10,8 +10,14 @@ unit of judgement. It is not a summary of the commit messages; `git log` already
 
 Read `merge-request` in `packages/vcs-gov/commit-contract.yaml` under the plugin root. It declares
 the title form, the section headings and their order, what each section answers, the writing rules,
-and what does not belong. Read `vcs.merge-request` in the project's `.engsys/project.yaml` for the
-target branch. The same contract applies to a merge request and a pull request.
+and what does not belong. Ask the project for the target branch instead of assuming one:
+
+```sh
+"$ENGSYS_PLUGIN_ROOT/bin/engsys" vcs settings --project <project>
+```
+
+It prints the branch model, the merge target, the role branches in promotion order, and the
+branch prefixes. Never write a branch name the project did not declare. The same contract applies to a merge request and a pull request.
 
 Use the declared headings verbatim and in the declared order. Do not invent a heading for this
 change. Put the detail inside the section it belongs to; add a subsection only when one section

@@ -50,7 +50,30 @@
           "additionalProperties": false,
           "properties": {
             "model": {"type": "string", "minLength": 1},
-            "protected": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            "roles": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["role", "branch"],
+                "additionalProperties": false,
+                "properties": {
+                  "role": {"type": "string", "minLength": 1},
+                  "branch": {"type": "string", "minLength": 1}
+                }
+              }
+            },
+            "prefixes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "feature": {"type": "string", "minLength": 1},
+                "fix": {"type": "string", "minLength": 1},
+                "hotfix": {"type": "string", "minLength": 1}
+              }
+            },
+            "protected": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "naming": {"type": "array", "items": {"type": "string", "minLength": 1}}
           }
         },
         "merge-request": {

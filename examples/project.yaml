@@ -10,6 +10,30 @@ project:
 commands:
   verify: make check
 
+vcs:
+  commit:
+    subject-language: en
+    subject-ending: imperative
+  branch:
+    model: env-branch
+    roles:
+      - role: development
+        branch: develop
+      - role: staging
+        branch: staging
+      - role: production
+        branch: main
+    prefixes:
+      feature: feature/
+      fix: fix/
+      hotfix: hotfix/
+    protected:
+      - develop
+      - staging
+      - main
+  merge-request:
+    target: develop
+
 documentation:
   policy: docs/documentation-policy.md
   architecture: docs/architecture/README.md
