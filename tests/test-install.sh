@@ -50,6 +50,16 @@ install
 grep -Fq 'Engineering System:' "$temporary/result"
 grep -Fq 'engsys on PATH' "$temporary/result"
 
+# Git Bash 의 $SHELL 은 /bin/bash.exe 다. 확장자 때문에 bash 분기를 놓치면 없던 .profile 을
+# 새로 만들어 거기에 쓰고, 로그인 셸이 읽는 파일에는 아무것도 남지 않는다.
+home="$temporary/home"
+mkdir -p "$home"
+: >"$home/.bashrc"
+: >"$home/.bash_profile"
+(cd "$clone" && HOME="$home" SHELL=/usr/bin/bash.exe ./install.sh) >"$temporary/result" 2>&1 || true
+grep -Fq "added the activation line to $home/.bash_profile" "$temporary/result"
+[ ! -e "$home/.profile" ]
+
 # 시스템 clone 밖에서는 실행하지 않는다.
 mkdir -p "$temporary/elsewhere"
 cp "$clone/install.sh" "$temporary/elsewhere/install.sh"
