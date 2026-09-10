@@ -3,6 +3,11 @@
 # Dependency-free project adapter for the Engineering System plugin.
 set -eu
 
+# git 은 hook 을 부를 때 GIT_INDEX_FILE 같은 변수를 상대 경로로 물려준다. 그대로 두면 engsys 가
+# cache worktree 를 상대로 도는 git 호출까지 호출자의 index 를 집어 전 파일을 변경으로 읽고,
+# 멀쩡한 cache 를 "local changes" 로 죽인다. 대상 저장소는 언제나 git -C 로 지정한다.
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_NAMESPACE
+
 if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ]; then
   system_root=$(CDPATH= cd -- "$ENGSYS_SYSTEM_ROOT" && pwd)
 else
