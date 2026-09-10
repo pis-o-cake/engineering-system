@@ -153,17 +153,19 @@ case "$body_file" in /*) ;; *) body_file="$cwd/$body_file" ;; esac
 [ -f "$body_file" ] || deny "engsys: the body file does not exist: $body_file"
 
 # 이 hook 을 부른 engsys 와 판정하는 engsys 는 같아야 한다. PATH 를 먼저 믿으면 개발자마다
-# 다른 checkout 이 답할 수 있다.
-if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ] && [ -x "$ENGSYS_SYSTEM_ROOT/bin/engsys" ]; then
-  launcher="$ENGSYS_SYSTEM_ROOT/bin/engsys"
-else
-  launcher=$(command -v engsys 2>/dev/null || true)
-fi
-[ -n "$launcher" ] || deny 'engsys: engsys is not on PATH, so the merge request body was not checked. Run install.sh in the system checkout.'
+# 다른 checkout 이 답할 수 있다. hook 은 로그인 셸이 아닌 곳에서 도는 경우가 있어 PATH 가
+# 비어 있을 수 있으므로, 자기가 실려 온 plugin 을 그다음 후보로 쓴다.
+launcher=
+for candidate in "${ENGSYS_SYSTEM_ROOT:-}" "${CLAUDE_PLUGIN_ROOT:-}"; do
+  [ -n "$candidate" ] || continue
+  if [ -f "$candidate/bin/engsys" ]; then launcher="$candidate/bin/engsys"; break; fi
+done
+[ -n "$launcher" ] || launcher=$(command -v engsys 2>/dev/null || true)
+[ -n "$launcher" ] || deny 'engsys: could not find engsys, so the merge request body was not checked. Run install.sh in the system checkout, or open the project with the Engineering System plugin enabled.'
 
 set -- vcs check-merge-request "$body_file" --project "$project_dir"
 [ -z "$title" ] || set -- "$@" --title "$title"
-if ! output=$("$launcher" "$@" 2>&1); then
+if ! output=$(sh "$launcher" "$@" 2>&1); then
   deny "$output"
 fi
 exit 0

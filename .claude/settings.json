@@ -9,19 +9,5 @@
   },
   "enabledPlugins": {
     "engsys@engineering-system": true
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "engsys vcs merge-request-hook",
-            "timeout": 15
-          }
-        ]
-      }
-    ]
   }
 }

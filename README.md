@@ -354,9 +354,14 @@ engsys vcs check-merge-request pr-body.md --title 'fix(auth): 로그인 게이�
 gh pr create --title 'fix(auth): 로그인 게이트 추가' --body-file pr-body.md
 ```
 
-`init`이 프로젝트에 남기는 `.claude/settings.json`이 `gh pr create` 앞에서 같은 판정을 부른다.
-읽을 수 없는 inline `--body`는 막는다. **강제하는 것은 세션이 읽은 skill이 아니라 저장소에 든
-이 설정이다** ([ADR 0022](docs/adr/0022-a-declared-contract-needs-a-gate-not-an-instruction.md)).
+`gh pr create` 앞에서 같은 판정을 부르는 것은 plugin이 등록한 hook이다. 읽을 수 없는 inline
+`--body`는 막는다. **강제하는 것은 세션이 읽은 skill이 아니라 저장소에 든 선언이다** — `init`이
+남기는 `.claude/settings.json`이 plugin을 붙이고, 그 plugin이 gate를 나른다
+([ADR 0022](docs/adr/0022-a-declared-contract-needs-a-gate-not-an-instruction.md) ·
+[ADR 0025](docs/adr/0025-the-gate-travels-with-the-plugin-not-the-path.md)).
+hook은 `engsys`를 `ENGSYS_SYSTEM_ROOT` → `CLAUDE_PLUGIN_ROOT` → PATH 순으로 찾는다. 로그인 셸이
+아닌 곳에서 도는 경우가 있어 PATH만 믿으면 gate가 꺼진 채로 돈다.
+
 판정 범위는 절 제목과 순서, 선언 밖 제목, 빈 절, 금지 문구, title 형식이다. 문체와 중복 서술은
 리뷰어가 본다.
 

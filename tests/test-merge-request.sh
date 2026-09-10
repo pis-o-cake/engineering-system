@@ -124,8 +124,10 @@ printf '## 아무 제목\n' >"$body"
 "$system_root/bin/engsys" vcs check-merge-request "$body" --project "$plain" >/dev/null 2>&1
 
 # --- gate ---
-# init 이 저장소에 gate 설정을 남긴다. skill 이 아니라 이것이 판정을 부른다.
-grep -Fq 'merge-request-hook' "$project/.claude/settings.json"
+# init 이 저장소에 표준을 가리키는 선언을 남긴다. gate 는 그 plugin 이 나른다. skill 을 읽었는지와
+# 무관하게, 그리고 PATH 가 비어 있어도 돌아야 한다.
+grep -Fq 'enabledPlugins' "$project/.claude/settings.json"
+grep -Fq 'check-merge-request.sh' "$system_root/adapters/claude-code/hooks/catalog.json"
 
 hook() { "$system_root/bin/engsys" vcs merge-request-hook <"$temporary/payload" \
   >"$temporary/out" 2>"$temporary/err"; }
@@ -192,6 +194,32 @@ denied 'a resolved path still gets judged' '선언하지 않은 절 제목'
 printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"D=$(mktemp -d)\\ngh pr create --body-file \\"$D/body.md\\""}}\n' \
   "$project" >"$temporary/payload"
 denied 'a path from command substitution' 'body file does not exist'
+
+# Claude Code 는 이 hook 을 plugin 경로로 직접 부른다. 그때 ENGSYS_SYSTEM_ROOT 는 없고, 로그인
+# 셸이 아니라 PATH 에 engsys 가 없을 수 있다. 그래도 자기가 실려 온 plugin 으로 판정해야 한다.
+gate="$system_root/packages/vcs-gov/claude-code/hooks/check-merge-request.sh"
+good
+payload "gh pr create --body-file $body"
+CLAUDE_PLUGIN_ROOT="$system_root" PATH="/usr/bin:/bin" ENGSYS_USE_CHECKOUT=1 \
+  sh "$gate" <"$temporary/payload" >"$temporary/out" 2>"$temporary/err" \
+  || fail 'the hook failed when invoked from the plugin without PATH'
+if grep -Fq 'permissionDecision' "$temporary/out"; then
+  printf 'the gate must judge a conforming body with the plugin it shipped in\n' >&2
+  cat "$temporary/out" >&2
+  exit 1
+fi
+
+printf '\n## 배경\n\n어쩌고\n' >>"$body"
+CLAUDE_PLUGIN_ROOT="$system_root" PATH="/usr/bin:/bin" ENGSYS_USE_CHECKOUT=1 \
+  sh "$gate" <"$temporary/payload" >"$temporary/out" 2>"$temporary/err" \
+  || fail 'the hook failed when invoked from the plugin without PATH'
+grep -Fq '선언하지 않은 절 제목' "$temporary/out" \
+  || fail 'the plugin-invoked gate did not judge the body'
+
+# 어디서도 찾지 못하면 조용히 넘기지 않고 그 사실을 돌려준다.
+PATH="/usr/bin:/bin" sh "$gate" <"$temporary/payload" >"$temporary/out" 2>&1 || true
+grep -Fq 'could not find engsys' "$temporary/out" \
+  || fail 'a hook that cannot find engsys must say so, not pass silently'
 
 # 계약을 선언하지 않은 프로젝트에서는 gate 가 돌지 않는다.
 printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"gh pr create --title x"}}\n' \

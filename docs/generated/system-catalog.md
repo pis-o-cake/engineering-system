@@ -96,7 +96,7 @@ Claude Code skill:
 
 Claude Code hook:
 
-- 없음
+- `PreToolUse` matcher `Bash` → `claude-code/hooks/check-merge-request.sh` (timeout 15s)
 
 ## Profiles
 
