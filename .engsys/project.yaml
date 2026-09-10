@@ -32,6 +32,17 @@ vcs:
       - 'main'
   merge-request:
     target: 'main'
+  tracker:
+    provider: 'github'
+    project: 'pis-o-cake/engineering-system'
+    default-assignee: 'pis-o-cake'
+    agent:
+      search: 'allowed'
+      create: 'allowed'
+      comment: 'allowed'
+      close: 'ask'
+      accept-risk: 'ask'
+      commit-deadline: 'ask'
 
 documentation:
   policy: 'packages/docs-gov/policy.yaml'

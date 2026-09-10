@@ -88,6 +88,39 @@
           "properties": {
             "target": {"type": "string", "minLength": 1}
           }
+        },
+        "tracker": {
+          "type": "object",
+          "required": ["provider", "project"],
+          "additionalProperties": false,
+          "properties": {
+            "provider": {"type": "string", "enum": ["github", "gitlab"]},
+            "project": {"type": "string", "minLength": 1},
+            "default-assignee": {"type": "string", "minLength": 1},
+            "labels": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "defect": {"type": "string", "minLength": 1},
+                "task": {"type": "string", "minLength": 1},
+                "decision": {"type": "string", "minLength": 1},
+                "blocked": {"type": "string", "minLength": 1},
+                "risk": {"type": "string", "minLength": 1}
+              }
+            },
+            "agent": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "search": {"type": "string", "enum": ["allowed", "ask"]},
+                "create": {"type": "string", "enum": ["allowed", "ask"]},
+                "comment": {"type": "string", "enum": ["allowed", "ask"]},
+                "close": {"type": "string", "enum": ["allowed", "ask"]},
+                "accept-risk": {"type": "string", "enum": ["allowed", "ask"]},
+                "commit-deadline": {"type": "string", "enum": ["allowed", "ask"]}
+              }
+            }
+          }
         }
       }
     },

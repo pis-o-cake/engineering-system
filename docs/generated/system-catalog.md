@@ -86,11 +86,13 @@ Claude Code hook:
 - merge request body contract and its native check
 - merge request gate that runs without a session instruction
 - branch model catalogue
+- unresolved-item contract and the project's tracker declaration
 
 Claude Code skill:
 
 - `write-commit` (`packages/vcs-gov/claude-code/skills/write-commit`)
 - `write-merge-request` (`packages/vcs-gov/claude-code/skills/write-merge-request`)
+- `track-unresolved` (`packages/vcs-gov/claude-code/skills/track-unresolved`)
 
 Claude Code hook:
 

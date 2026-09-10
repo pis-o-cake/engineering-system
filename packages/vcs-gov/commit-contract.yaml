@@ -78,6 +78,21 @@ merge-request:
       question: '호환성, 운영 영향, 채택에 필요한 조치, 남은 작업. 없으면 없음으로 적는다'
   # 절 제목과 금지 문구는 기계가 판정한다. writing 과 excluded 의 나머지는 사람이 본다.
   section-heading-prefix: '## '
+  # 후속 작업이 남았다고 쓰면서 그것을 어디서 추적하는지 적지 않으면, 그 항목은 이 본문에서만
+  # 산다. 표현이 있는데 링크가 없을 때만 막는다. 남은 것이 없다고 쓰는 본문은 대상이 아니다.
+  unresolved-needs-link:
+    section: '영향 및 후속 작업'
+    signals:
+      - '후속'
+      - '미결'
+      - '남은'
+      - '추적'
+      - 'TODO'
+    link-patterns:
+      - '#'
+      - 'issues/'
+      - '/-/issues/'
+    message: '후속 작업을 적었는데 추적할 항목 링크가 없다'
   forbidden-body-contains:
     - value: 'Generated with'
       message: '자동 생성 서명은 본문에 넣지 않는다'

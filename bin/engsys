@@ -52,6 +52,7 @@ Usage:
   engsys vcs check-merge-request <file> [--title <text>] [--project <directory>]
   engsys vcs merge-request-hook
   engsys vcs <base-branch|check-settings|settings> [--project <directory>] [--branch <name>]
+  engsys vcs <tracker|check-tracker> [--project <directory>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
@@ -1193,6 +1194,10 @@ case "$command" in
       base-branch|check-settings|settings)
         ENGSYS_SYSTEM_ROOT="$system_root" \
           sh "$system_root/packages/vcs-gov/bin/branch-settings.sh" "$@"
+        ;;
+      tracker|check-tracker)
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/tracker-settings.sh" "$@"
         ;;
       help|-h|--help) usage ;;
       *) die "unknown vcs action: $vcs_action" ;;
