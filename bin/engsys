@@ -55,6 +55,10 @@ Usage:
   engsys claude [--project <directory>] [claude arguments...]
   engsys shellenv
 
+Environment:
+  ENGSYS_USE_CHECKOUT=1       Judge with this checkout instead of the locked revision
+  ENGSYS_CACHE_DIR <path>     Where locked revisions are unpacked
+
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
   --detect                    Fill unset declarations by inspecting the project
@@ -1017,6 +1021,10 @@ upgrade() (
         exit 1
       fi
       printf '%s\n' 'engsys: upgrade failed; restored the previous lock' >&2
+      # 계약만 바꾼 변경이 프로젝트의 native test 때문에 막히면 lock 은 옛 revision 에
+      # 남고, 그 revision 이 모르는 key 를 계약이 쓰면 일상 명령까지 멈춘다. 탈출구를
+      # 여기서 댄다. lock 을 올리지 않고 이 checkout 으로 판정하는 길이다.
+      printf '%s\n' 'engsys: to keep working at the old lock, run with ENGSYS_USE_CHECKOUT=1' >&2
     else
       rm -f "$upgrade_backup"
     fi
