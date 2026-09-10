@@ -24,7 +24,9 @@ hook_state() {
 
   recorded_template=$(hook_recorded "$hook_project" "$hook_name" 2)
   recorded_installed=$(hook_recorded "$hook_project" "$hook_name" 3)
-  [ -n "$recorded_installed" ] || { printf 'modified'; return; }
+  # 기준 기록이 없으면 사본이 갈라진 이유를 알 수 없다. 프로젝트가 고쳤다고 단정하면
+  # template 이 움직인 경우에도 같은 문장이 나와 읽는 사람이 원인을 반대로 잡는다.
+  [ -n "$recorded_installed" ] || { printf 'unrecorded'; return; }
   [ "$installed_hash" = "$recorded_installed" ] || { printf 'modified'; return; }
   [ "$recorded_template" != "$template_hash" ] || { printf 'owned'; return; }
   [ "$recorded_installed" = "$recorded_template" ] || { printf 'modified'; return; }
@@ -120,6 +122,18 @@ hooks() {
           printf 'modified %s — 프로젝트가 고친 사본이다. 갱신하면 그 수정이 사라진다\n' "$hook_name"
           printf '         차이: diff %s %s\n' "$installed" "$template"
           printf '         갱신: engsys hooks update --force · 유지: engsys hooks update --adopt\n'
+          hooks_pending=$((hooks_pending + 1))
+        fi
+        ;;
+      unrecorded)
+        if [ "$hooks_action" = update ] && [ "$hooks_force" = true ]; then
+          install_hook
+          printf 'replaced %s — 기준 기록이 없던 사본을 template으로 덮었다\n' "$hook_name"
+        else
+          printf 'unrecorded %s — 사본이 template과 다르지만 기준 기록이 없다. 프로젝트가 고친 것인지 template이 바뀐 것인지 engsys는 모른다\n' "$hook_name"
+          printf '         차이: diff %s %s\n' "$installed" "$template"
+          printf '         차이가 프로젝트의 것이면: engsys hooks update --adopt\n'
+          printf '         차이가 template의 것이면: engsys hooks update --force\n'
           hooks_pending=$((hooks_pending + 1))
         fi
         ;;
@@ -422,6 +436,8 @@ doctor() {
         "run: engsys hooks update --project $project_dir" ;;
       modified) doctor_report warn "project hook differs from the template: $hook_name" \
         "the project owns it; engsys hooks status shows the options" ;;
+      unrecorded) doctor_report warn "project hook differs from the template with no baseline: $hook_name" \
+        "run: engsys hooks status --project $project_dir" ;;
     esac
   done
 
