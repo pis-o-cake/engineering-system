@@ -3,6 +3,11 @@
 # Dependency-free project adapter for the Engineering System plugin.
 set -eu
 
+# git 은 hook 을 부를 때 GIT_INDEX_FILE 같은 변수를 상대 경로로 물려준다. 그대로 두면 engsys 가
+# cache worktree 를 상대로 도는 git 호출까지 호출자의 index 를 집어 전 파일을 변경으로 읽고,
+# 멀쩡한 cache 를 "local changes" 로 죽인다. 대상 저장소는 언제나 git -C 로 지정한다.
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_NAMESPACE
+
 if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ]; then
   system_root=$(CDPATH= cd -- "$ENGSYS_SYSTEM_ROOT" && pwd)
 else
@@ -895,7 +900,17 @@ verify() {
   [ -n "$verify_key" ] || die "project contract has no commands.verify"
   verify_command=$(contract_command "$contract" "$verify_key")
   printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
-  (cd "$project_dir" && sh -c "$verify_command")
+  verify_status=0
+  (cd "$project_dir" && sh -c "$verify_command") || verify_status=$?
+  if [ "$verify_status" -ne 0 ]; then
+    # 127 은 shell 이 명령을 찾지 못한 것이다. 이 platform 의 변형을 선언하지 않았다면
+    # 경로가 갈리는 것이 첫 의심이다. 해법이 표준 안에 있으니 실패 지점에서 알려 준다.
+    if [ "$verify_status" -eq 127 ] && [ "$verify_key" = verify ] && [ "$verify_platform" != unknown ]; then
+      printf '%s\n' "engsys: commands.verify could not be run on $verify_platform" >&2
+      printf '%s\n' "engsys: declare commands.verify-$verify_platform in .engsys/project.yaml if this platform needs a different path" >&2
+    fi
+    exit "$verify_status"
+  fi
 
   generated_commands=$(extract_generated_commands "$contract" "$verify_platform")
   if [ -n "$generated_commands" ]; then

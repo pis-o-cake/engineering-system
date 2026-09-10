@@ -56,6 +56,20 @@ if engsys check --project "$project" >"$temporary/out" 2>&1; then
 fi
 grep -Fq 'unknown commands key: verify-win' "$temporary/out"
 
+# 기본 선언이 이 platform 에서 실행되지 않으면 해법을 실패 지점에서 알려 준다.
+# verify-windows 라는 답이 표준 안에 있는데 shell 의 127 만 흘리면 아무도 찾지 못한다.
+sed "s|^  verify:.*|  verify: './nowhere/poe check'|; /verify-win:/d" "$contract" >"$temporary/contract"
+cp "$temporary/contract" "$contract"
+if engsys verify --project "$project" >"$temporary/out" 2>&1; then
+  printf 'a missing verify command must fail\n' >&2
+  exit 1
+fi
+grep -Fq "declare commands.verify-$platform" "$temporary/out" || {
+  printf 'the failure must name the platform variant that would fix it\n' >&2
+  cat "$temporary/out" >&2
+  exit 1
+}
+
 # generated 문서의 재생성 명령도 같은 환경을 쓰므로 같은 방식으로 갈린다.
 generated="$temporary/generated"
 mkdir -p "$generated/docs/architecture"

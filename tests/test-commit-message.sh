@@ -130,10 +130,23 @@ printf 'fix(chat): 렌더링 누락 수정\n' >"$message"
 ( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
 grep -Fq 'engsys is not on PATH' "$temporary/err"
 
-printf '#!/bin/sh\nexit 1\n' >"$temporary/bin/engsys"
+# subcommand 자체가 없다고 말하는 engsys 만 낡은 것으로 보고 건너뛴다.
+cat >"$temporary/bin/engsys" <<'EOF'
+#!/bin/sh
+printf 'engsys: unknown command: vcs\n' >&2
+exit 1
+EOF
 chmod +x "$temporary/bin/engsys"
 ( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"
 grep -Fq 'no vcs check-message' "$temporary/err"
+
+# 그 밖의 이유로 죽은 engsys 는 gate 를 열지 않는다. 통과시키면 검사기가 없는 것과 같다.
+printf '#!/bin/sh\nexit 1\n' >"$temporary/bin/engsys"
+if ( cd "$project" && PATH="$temporary/bin" /bin/sh "$hook" "$message" ) >"$temporary/out" 2>"$temporary/err"; then
+  printf 'a broken engsys must not pass the commit message\n' >&2
+  exit 1
+fi
+grep -Fq 'failed before the commit message contract' "$temporary/err"
 
 # MR 본문 절 제목은 계약이 정본이다. template 이 그것과 어긋나면 작성자가 둘 중 하나를 고른다.
 contract="$system_root/packages/vcs-gov/commit-contract.yaml"

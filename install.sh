@@ -31,11 +31,33 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+# Git Bash 는 언제나 로그인 셸로 뜨고, .bash_profile -> .bash_login -> .profile 중 처음 있는
+# 파일 하나만 읽는다. 이미 있는 그 파일에 쓰지 않으면 새 터미널에서 활성화되지 않는다.
+bash_profile_file() {
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*|Windows_NT)
+      for candidate in "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile"; do
+        [ -f "$candidate" ] && { printf '%s' "$candidate"; return 0; }
+      done
+      printf '%s' "$HOME/.bash_profile"
+      ;;
+    *)
+      if [ -f "$HOME/.bash_profile" ]; then printf '%s' "$HOME/.bash_profile"
+      else printf '%s' "$HOME/.bashrc"; fi
+      ;;
+  esac
+}
+
 if [ -z "$profile_file" ]; then
-  case "${SHELL##*/}" in
+  # Git Bash 의 $SHELL 은 /bin/bash.exe 다. 확장자를 떼지 않으면 bash 분기에 걸리지 않고
+  # 없던 .profile 을 새로 만들어 거기에 쓴다.
+  shell_name=${SHELL##*/}
+  case "$shell_name" in
+    *.exe) shell_name=${shell_name%.exe} ;;
+  esac
+  case "$shell_name" in
     zsh) profile_file="${ZDOTDIR:-$HOME}/.zshrc" ;;
-    bash) if [ -f "$HOME/.bash_profile" ]; then profile_file="$HOME/.bash_profile"
-          else profile_file="$HOME/.bashrc"; fi ;;
+    bash) profile_file=$(bash_profile_file) ;;
     *) profile_file="$HOME/.profile" ;;
   esac
 fi
