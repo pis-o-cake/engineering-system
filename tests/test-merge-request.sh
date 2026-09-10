@@ -175,6 +175,24 @@ printf '\n## 배경\n\n어쩌고\n' >>"$body"
 payload "gh pr create --body-file $body"
 denied 'undeclared heading through the gate' '선언하지 않은 절 제목'
 
+# 같은 명령에서 세운 변수는 hook 프로세스의 환경에 없다. 그것 때문에 정상 명령을 막으면
+# 사람은 gate 를 우회할 방법부터 찾는다.
+good
+printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"OUT=%s\\ngh pr create --body-file \\"$OUT/body.md\\""}}\n' \
+  "$project" "$temporary" >"$temporary/payload"
+allowed 'a path built from an assignment in the same command'
+
+# 대입해 둔 변수라도 값이 계약을 어긴 본문을 가리키면 그대로 막는다.
+printf '\n## 배경\n\n어쩌고\n' >>"$body"
+printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"OUT=%s\\ngh pr create --body-file \\"$OUT/body.md\\""}}\n' \
+  "$project" "$temporary" >"$temporary/payload"
+denied 'a resolved path still gets judged' '선언하지 않은 절 제목'
+
+# 값을 알 수 없는 변수는 풀지 않는다. 읽지 못한 본문을 통과시키지 않는다.
+printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"D=$(mktemp -d)\\ngh pr create --body-file \\"$D/body.md\\""}}\n' \
+  "$project" >"$temporary/payload"
+denied 'a path from command substitution' 'body file does not exist'
+
 # 계약을 선언하지 않은 프로젝트에서는 gate 가 돌지 않는다.
 printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"gh pr create --title x"}}\n' \
   "$plain" >"$temporary/payload"

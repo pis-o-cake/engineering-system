@@ -71,6 +71,32 @@ except Exception:
     print("PARSE\tfailed")
     raise SystemExit(0)
 
+# shlex 는 변수를 펴지 않는다. 같은 명령에서 세운 변수는 hook 프로세스의 환경에도 없으므로
+# 명령 안의 대입을 먼저 모은다. 값이 명령 치환이면 알 수 없고, 그때는 통과시키지 않는다.
+ASSIGNMENT = re.compile(r"\A([A-Za-z_][A-Za-z0-9_]*)=(.*)\Z", re.S)
+REFERENCE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)")
+
+def resolve(value, known):
+    if value.startswith("~"):
+        value = os.path.expanduser(value)
+    if "$" not in value:
+        return value
+    def replace(hit):
+        name = hit.group(1) or hit.group(2)
+        if name in known:
+            return known[name]
+        return os.environ.get(name, hit.group(0))
+    return REFERENCE.sub(replace, value)
+
+assignments = {}
+try:
+    for word in shlex.split(strip_heredocs(command)):
+        found = ASSIGNMENT.match(word)
+        if found:
+            assignments[found.group(1)] = resolve(found.group(2), assignments)
+except Exception:
+    assignments = {}
+
 print("ACTION\t" + match.group(1))
 for word in words:
     if word in (";", "&&", "||", "|"):
@@ -78,10 +104,7 @@ for word in words:
     if word in ("--body-file", "--body", "--title"):
         position = words.index(word)
         value = words[position + 1] if position + 1 < len(words) else ""
-        # shlex 는 변수를 펴지 않는다. 경로에 $TMPDIR 가 남으면 열 수 없는 파일이 된다.
-        if "$" in value:
-            value = os.path.expandvars(value)
-        print(word + "\t" + value)
+        print(word + "\t" + resolve(value, assignments))
 ' 2>/dev/null) || parsed='PARSE	failed'
 else
   # python3 가 없으면 같은 자리 규칙을 grep 으로 본다. 읽지 못하면 통과시키지 않는다.
