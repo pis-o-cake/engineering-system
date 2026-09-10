@@ -8,6 +8,21 @@ set -eu
 # 멀쩡한 cache 를 "local changes" 로 죽인다. 대상 저장소는 언제나 git -C 로 지정한다.
 unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_NAMESPACE
 
+# MSYS_NO_PATHCONV=1 을 건 채로 engsys 를 부르면 native git.exe 가 /c/Users/... 형태를 못 열고,
+# 실패는 "cached revision is invalid" 로 나와 멀쩡한 cache 를 의심하게 만든다. 자기 git 호출은
+# 변환이 필요하므로 지우되, 프로젝트가 선언한 명령에는 호출자가 건 설정을 그대로 돌려준다.
+caller_msys_no_pathconv=${MSYS_NO_PATHCONV-}
+unset MSYS_NO_PATHCONV
+
+# 프로젝트가 계약에 선언한 명령을 그 프로젝트에서 실행한다.
+run_declared_command() {
+  if [ -n "$caller_msys_no_pathconv" ]; then
+    (cd "$1" && MSYS_NO_PATHCONV="$caller_msys_no_pathconv" sh -c "$2")
+  else
+    (cd "$1" && sh -c "$2")
+  fi
+}
+
 if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ]; then
   system_root=$(CDPATH= cd -- "$ENGSYS_SYSTEM_ROOT" && pwd)
 else
@@ -901,7 +916,7 @@ verify() {
   verify_command=$(contract_command "$contract" "$verify_key")
   printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
   verify_status=0
-  (cd "$project_dir" && sh -c "$verify_command") || verify_status=$?
+  run_declared_command "$project_dir" "$verify_command" || verify_status=$?
   if [ "$verify_status" -ne 0 ]; then
     # 127 은 shell 이 명령을 찾지 못한 것이다. 이 platform 의 변형을 선언하지 않았다면
     # 경로가 갈리는 것이 첫 의심이다. 해법이 표준 안에 있으니 실패 지점에서 알려 준다.
@@ -917,7 +932,7 @@ verify() {
     printf '%s\n' "$generated_commands" | while IFS= read -r generated_command; do
       [ -n "$generated_command" ] || continue
       printf '%s\n' "Running generated-document verification: $generated_command"
-      (cd "$project_dir" && sh -c "$generated_command")
+      run_declared_command "$project_dir" "$generated_command"
     done
   fi
   if grep -q '^vcs:' "$contract"; then

@@ -44,6 +44,20 @@ if run verify --project "$project"; then
 fi
 grep -Fq 'could not be prepared' "$temporary/err"
 git -C "$cached" checkout -q -- bin/engsys
+
+# 경로를 열지 못한 것과 담긴 revision 이 다른 것은 다른 문제다. 하나로 뭉치면 멀쩡한 cache 를
+# 지우라고 안내하게 되고, 실제 원인(환경이 경로를 가림)은 끝까지 보이지 않는다.
+mv "$cached/.git" "$temporary/cache-git"
+printf 'not a worktree link\n' >"$cached/.git"
+if run check --project "$project"; then
+  printf 'an unreadable cache must fail the check\n' >&2; exit 1
+fi
+grep -Fq 'could not read the cached revision' "$temporary/err"
+if grep -Fq 'cached revision is invalid' "$temporary/err"; then
+  printf 'an unreadable path must not be reported as a wrong revision\n' >&2; exit 1
+fi
+mv -f "$temporary/cache-git" "$cached/.git"
+
 git -C "$system_root" checkout -q -- bin/engsys
 
 # lock 을 vcs-gov 이전 commit 으로 내리면 그 revision 의 engsys 가 돈다.
