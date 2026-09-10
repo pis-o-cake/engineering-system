@@ -57,20 +57,51 @@ expect 'adopted  pre-push'
 hooks status
 expect '프로젝트가 소유한 사본이다'
 
-# 확인한 뒤 template 이 다시 바뀌면 알린다.
+# 확인한 뒤 template 이 다시 바뀌면 알린다. 기록의 template 해시만 옮겨 그 상황을 만든다.
 python3 - "$project/.engsys/hooks.txt" <<'PY'
 import sys
 path = sys.argv[1]
 lines = []
 for line in open(path, encoding="utf-8"):
-    name = line.split("\t")[0]
-    lines.append("%s\t%s\n" % (name, "0" * 40))
+    name, _recorded_template, recorded_installed = line.rstrip("\n").split("\t")
+    lines.append("%s\t%s\t%s\n" % (name, "0" * 40, recorded_installed))
 open(path, "w").writelines(lines)
 PY
 if hooks status; then
   printf 'a template change after adoption must be reported\n' >&2; exit 1
 fi
 expect 'modified pre-push'
+
+# 기준 기록이 없으면 갈라진 이유를 모른다. 프로젝트가 고쳤다고 단정하지 않는다.
+rm -f "$project/.engsys/hooks.txt"
+if hooks status; then
+  printf 'a copy without a baseline must not report as current\n' >&2; exit 1
+fi
+expect 'unrecorded pre-push'
+grep -Fq 'engsys는 모른다' "$temporary/out"
+if grep -Fq 'modified pre-push' "$temporary/out"; then
+  printf 'engsys must not claim the project edited a copy it has no record of\n' >&2; exit 1
+fi
+PATH="$system_root/bin:$PATH" "$system_root/bin/engsys" doctor --project "$project" \
+  >"$temporary/out" 2>&1 || true
+grep -Fq 'differs from the template with no baseline' "$temporary/out"
+
+# --adopt 는 그 사본을 그대로 두고 기준선을 다시 세운다.
+hooks update --adopt
+expect 'adopted  pre-push'
+hooks status
+expect '프로젝트가 소유한 사본이다'
+
+# doctor 검사를 위해 template 이 바뀐 상황으로 되돌린다.
+python3 - "$project/.engsys/hooks.txt" <<'PY'
+import sys
+path = sys.argv[1]
+lines = []
+for line in open(path, encoding="utf-8"):
+    name, _recorded_template, recorded_installed = line.rstrip("\n").split("\t")
+    lines.append("%s\t%s\t%s\n" % (name, "0" * 40, recorded_installed))
+open(path, "w").writelines(lines)
+PY
 
 # doctor 도 같은 상태를 보고한다.
 PATH="$system_root/bin:$PATH" "$system_root/bin/engsys" doctor --project "$project" \
