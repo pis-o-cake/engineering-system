@@ -13,3 +13,8 @@ package:
       - claude-code/skills/write-commit
       - claude-code/skills/write-merge-request
       - claude-code/skills/track-unresolved
+    hooks:
+      - event: PreToolUse
+        matcher: Bash
+        command: claude-code/hooks/check-merge-request.sh
+        timeout: 15

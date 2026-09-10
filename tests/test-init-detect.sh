@@ -123,7 +123,6 @@ init --detect
 grep -Fq 'declaring engsys@' "$temporary/result"
 grep -Fq '"enabledPlugins"' "$project/.claude/settings.json"
 grep -Fq '"extraKnownMarketplaces"' "$project/.claude/settings.json"
-grep -Fq 'merge-request-hook' "$project/.claude/settings.json"
 if grep -Fq '__MARKETPLACE__' "$project/.claude/settings.json"; then
   printf 'the marketplace placeholder was not filled in\n' >&2
   exit 1

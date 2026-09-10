@@ -3,6 +3,7 @@ type: decision-record
 id: 0022
 status: accepted
 date: 2026-09-10
+superseded-in-part-by: 0025
 ---
 
 # 0022. 선언한 규약에는 지시문이 아니라 gate 가 필요하다
