@@ -900,7 +900,17 @@ verify() {
   [ -n "$verify_key" ] || die "project contract has no commands.verify"
   verify_command=$(contract_command "$contract" "$verify_key")
   printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
-  (cd "$project_dir" && sh -c "$verify_command")
+  verify_status=0
+  (cd "$project_dir" && sh -c "$verify_command") || verify_status=$?
+  if [ "$verify_status" -ne 0 ]; then
+    # 127 은 shell 이 명령을 찾지 못한 것이다. 이 platform 의 변형을 선언하지 않았다면
+    # 경로가 갈리는 것이 첫 의심이다. 해법이 표준 안에 있으니 실패 지점에서 알려 준다.
+    if [ "$verify_status" -eq 127 ] && [ "$verify_key" = verify ] && [ "$verify_platform" != unknown ]; then
+      printf '%s\n' "engsys: commands.verify could not be run on $verify_platform" >&2
+      printf '%s\n' "engsys: declare commands.verify-$verify_platform in .engsys/project.yaml if this platform needs a different path" >&2
+    fi
+    exit "$verify_status"
+  fi
 
   generated_commands=$(extract_generated_commands "$contract" "$verify_platform")
   if [ -n "$generated_commands" ]; then

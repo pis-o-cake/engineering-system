@@ -280,8 +280,11 @@ setup_body() {
     || setup_warn 'core.hooksPath 가 없다. hook 이 돌지 않는다'
 
   setup_say '검사'
-  "$system_root/bin/engsys" check --project "$project_dir" >/dev/null \
-    || die '계약 검사가 실패했다. 위 오류를 먼저 고친다'
+  # 진단은 stdout 으로도 나온다. 통째로 버리면 실패 원인이 사라진 채 "고쳐라"만 남는다.
+  if ! setup_output=$("$system_root/bin/engsys" check --project "$project_dir" 2>&1); then
+    [ -z "$setup_output" ] || printf '%s\n' "$setup_output" >&2
+    die '계약 검사가 실패했다. 위 오류를 먼저 고친다'
+  fi
   setup_ok '계약과 lock 이 engsys check 를 통과한다'
   if setup_ask 'engsys verify 실행 (프로젝트의 native test 포함, 시간이 걸린다)'; then
     "$system_root/bin/engsys" verify --project "$project_dir" || return 1
