@@ -51,6 +51,22 @@ record_hook_baseline() {
   mv -f "$hook_record_file.next" "$hook_record_file"
 }
 
+# core.hooksPath 는 .git/config 에 있어 commit 되지 않는다. hook 파일을 받은 팀원도 이것을
+# 세우지 않으면 git 이 그 파일을 부르지 않는다. 게이트가 통째로 사라지는 지점이다.
+register_hooks_path() {
+  hooks_dir=$1
+  current_hooks_path=$(git -C "$hooks_dir" config --get core.hooksPath 2>/dev/null || true)
+  if [ -z "$current_hooks_path" ]; then
+    git -C "$hooks_dir" config core.hooksPath .githooks
+    printf 'registered core.hooksPath .githooks\n'
+  elif [ "$current_hooks_path" = .githooks ]; then
+    printf 'core.hooksPath is already .githooks\n'
+  else
+    printf 'left core.hooksPath as %s; run the gate from there or change it yourself\n' \
+      "$current_hooks_path"
+  fi
+}
+
 hooks() {
   project_dir=$(pwd)
   hooks_action=${1:-status}
@@ -141,7 +157,10 @@ hooks() {
     esac
   done
 
-  [ "$hooks_action" = status ] || return 0
+  if [ "$hooks_action" = update ]; then
+    register_hooks_path "$project_dir"
+    return 0
+  fi
   [ "$hooks_pending" -eq 0 ] || return 1
 }
 
@@ -290,8 +309,16 @@ setup_body() {
       || setup_warn 'hook 갱신이 끝나지 않았다. 위 출력을 보고 직접 처리한다'
   fi
   hooks_path=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
-  [ -n "$hooks_path" ] && setup_ok "core.hooksPath = $hooks_path" \
-    || setup_warn 'core.hooksPath 가 없다. hook 이 돌지 않는다'
+  if [ -n "$hooks_path" ]; then
+    setup_ok "core.hooksPath = $hooks_path"
+  else
+    setup_note 'core.hooksPath 가 없다. 이 설정은 commit 되지 않으므로 clone 한 사람마다 세운다'
+    if setup_ask 'core.hooksPath 를 .githooks 로 설정'; then
+      register_hooks_path "$project_dir"
+    else
+      setup_warn '건너뛴다. hook 파일이 있어도 git 이 부르지 않는다'
+    fi
+  fi
 
   setup_say '검사'
   # 진단은 stdout 으로도 나온다. 통째로 버리면 실패 원인이 사라진 채 "고쳐라"만 남는다.
