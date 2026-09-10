@@ -71,8 +71,18 @@ awk "$unquote_awk"'
   /^      question:/ {
     line = $0; sub(/^      question:/, "", line); print "question\t" unq(line) "\t"; next
   }
+  /^  unresolved-needs-link:$/ { in_unresolved = 1; next }
   /^  forbidden-body-contains:$/ { in_forbidden = 1; next }
-  /^  [a-z-]+:/ { in_forbidden = 0 }
+  /^  [a-z-]+:/ { in_forbidden = 0; in_unresolved = 0 }
+  in_unresolved && /^    section:/ {
+    line = $0; sub(/^    section:/, "", line); print "unresolved-section\t" unq(line) "\t"; next
+  }
+  in_unresolved && /^    message:/ {
+    line = $0; sub(/^    message:/, "", line); print "unresolved-message\t" unq(line) "\t"; next
+  }
+  in_unresolved && /^    signals:$/ { list = "unresolved-signal"; next }
+  in_unresolved && /^    link-patterns:$/ { list = "unresolved-link"; next }
+  in_unresolved && /^      - / { line = $0; sub(/^      - /, "", line); print list "\t" unq(line) "\t"; next }
   in_forbidden && /^    - value:/ {
     line = $0; sub(/^    - value:/, "", line); pending = unq(line); next
   }
@@ -139,6 +149,34 @@ while IFS="$tab" read -r needle note; do
   [ -n "$needle" ] || continue
   grep -Fq -- "$needle" "$body" && report "$note: $needle"
 done <"$work/forbidden"
+
+# 후속 작업이 남았다고 쓰면서 어디서 추적하는지 적지 않으면 그 항목은 이 본문에서만 산다.
+unresolved_section=$(contract_values unresolved-section | sed -n '1p')
+if [ -n "$unresolved_section" ] && grep -Fxq -- "$unresolved_section" "$work/present"; then
+  awk -v prefix="$prefix" -v want="$unresolved_section" '
+    index($0, prefix) == 1 {
+      line = substr($0, length(prefix) + 1); sub(/[ \t]+$/, "", line)
+      inside = (line == want); next
+    }
+    inside { print }
+  ' "$body" >"$work/unresolved-body"
+  contract_values unresolved-signal >"$work/signals"
+  found_signal=
+  while IFS= read -r signal; do
+    [ -n "$signal" ] || continue
+    grep -Fq -- "$signal" "$work/unresolved-body" && { found_signal=$signal; break; }
+  done <"$work/signals"
+  if [ -n "$found_signal" ]; then
+    contract_values unresolved-link >"$work/links"
+    found_link=false
+    while IFS= read -r pattern; do
+      [ -n "$pattern" ] || continue
+      grep -Fq -- "$pattern" "$work/unresolved-body" && { found_link=true; break; }
+    done <"$work/links"
+    [ "$found_link" = true ] \
+      || report "$(contract_values unresolved-message | sed -n '1p') (\"$found_signal\")"
+  fi
+fi
 
 # title 은 commit 헤더와 같은 형식이다. 판정은 commit 검사기가 그대로 한다.
 if [ -n "$title" ]; then

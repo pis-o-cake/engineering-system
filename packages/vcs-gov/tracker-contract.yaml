@@ -1,0 +1,111 @@
+policy:
+  name: vcs-gov-tracker
+  version: 0.1.0-draft
+
+# 변경에서 닫지 못한 것은 담당자와 종료 조건을 가진 업무 항목에 연결한다. 표준은 언제 등록하고
+# 무엇을 반드시 적고 무엇으로 닫는지를 갖고, 어느 도구에 어떤 권한으로 쓸지는 프로젝트가
+# vcs.tracker 에 선언한다. 문서는 항목의 진행 상태를 다시 관리하지 않는다.
+
+# 항목의 종류마다 종료 조건의 성격이 다르다. 하나로 묶으면 누가 코드를 고쳐야 하는지와 누가
+# 답을 받아 와야 하는지의 차이가 사라진다.
+kinds:
+  - key: defect
+    heading: '결함'
+    closes-with: '수정 후 실패 시나리오를 다시 재현해 통과'
+  - key: task
+    heading: '해야 할 후속 작업'
+    closes-with: '약속한 산출물이나 실행 결과를 확인'
+  - key: decision
+    heading: '미확정 결정'
+    closes-with: '결정권자가 선택하고 근거를 남김'
+  - key: blocked
+    heading: '외부 답변 대기'
+    closes-with: '답변을 받아 기준 문서에 반영'
+  - key: risk
+    heading: '당장 해결하지 않을 위험'
+    closes-with: '수용권자와 조건과 재검토 시점을 명시'
+
+# 등록할 때 반드시 있어야 하는 것. 모르는 값은 지어내지 않고 미정으로 남긴다.
+item:
+  required:
+    - kind
+    - title
+    - impact
+    - evidence
+    - closing-conditions
+  single-assignee: true
+  unknown-value: '미정'
+  closing-conditions:
+    minimum: 1
+    form: '무엇을 확인하면 닫히는지로 적는다. 개선한다·검토한다 로 적지 않는다'
+
+# 등록 전에 같은 것이 이미 있는지 본다. 중복은 새 항목이 아니라 근거 추가로 처리한다.
+duplicate-check:
+  required: true
+  search-by:
+    - title keywords
+    - referenced file paths
+    - linked merge request
+  on-match: 'add-evidence-to-existing'
+
+# 언제 등록하는가. 사람이 skill 이름을 기억해서 부르지 않아도 되게, 기존 흐름의 네 시점에 건다.
+moments:
+  - key: session-start
+    when: '작업을 시작할 때'
+    action: '이 작업과 연결된 열린 항목을 조회해 맥락을 복원한다'
+  - key: found
+    when: '이번 변경에서 닫지 못할 것을 발견했을 때'
+    action: '중복을 먼저 확인하고, 없으면 등록한다'
+  - key: change
+    when: '변경을 수행할 때'
+    action: '항목과 merge request 를 서로 연결하고 문서 영향과 미검증 사항을 적는다'
+  - key: finish
+    when: '작업을 끝낼 때'
+    action: '종료 조건과 증거를 대조해 상태를 갱신하거나 남은 조치를 적는다'
+
+# 등록 항목은 사람이 양식을 채우지 않는다. 지금 대화와 diff 와 검사 결과에서 뽑는다.
+extraction:
+  sources:
+    - current conversation
+    - working tree diff
+    - verification output
+  constraints:
+    - no-invented-assignee
+    - no-invented-deadline
+    - no-invented-decision
+    - ask-only-for-what-is-required
+
+# 닫을 때 요구하는 것. 후속 항목을 만들었다는 사실은 완료 판정이 아니다.
+closing:
+  evidence-required: true
+  evidence-form: '실행한 명령과 그 결과, 또는 그것을 담은 merge request 링크'
+  editing-and-verification-are-separate: true
+  carry-over-decided-by: project
+
+# 사람이 판단할 것과 agent 가 그대로 해도 되는 것을 프로젝트가 선언한다. 등록할 때마다
+# 확인받으면 자동화의 효과가 사라지고, 모두 맡기면 사람이 져야 할 판단이 사라진다.
+agent-permissions:
+  declared-at: 'vcs.tracker.agent'
+  values: [allowed, ask]
+  defaults:
+    search: allowed
+    create: ask
+    comment: ask
+    close: ask
+    accept-risk: ask
+    commit-deadline: ask
+  always-human:
+    - accept-risk
+    - commit-deadline
+
+# 비용 기록은 두 축을 합산하지 않는다. 세션 경과 시간은 사람의 작업 시간이 아니다.
+cost-record:
+  automatic:
+    - command duration
+    - failure count
+    - retry count
+  human:
+    - review and decision time
+  constraints:
+    - no-session-elapsed-as-human-time
+    - no-sum-across-axes

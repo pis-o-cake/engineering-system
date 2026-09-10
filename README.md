@@ -392,6 +392,35 @@ branch 이름 규칙은 model의 `naming`이 기본값이고, 프로젝트가 `v
 기계가 판정할 수 있는 것만 막는다. `·` 나열처럼 커밋을 쪼갤 신호는 경고로 남기고 통과시킨다
 ([ADR 0011](docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md)).
 
+## 닫지 못한 것
+
+이번 변경에서 닫지 못한 것은 담당자와 종료 조건을 가진 추적 항목에 연결한다. 문서는 그 상태를
+다시 관리하지 않는다. 표준이 갖는 것은 [tracker contract](packages/vcs-gov/tracker-contract.yaml)
+— 항목의 종류와 종료 조건의 성격, 필수 정보, 중복 확인, 등록 시점, 종료 증거 — 이고, 어느 도구에
+어떤 label 로 쓸지는 프로젝트가 선언한다.
+
+```yaml
+vcs:
+  tracker:
+    provider: 'gitlab'              # github 또는 gitlab
+    project: 'group/thing'
+    default-assignee: 'someone'
+    labels:
+      defect: '결함'
+    agent:                          # allowed 또는 ask
+      create: 'allowed'
+      close: 'ask'
+```
+
+**표준은 tracker 이름도 label 이름도 갖지 않는다.** 선언하지 않으면 `engsys vcs tracker`는 답하지
+않는다. `engsys vcs check-tracker`가 선언을 판정하며, `accept-risk`와 `commit-deadline`은 계약이
+사람에게 고정하므로 `allowed`로 열 수 없다
+([ADR 0024](docs/adr/0024-the-project-declares-its-tracker-and-agent-permissions.md)).
+
+MR 본문의 「영향 및 후속 작업」에 후속을 뜻하는 표현이 있는데 추적 항목 링크가 없으면 gate가
+막는다. 링크의 형식만 보고 항목의 내용은 보지 않는다. 남은 것이 없으면 「없음」으로 적는다.
+등록·중복 확인·근거 갱신은 `/engsys:track-unresolved`가 한 흐름으로 처리한다.
+
 ## 문서 유형과 구조 검사
 
 새 문서는 유형을 먼저 정한다. 유형별 독자, 답할 질문, 필수 metadata, 필수 절의 정본은

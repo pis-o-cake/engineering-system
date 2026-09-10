@@ -63,3 +63,8 @@ inline `--body` it cannot read. Run the same judgement yourself first:
 
 It decides the declared headings, their order, undeclared headings, empty sections, forbidden
 phrases, and the title form. It does not decide the writing rules — that part is still yours.
+
+Work this change does not close belongs in a tracked item, not in this body alone. Before writing
+the last section, run `track-unresolved`: it searches the project's declared tracker, adds
+evidence to an existing item when one matches, and registers a new one when none does. Then link
+it here. The gate refuses a body that says work remains without naming where it is tracked.

@@ -7,7 +7,9 @@ package:
     - merge request body contract and its native check
     - merge request gate that runs without a session instruction
     - branch model catalogue
+    - unresolved-item contract and the project's tracker declaration
   claude-code:
     skills:
       - claude-code/skills/write-commit
       - claude-code/skills/write-merge-request
+      - claude-code/skills/track-unresolved
