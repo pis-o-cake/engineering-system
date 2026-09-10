@@ -267,7 +267,10 @@ resolve_locked_plugin() {
 
   cache_dir="$(cache_root)/releases/$revision"
   if [ -d "$cache_dir" ]; then
-    cached_revision=$(git -C "$cache_dir" rev-parse HEAD 2>/dev/null || true)
+    # 경로를 열지 못한 것과 담긴 revision 이 다른 것은 다른 문제다. 하나로 뭉치면 멀쩡한
+    # cache 를 고치라고 안내하게 되고, 실제 원인(환경이 경로를 가림)은 끝까지 안 보인다.
+    cached_revision=$(git -C "$cache_dir" rev-parse HEAD 2>/dev/null) \
+      || die "could not read the cached revision; git could not open $cache_dir"
     [ "$cached_revision" = "$revision" ] || die "cached revision is invalid: $cache_dir"
     [ -z "$(git -C "$cache_dir" status --porcelain --untracked-files=no 2>/dev/null)" ] \
       || die "cached revision has local changes: $cache_dir"

@@ -8,6 +8,21 @@ set -eu
 # 멀쩡한 cache 를 "local changes" 로 죽인다. 대상 저장소는 언제나 git -C 로 지정한다.
 unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_NAMESPACE
 
+# MSYS_NO_PATHCONV=1 을 건 채로 engsys 를 부르면 native git.exe 가 /c/Users/... 형태를 못 열고,
+# 실패는 "cached revision is invalid" 로 나와 멀쩡한 cache 를 의심하게 만든다. 자기 git 호출은
+# 변환이 필요하므로 지우되, 프로젝트가 선언한 명령에는 호출자가 건 설정을 그대로 돌려준다.
+caller_msys_no_pathconv=${MSYS_NO_PATHCONV-}
+unset MSYS_NO_PATHCONV
+
+# 프로젝트가 계약에 선언한 명령을 그 프로젝트에서 실행한다.
+run_declared_command() {
+  if [ -n "$caller_msys_no_pathconv" ]; then
+    (cd "$1" && MSYS_NO_PATHCONV="$caller_msys_no_pathconv" sh -c "$2")
+  else
+    (cd "$1" && sh -c "$2")
+  fi
+}
+
 if [ -n "${ENGSYS_SYSTEM_ROOT:-}" ]; then
   system_root=$(CDPATH= cd -- "$ENGSYS_SYSTEM_ROOT" && pwd)
 else
@@ -39,6 +54,10 @@ Usage:
   engsys resolve [--project <directory>]
   engsys claude [--project <directory>] [claude arguments...]
   engsys shellenv
+
+Environment:
+  ENGSYS_USE_CHECKOUT=1       Judge with this checkout instead of the locked revision
+  ENGSYS_CACHE_DIR <path>     Where locked revisions are unpacked
 
 Options for init:
   --project <directory>       Target Git worktree (default: current directory)
@@ -901,7 +920,7 @@ verify() {
   verify_command=$(contract_command "$contract" "$verify_key")
   printf '%s\n' "Running project verification (commands.$verify_key): $verify_command"
   verify_status=0
-  (cd "$project_dir" && sh -c "$verify_command") || verify_status=$?
+  run_declared_command "$project_dir" "$verify_command" || verify_status=$?
   if [ "$verify_status" -ne 0 ]; then
     # 127 은 shell 이 명령을 찾지 못한 것이다. 이 platform 의 변형을 선언하지 않았다면
     # 경로가 갈리는 것이 첫 의심이다. 해법이 표준 안에 있으니 실패 지점에서 알려 준다.
@@ -917,7 +936,7 @@ verify() {
     printf '%s\n' "$generated_commands" | while IFS= read -r generated_command; do
       [ -n "$generated_command" ] || continue
       printf '%s\n' "Running generated-document verification: $generated_command"
-      (cd "$project_dir" && sh -c "$generated_command")
+      run_declared_command "$project_dir" "$generated_command"
     done
   fi
   if grep -q '^vcs:' "$contract"; then
@@ -1002,6 +1021,10 @@ upgrade() (
         exit 1
       fi
       printf '%s\n' 'engsys: upgrade failed; restored the previous lock' >&2
+      # 계약만 바꾼 변경이 프로젝트의 native test 때문에 막히면 lock 은 옛 revision 에
+      # 남고, 그 revision 이 모르는 key 를 계약이 쓰면 일상 명령까지 멈춘다. 탈출구를
+      # 여기서 댄다. lock 을 올리지 않고 이 checkout 으로 판정하는 길이다.
+      printf '%s\n' 'engsys: to keep working at the old lock, run with ENGSYS_USE_CHECKOUT=1' >&2
     else
       rm -f "$upgrade_backup"
     fi
@@ -1051,8 +1074,10 @@ claude() {
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
   command -v claude >/dev/null 2>&1 || die "Claude Code is not on PATH"
-  check --project "$project_dir"
   plugin_source=$(resolve_locked_plugin "$project_dir")
+  # 계약 판정은 lock 이 가리키는 revision 이 한다. 여기서 현재 checkout 의 parser 를 부르면
+  # 같은 계약에 engsys check 와 반대 답이 나오고, 어느 쪽이 유효한지 알 방법이 없어진다.
+  ENGSYS_PINNED=1 "$plugin_source/bin/engsys" check --project "$project_dir"
   plugin_root=$(materialize_plugin_view "$project_dir" "$plugin_source")
   unset ENGSYS_SYSTEM_ROOT
   # IMPORTANT: CLAUDE_PLUGIN_ROOT·CLAUDE_PROJECT_DIR는 hook process에만 주입된다. skill이

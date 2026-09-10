@@ -114,8 +114,17 @@ engsys verify      # 계약·문서·프로젝트 test 를 전부 실행
 
 ### Windows
 
-Git Bash 에서 연다. `bin/engsys` 는 확장자 없는 POSIX sh 라 PowerShell 이나 CMD 에서 실행하면
-Windows 가 연결 프로그램을 묻는다. 활성화 전이라 `engsys` 가 아직 PATH 에 없다면 `sh` 로 부른다.
+`engsys` 는 Git Bash 에서만 돈다. `bin/engsys` 는 확장자 없는 POSIX sh 라 PowerShell 과 CMD 는
+그 파일을 실행하지 못하고, `install.sh` 도 bash 의 로그인 프로필만 고치므로 두 셸의 PATH 에는
+아무것도 들어가지 않는다. 그래서 활성화를 마친 뒤에도 PowerShell 은 이렇게 답한다.
+
+```
+The term 'engsys' is not recognized as the name of a cmdlet, function, script file, ...
+```
+
+설치가 실패했다는 뜻이 아니라 셸을 잘못 열었다는 뜻이다. Git Bash 를 열고 다시 친다.
+
+활성화 전이라 `engsys` 가 아직 PATH 에 없다면 `sh` 로 부른다.
 
 ```sh
 cd /d/dev/engineering-system && sh install.sh

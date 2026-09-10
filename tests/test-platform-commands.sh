@@ -98,4 +98,23 @@ if engsys verify --project "$generated" >"$temporary/out" 2>&1; then
 fi
 grep -Fq 'requires output and command' "$temporary/out"
 
+# 프로젝트가 선언한 명령은 호출자의 환경 그대로 돈다. engsys 는 native git 이 MSYS 경로를
+# 읽도록 MSYS_NO_PATHCONV 를 자기 구간에서만 지운다. 그 설정을 계약 명령에서까지 빼앗으면
+# Docker 를 부르는 프로젝트가 깨진다.
+passthrough="$temporary/passthrough"
+mkdir -p "$passthrough"
+git -C "$passthrough" init -q
+"$system_root/bin/engsys" init --project "$passthrough" --name passthrough-fixture \
+  --verify 'printf "pathconv=%s\n" "${MSYS_NO_PATHCONV-unset}"' >/dev/null
+MSYS_NO_PATHCONV=1 ENGSYS_USE_CHECKOUT=1 "$system_root/bin/engsys" verify \
+  --project "$passthrough" >"$temporary/out" 2>&1
+grep -Fq 'pathconv=1' "$temporary/out" || {
+  printf 'the declared command lost the caller MSYS_NO_PATHCONV\n' >&2
+  cat "$temporary/out" >&2
+  exit 1
+}
+ENGSYS_USE_CHECKOUT=1 "$system_root/bin/engsys" verify \
+  --project "$passthrough" >"$temporary/out" 2>&1
+grep -Fq 'pathconv=unset' "$temporary/out"
+
 printf 'platform command tests passed\n'
