@@ -1,4 +1,15 @@
 {
+  "extraKnownMarketplaces": {
+    "__MARKETPLACE__": {
+      "source": {
+        "source": "github",
+        "repo": "__REPO__"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "engsys@__MARKETPLACE__": true
+  },
   "hooks": {
     "PreToolUse": [
       {

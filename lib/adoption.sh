@@ -51,6 +51,22 @@ record_hook_baseline() {
   mv -f "$hook_record_file.next" "$hook_record_file"
 }
 
+# core.hooksPath 는 .git/config 에 있어 commit 되지 않는다. hook 파일을 받은 팀원도 이것을
+# 세우지 않으면 git 이 그 파일을 부르지 않는다. 게이트가 통째로 사라지는 지점이다.
+register_hooks_path() {
+  hooks_dir=$1
+  current_hooks_path=$(git -C "$hooks_dir" config --get core.hooksPath 2>/dev/null || true)
+  if [ -z "$current_hooks_path" ]; then
+    git -C "$hooks_dir" config core.hooksPath .githooks
+    printf 'registered core.hooksPath .githooks\n'
+  elif [ "$current_hooks_path" = .githooks ]; then
+    printf 'core.hooksPath is already .githooks\n'
+  else
+    printf 'left core.hooksPath as %s; run the gate from there or change it yourself\n' \
+      "$current_hooks_path"
+  fi
+}
+
 hooks() {
   project_dir=$(pwd)
   hooks_action=${1:-status}
@@ -141,7 +157,10 @@ hooks() {
     esac
   done
 
-  [ "$hooks_action" = status ] || return 0
+  if [ "$hooks_action" = update ]; then
+    register_hooks_path "$project_dir"
+    return 0
+  fi
   [ "$hooks_pending" -eq 0 ] || return 1
 }
 
@@ -290,8 +309,16 @@ setup_body() {
       || setup_warn 'hook 갱신이 끝나지 않았다. 위 출력을 보고 직접 처리한다'
   fi
   hooks_path=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
-  [ -n "$hooks_path" ] && setup_ok "core.hooksPath = $hooks_path" \
-    || setup_warn 'core.hooksPath 가 없다. hook 이 돌지 않는다'
+  if [ -n "$hooks_path" ]; then
+    setup_ok "core.hooksPath = $hooks_path"
+  else
+    setup_note 'core.hooksPath 가 없다. 이 설정은 commit 되지 않으므로 clone 한 사람마다 세운다'
+    if setup_ask 'core.hooksPath 를 .githooks 로 설정'; then
+      register_hooks_path "$project_dir"
+    else
+      setup_warn '건너뛴다. hook 파일이 있어도 git 이 부르지 않는다'
+    fi
+  fi
 
   setup_say '검사'
   # 진단은 stdout 으로도 나온다. 통째로 버리면 실패 원인이 사라진 채 "고쳐라"만 남는다.
@@ -418,6 +445,23 @@ doctor() {
   fi
 
   if [ "$project_dir" != "$system_root" ]; then
+    # 이 선언이 있으면 팀원은 clone 하고 열기만 해도 skill 과 hook 을 받는다. 없으면 각자
+    # 세션을 어떻게 열었는지에 따라 결과가 달라진다.
+    if grep -q '"enabledPlugins"' "$project_dir/.claude/settings.json" 2>/dev/null; then
+      doctor_report ok 'project declares the Engineering System plugin for any Claude Code session'
+      # 선언된 hook 은 engsys 를 PATH 에서 찾는다. plugin 은 배선을 나르고 판정하는 코드는
+      # 나르지 않으므로, PATH 가 비면 붙어 있어도 아무것도 판정하지 않는다.
+      if command -v engsys >/dev/null 2>&1; then
+        doctor_report ok 'the declared hooks can reach engsys on PATH'
+      else
+        doctor_report fail 'the declared hooks cannot reach engsys; the plugin carries no checker' \
+          'run: install.sh in the system checkout, then open a new shell'
+        failures=$((failures + 1))
+      fi
+    else
+      doctor_report warn 'project does not declare the Engineering System plugin' \
+        "run: engsys init --project $project_dir, or copy templates/project/.claude/settings.json"
+    fi
     project_hooks=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
     if [ "$project_hooks" = .githooks ] && [ -f "$project_dir/.githooks/pre-push" ]; then
       doctor_report ok 'project push gate is registered'

@@ -1,21 +1,29 @@
 engsys-document-review: 1
 document: docs/adr/0007-one-command-activation-and-main-as-release-channel.md
-blob: 8d030c89b7a07e7777d8111da22da213bc462c9a
+blob: 4b0309fc49bbf97d339ec9fa698af3a66b175f89
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: 팀원 활성화와 표준 배포를 어떤 경로로 하는가
+reviewer: claude-opus-5 (agent)
+audience: 기술 책임자와 표준 유지보수자
+purpose: 이 결정 중 무엇이 아직 유효하고 무엇이 대체됐는가
 
-새로 쓴 기록이라 전문을 다시 읽었다. 결정 4항목이 구현과 일치하는지 대조했다 — install.sh 의
-idempotency 와 다른 checkout 감지, doctor 의 보고 항목 6가지와 exit code, lock 이 checkout
-revision 을 기록한다는 것, origin/main 도달 불가를 warn 으로 둔 것.
-warn 으로 둔 이유를 결정 절에 적었다. fail 로 두면 표준을 고치는 동안 자기 branch 에 lock 하는
-흐름이 막힌다 — 실제로 구현 중 그 상태가 됐고 그래서 fail 에서 warn 으로 바꿨다.
-대안 4개는 실제로 검토한 것만 넣었다. marketplace 는 고정 축이 개발자 단위라 프로젝트 단위
-고정과 충돌한다는 것이 제외 이유이고, upgrade --to 는 대상 revision 의 package version 을
-working tree 에서 읽는 현재 구현의 한계가 제외 이유다. 둘 다 만들지 않고 판단한 것이므로
-"검토했다"로 적고 구현했다고 쓰지 않았다.
-영향 절에 되돌리는 방법(profile 의 두 줄 삭제)과 재검토 조건(--to 가 실제로 필요해지면)을 남겼다.
-미확정: private-marketplace 배포는 v0.1 에서 쓰지 않기로 했을 뿐, system.yaml 의 그 선언을
-아직 고치지 않았다. 다음 변경에서 정리해야 한다.
+ADR 0007 은 accepted 상태의 frozen 기록이다. 본문은 한 글자도 고치지 않았다. frontmatter 에
+superseded-in-part-by: 0023 한 줄만 더했다.
+
+이유: 그 문서의 「근거와 대안」이 "Claude Code plugin marketplace 로 배포한다"를 검토하고
+거절했다. ADR 0023 이 그 판단을 뒤집는다. 두 문서를 따로 읽으면 어느 쪽이 현재 결정인지 알
+수 없고, 0007 만 읽은 사람은 marketplace 가 여전히 금지된 것으로 이해한다.
+
+전체를 superseded 로 바꾸지 않은 이유: 0007 의 나머지 결정은 그대로 유효하다 — install.sh
+하나로 하는 개발자 활성화, doctor 의 진단 범위, origin/main 이라는 배포 채널, upgrade 가
+checkout revision 을 기록한다는 규칙이다. status 를 superseded 로 바꾸면 지금도 지키고 있는
+결정들이 폐기된 것으로 읽힌다. 그래서 상태는 accepted 로 두고 부분 대체만 표시했다.
+
+뒤집힌 근거가 무엇이었는지는 이 문서가 아니라 ADR 0023 의 배경 절에 적었다. frozen 기록에
+나중의 반박을 덧붙이면 그 문서가 당시 판단이 아니게 된다.
+
+확인한 것: docs check 와 check-documentation.py 가 이 frontmatter 키를 받는다. 문서 본문·날짜·
+상태·결정 서술은 원본 그대로다.
+
+한계: superseded-in-part-by 는 이 저장소가 처음 쓰는 키다. 기계가 판정하지 않고 읽는 사람을
+위한 표시다.
 

@@ -25,11 +25,16 @@ fi
 expect 'missing  commit-msg'
 expect 'missing  pre-push'
 
-# update 가 설치하고 기준선을 기록한다.
+# update 가 설치하고 기준선을 기록한다. core.hooksPath 는 commit 되지 않으므로 여기서 세운다.
+[ -z "$(git -C "$project" config --get core.hooksPath 2>/dev/null || true)" ]
 hooks update
 expect 'wrote    commit-msg'
 [ -x "$project/.githooks/pre-push" ]
 grep -q '^commit-msg	' "$project/.engsys/hooks.txt"
+[ "$(git -C "$project" config --get core.hooksPath)" = .githooks ] || {
+  printf 'hooks update must register core.hooksPath; hook files alone do not run\n' >&2
+  exit 1
+}
 hooks status
 expect '현재 template과 같다'
 

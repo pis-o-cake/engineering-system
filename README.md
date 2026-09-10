@@ -67,7 +67,7 @@ engsys setup
 | 2. 시스템 checkout | 표준이 어느 revision 인지, 팀원이 받을 수 있는 상태인지 확인한다 |
 | 3. 개발자 활성화 | `engsys` 가 PATH 에 있는지 본다. 없으면 `install.sh` 를 실행할지 묻는다 |
 | 4. 대상 프로젝트 | 프로젝트를 훑어 검사 명령·소스 경로·branch 이름을 **감지하고, 만들 계약 전문을 먼저 보여 준 뒤** 만들지 묻는다 |
-| 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
+| 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻고, `core.hooksPath` 가 없으면 세울지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
 | 6. 검사 | 계약이 올바른지 확인하고, 프로젝트의 기존 test 까지 돌릴지 묻는다 |
 | 7. 최종 진단 | `doctor` 를 한 번 더 돌린다. 남은 문제가 있으면 성공으로 끝내지 않는다 |
 | 8. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
@@ -83,9 +83,30 @@ git add .engsys .githooks .claude
 git commit -m "build(engsys): Engineering System 계약 추가"
 ```
 
-이 파일들이 있어야 팀원이 같은 계약을 받는다. 팀원은 1번(clone + `install.sh`)을 각자 하고,
-프로젝트에서 `engsys hooks update` 로 hook 을 켠다. Git 의 hook 경로 설정은 clone 으로 전달되지
-않기 때문이다.
+이 파일들이 있어야 팀원이 같은 계약을 받는다.
+
+### 팀원은 무엇을 하나
+
+`.claude/settings.json` 에 표준이 marketplace 로 선언돼 있으므로, 팀원이 프로젝트를 Claude Code 로
+열면 skill 과 문서 guardrail 이 **자동으로 붙는다.** CLI 든 데스크톱 앱이든 IDE 확장이든 같다.
+`engsys claude` 를 알 필요가 없다 ([ADR 0023](docs/adr/0023-the-standard-ships-as-a-plugin-marketplace.md)).
+
+**단, plugin 은 판정하는 코드를 나르지 않는다.** 붙는 것은 skill 과 hook 배선이고, 그 hook 이
+하는 일은 PATH 의 `engsys` 를 부르는 것이다. `engsys` 가 없으면 붙어 있어도 아무것도 판정하지
+않는다. `engsys doctor` 가 이 상태를 실패로 보고한다.
+
+그래서 나머지 둘은 각자 한 번씩 해야 한다.
+
+```sh
+git clone https://github.com/pis-o-cake/engineering-system && cd engineering-system && ./install.sh
+cd /내/프로젝트 && engsys setup
+```
+
+- **`install.sh`** — 판정하는 코드(`engsys`)는 plugin 이 나르지 않는다. 각 머신에 있어야 한다.
+- **`engsys setup`** — `core.hooksPath` 를 세운다. 이 설정은 `.git/config` 에 있어 **commit 되지
+  않으므로** clone 만으로는 전달되지 않는다. 세우지 않으면 hook 파일이 있어도 Git 이 부르지 않는다.
+
+둘 다 건너뛴 상태에서 push 하면 `pre-push` 가 원인을 알리고 막는다.
 
 ### 실패했을 때
 
@@ -266,9 +287,18 @@ commands:
 모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로
 처리한다. 명령에 quote나 escape가 필요하면 single-quoted scalar를 쓴다.
 
-Claude Code는 프로젝트에서 `engsys claude`로 시작한다. launcher가 lock revision의 clean system
-worktree를 고른 뒤, lock에 있는 package만 developer-local cache plugin view로 조합한다. 따라서
-선택하지 않은 skill·hook은 Claude에 등록되지 않는다.
+Claude Code에 표준을 붙이는 길은 둘이다. 기본은 프로젝트의 `.claude/settings.json`이 표준을
+marketplace로 선언하는 것이고, 이 파일은 commit되므로 세션을 어떻게 열든 같게 붙는다. 이때
+skill과 hook 배선은 표준의 `main`에서 온다.
+
+`engsys claude`는 **재현 모드**다. 옛 lock에 묶인 프로젝트를 그때의 안내로 다시 보거나 표준
+자체를 고칠 때 쓴다. 일상 작업의 기본 경로가 아니다. launcher가 lock revision의
+clean system worktree를 고른 뒤, lock에 있는 package만 developer-local cache plugin view로
+조합한다. 따라서 선택하지 않은 skill·hook은 Claude에 등록되지 않는다.
+
+어느 쪽이든 **판정은 고정된다.** hook이 하는 일은 `engsys`를 부르는 것이고, `engsys`는 자기를
+lock revision으로 다시 실행하기 때문이다. marketplace 경로에서 흔들리는 것은 안내문이지 합격
+여부가 아니다 ([ADR 0023](docs/adr/0023-the-standard-ships-as-a-plugin-marketplace.md)).
 
 launcher는 plugin view 경로를 `ENGSYS_PLUGIN_ROOT`로 export한다. skill은 이 변수로만 plugin
 안의 스크립트를 실행한다. `CLAUDE_PLUGIN_ROOT`는 hook process 전용이라 skill에서는 비어 있다
@@ -381,7 +411,7 @@ engsys docs check --project .
 
 `--path <문서>`를 주면 그 문서 하나만 본다. 배정되지 않은 경로와 없는 파일은 오류가 아니다.
 
-`engsys claude`로 연 세션에서는 이 검사가 자동으로 돈다. 문서를 쓴 직후 그 문서 하나가 검사되고,
+표준이 plugin으로 붙은 세션에서는 이 검사가 자동으로 돈다. 문서를 쓴 직후 그 문서 하나가 검사되고,
 실패하면 결과가 Claude에게 전달돼 그 자리에서 고친다. 세션을 열 때는 검토 기록이 없는 문서 수가
 한 줄로 주입된다. 사람이 에디터로 직접 고친 문서는 이 층에 걸리지 않으며 push gate가 잡는다
 ([ADR 0009](docs/adr/0009-document-structure-feedback-at-write-time.md)).
