@@ -83,7 +83,8 @@ Claude Code hook:
 소유 책임:
 
 - commit message contract and its native check
-- merge request body contract
+- merge request body contract and its native check
+- merge request gate that runs without a session instruction
 - branch model catalogue
 
 Claude Code skill:

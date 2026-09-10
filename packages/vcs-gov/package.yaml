@@ -4,7 +4,8 @@ package:
   status: draft
   owns:
     - commit message contract and its native check
-    - merge request body contract
+    - merge request body contract and its native check
+    - merge request gate that runs without a session instruction
     - branch model catalogue
   claude-code:
     skills:

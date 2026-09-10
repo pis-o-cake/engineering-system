@@ -317,6 +317,19 @@ engsys vcs check-message .git/COMMIT_EDITMSG --project .
 강제는 Claude Code hook이 아니라 native git hook이 맡는다. 작성은 `/engsys:write-commit`과
 `/engsys:write-merge-request`가 돕는다.
 
+MR 본문은 git 안에 없어서 git hook을 걸 지점이 없다. 대신 본문을 파일로 쓰고 판정한다.
+
+```sh
+engsys vcs check-merge-request pr-body.md --title 'fix(auth): 로그인 게이트 추가' --project .
+gh pr create --title 'fix(auth): 로그인 게이트 추가' --body-file pr-body.md
+```
+
+`init`이 프로젝트에 남기는 `.claude/settings.json`이 `gh pr create` 앞에서 같은 판정을 부른다.
+읽을 수 없는 inline `--body`는 막는다. **강제하는 것은 세션이 읽은 skill이 아니라 저장소에 든
+이 설정이다** ([ADR 0022](docs/adr/0022-a-declared-contract-needs-a-gate-not-an-instruction.md)).
+판정 범위는 절 제목과 순서, 선언 밖 제목, 빈 절, 금지 문구, title 형식이다. 문체와 중복 서술은
+리뷰어가 본다.
+
 branch model은 역할과 분기·승격 방향만 정의한다. 실제 이름은 프로젝트가 정한다.
 
 ```yaml

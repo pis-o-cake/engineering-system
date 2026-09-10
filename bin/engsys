@@ -49,6 +49,8 @@ Usage:
   engsys docs new --type <type> <slug> [--project <directory>] [--path <directory>]
   engsys vcs check-message <file> [--project <directory>]
   engsys vcs check-branch [--project <directory>] [--branch <name>]
+  engsys vcs check-merge-request <file> [--title <text>] [--project <directory>]
+  engsys vcs merge-request-hook
   engsys vcs <base-branch|check-settings|settings> [--project <directory>] [--branch <name>]
   engsys upgrade [--project <directory>] [--apply]
   engsys resolve [--project <directory>]
@@ -652,6 +654,13 @@ init() {
     cp "$system_root/templates/project/.claude/rules/engineering-system.md" "$route"
   fi
 
+  # skill 은 지시문이라 세션이 그것을 읽었는지에 결과가 달라진다. merge request 판정은
+  # 저장소에 들어 있는 이 설정이 부르므로 어떤 세션에서 열든 같게 돈다.
+  gate="$project_dir/.claude/settings.json"
+  if [ ! -e "$gate" ]; then
+    cp "$system_root/templates/project/.claude/settings.json" "$gate"
+  fi
+
   [ "$hooks" = false ] || write_project_hook "$project_dir"
 
   printf '%s\n' "Initialized Engineering System contract in $project_dir"
@@ -1125,6 +1134,18 @@ case "$command" in
         shift
         ENGSYS_SYSTEM_ROOT="$system_root" \
           sh "$system_root/packages/vcs-gov/bin/check-branch-name.sh" "$@"
+        ;;
+      check-merge-request)
+        shift
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/bin/check-merge-request.sh" "$@"
+        ;;
+      # Claude Code 가 PreToolUse 에서 부른다. 경로 대신 launcher 를 부르므로 프로젝트가
+      # 표준의 파일 위치를 알 필요가 없고, 판정도 lock 이 가리키는 revision 이 한다.
+      merge-request-hook)
+        shift
+        ENGSYS_SYSTEM_ROOT="$system_root" \
+          sh "$system_root/packages/vcs-gov/claude-code/hooks/check-merge-request.sh" "$@"
         ;;
       base-branch|check-settings|settings)
         ENGSYS_SYSTEM_ROOT="$system_root" \

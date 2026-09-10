@@ -52,3 +52,14 @@ is the author's, and a trailing badge only adds a line every reviewer skips.
 Reread the final body against the final diff before opening or updating. The reviewer must see
 what changes, which exceptions exist, and what verified it. Structure and prose are separate
 checks; a body that carries every heading can still fail the writing rules.
+
+Write the body to a file and open the request with `--body-file`. A gate declared in the
+project's `.claude/settings.json` reads that file before `gh pr create` runs and refuses an
+inline `--body` it cannot read. Run the same judgement yourself first:
+
+```sh
+"$ENGSYS_PLUGIN_ROOT/bin/engsys" vcs check-merge-request <body-file> --title <title> --project <project>
+```
+
+It decides the declared headings, their order, undeclared headings, empty sections, forbidden
+phrases, and the title form. It does not decide the writing rules — that part is still yours.
