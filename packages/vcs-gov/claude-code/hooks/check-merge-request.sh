@@ -33,7 +33,7 @@ grep -q '^vcs:' "$project_dir/.engsys/project.yaml" || exit 0
 # 명령 문자열은 JSON 안에서 이스케이프돼 있다. python3 가 있으면 그것으로 읽는다.
 if command -v python3 >/dev/null 2>&1; then
   parsed=$(printf '%s' "$payload" | python3 -c '
-import json, re, shlex, sys
+import json, os, re, shlex, sys
 
 try:
     command = json.load(sys.stdin).get("tool_input", {}).get("command", "")
@@ -78,6 +78,9 @@ for word in words:
     if word in ("--body-file", "--body", "--title"):
         position = words.index(word)
         value = words[position + 1] if position + 1 < len(words) else ""
+        # shlex 는 변수를 펴지 않는다. 경로에 $TMPDIR 가 남으면 열 수 없는 파일이 된다.
+        if "$" in value:
+            value = os.path.expandvars(value)
         print(word + "\t" + value)
 ' 2>/dev/null) || parsed='PARSE	failed'
 else
