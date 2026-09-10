@@ -1,27 +1,28 @@
 engsys-document-review: 1
 document: README.md
-blob: 10cc0f4b9119db7640b096cd472255c71e41be82
+blob: a93e3302779c63745465abfc282bd5514877d704
 decision: pass
-reviewer: Claude Opus 5 (자기 검토)
-audience: 표준을 채택하는 개발자와 이 레포를 고치는 기여자
-purpose: 표준을 어떻게 붙이고 무엇이 강제되며 무엇이 아직 아닌가
+reviewer: claude-opus-5 (agent)
+audience: 표준을 처음 붙이는 개발자, 특히 Windows 사용자
+purpose: PowerShell 에서 engsys 를 못 찾는 것이 설치 실패인지 셸 선택 문제인지
 
-문서 전체를 다시 읽고 현재 구현과 대조했다. 채택 3단계, setup 8단계 표, 실패 시 출력 예시,
-upgrade·init·hooks·docs·review 절의 명령과 옵션, platform 변형 예시가 bin/engsys 와 lib/adoption.sh 의
-현재 동작과 일치한다.
+README 는 표준을 처음 붙이는 개발자가 순서대로 따라 읽는 운영 절차 문서다. 이번 편집은
+「처음 붙일 때 > Windows」 절 하나만 바꿨고, 나머지 절과 명령·수치는 손대지 않았다.
 
-이번에 고친 것은 시스템 레포 개발 절의 push 전 강제 설명이다. 이전 문장은 pre-push 가
-sh tests/test-all.sh 와 문서 검토 검사를 실행한다고 했는데, hook 은 이제 전송 ref 마다
-bin/engsys verify --project . --revision <commit> 하나를 실행한다. 실제 .githooks/pre-push 와 맞도록
-바꾸고, 검사한 내용과 전송하는 내용이 같을 때만 통과한다는 조건을 함께 적었다.
+바꾼 이유: Windows 적용 검증에서 PowerShell 이 낸 "The term 'engsys' is not recognized"
+가 설치 실패로 읽혀 시간을 잃었다. 원래 문장은 활성화 「전」에 파일을 직접 실행하는 경우만
+설명했고, 활성화를 마친 뒤에도 PowerShell·CMD 에서는 engsys 를 찾을 수 없다는 사실과
+그 이유(install.sh 가 bash 로그인 프로필만 고친다)는 어디에도 없었다.
 
-서버 CI 는 구성하지 않기로 해 이 문서에서 CI 관련 서술을 모두 없앴다. 대신 서버 검사가 없다는
-사실과 그로 인한 한계를 한 문단으로 남겼다. 로컬 hook 은 우회할 수 있고, 통과는 push 한 개발자의
-환경에서 얻은 결과이며 다른 OS 의 동작을 보증하지 않는다. 보증 범위를 넓게 읽지 않도록 명시했다.
+바꾼 것: 절의 첫 문장을 "engsys 는 Git Bash 에서만 돈다"로 올려 전제를 먼저 주고, 그 이유
+두 가지(확장자 없는 POSIX sh · bash 프로필만 고침)를 한 문단에 모았다. 실제 오류 문자열을
+그대로 인용하고 "설치 실패가 아니라 셸을 잘못 연 것"이라는 판정을 붙였다. 활성화 전
+`sh install.sh` 안내와 `/d/work/myapp` 경로 규칙은 그 뒤로 옮겨 순서를 실행 순서와 맞췄다.
 
-이미 적절했던 부분은 손대지 않았다. 첫 절이 경계를 먼저 밝히고, 채택 절차가 명령과 그 명령이 바꾸는
-것을 함께 적으며, 각 규칙의 근거를 ADR 링크로 연결한다. 명령·경로·옵션·출력 예시를 축약하지 않았다.
+확인한 것: 인용한 오류 문자열은 검증 기록의 실제 출력이다. 경로 형식 규칙과 CRLF 절은
+그대로 남겼고 중복 서술이 생기지 않았다. 문서 전체를 다시 읽어 다른 절이 "PowerShell 에서도
+된다"고 읽힐 여지가 없음을 확인했다. `engsys docs check` 와 `engsys verify` 는 통과한다.
 
-미확정으로 남은 것은 서버 검사와 Windows 동작이며 본문에 그렇게 적었다. 해결되지 않은 모순은 없다.
-이 검토는 작성자 본인의 자기 검토이며 독립 검토나 사람의 승인이 아니다.
+한계: PowerShell·CMD 용 진입점(.cmd shim)은 만들지 않았다. install.sh 가 Windows PATH 를
+건드리지 않으므로 shim 을 두어도 찾을 수 없기 때문이며, 이 절은 그 사실을 설명만 한다.
 

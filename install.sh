@@ -94,5 +94,14 @@ fi
 
 printf '\nOpen a new shell, or run this once in the current one:\n  %s\n\n' "$line"
 
+# 이 줄은 bash 의 로그인 프로필에만 들어간다. PowerShell 과 CMD 의 PATH 에는 아무것도
+# 들어가지 않으므로, 거기서 나는 "not recognized" 는 설치 실패로 읽히지만 실제로는
+# 셸을 잘못 연 것이다. 그 사실을 여기서 한 번 말해 둔다.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*|Windows_NT)
+    printf 'note  engsys runs in Git Bash. PowerShell and CMD will not find it.\n\n'
+    ;;
+esac
+
 # Report the state the developer will have after the profile is sourced.
 PATH="$system_root/bin:$PATH" "$system_root/bin/engsys" doctor --project "$system_root"
