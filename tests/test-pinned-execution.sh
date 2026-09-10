@@ -45,6 +45,34 @@ fi
 grep -Fq 'could not be prepared' "$temporary/err"
 git -C "$cached" checkout -q -- bin/engsys
 
+# engsys claude 도 계약을 lock 이 가리키는 revision 으로 판정한다. 현재 checkout 의 parser 를
+# 쓰면 같은 계약에 engsys check 와 반대 답을 내고, 어느 쪽이 유효한지 알 방법이 없어진다.
+mkdir -p "$temporary/fake-bin"
+printf '#!/bin/sh\nprintf "claude ran\\n"\n' >"$temporary/fake-bin/claude"
+chmod +x "$temporary/fake-bin/claude"
+# checkout 의 check 만 무조건 통과하게 바꿔 두 판정을 갈라 놓는다. 판정이 갈리지 않으면
+# 어느 경로로 돌았는지 이 검사가 구분하지 못한다.
+awk '{ print } /^check\(\) \{$/ && !done { print "  printf \"checkout check passed\\n\"; return 0"; done = 1 }' \
+  "$system_root/bin/engsys" >"$temporary/lenient"
+cat "$temporary/lenient" >"$system_root/bin/engsys"
+grep -Fq 'checkout check passed' "$system_root/bin/engsys"
+# lock 이 가리키는 revision 은 이 key 를 모른다.
+awk '{ print } /^  verify:/ { print "  verify-win: \047true\047" }' \
+  "$project/.engsys/project.yaml" >"$temporary/contract"
+cp "$temporary/contract" "$project/.engsys/project.yaml"
+
+if PATH="$temporary/fake-bin:$PATH" ENGSYS_CACHE_DIR="$temporary/cache" \
+    "$system_root/bin/engsys" claude --project "$project" >"$temporary/out" 2>&1; then
+  printf 'engsys claude must judge the contract at the locked revision\n' >&2
+  cat "$temporary/out" >&2
+  exit 1
+fi
+grep -Fq 'unknown commands key: verify-win' "$temporary/out"
+if grep -Fq 'claude ran' "$temporary/out"; then
+  printf 'engsys claude started Claude Code despite a rejected contract\n' >&2
+  exit 1
+fi
+
 # 경로를 열지 못한 것과 담긴 revision 이 다른 것은 다른 문제다. 하나로 뭉치면 멀쩡한 cache 를
 # 지우라고 안내하게 되고, 실제 원인(환경이 경로를 가림)은 끝까지 보이지 않는다.
 mv "$cached/.git" "$temporary/cache-git"

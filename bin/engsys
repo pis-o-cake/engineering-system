@@ -1066,8 +1066,10 @@ claude() {
   project_dir=$(normalise_project_dir "$project_dir")
   require_worktree "$project_dir"
   command -v claude >/dev/null 2>&1 || die "Claude Code is not on PATH"
-  check --project "$project_dir"
   plugin_source=$(resolve_locked_plugin "$project_dir")
+  # 계약 판정은 lock 이 가리키는 revision 이 한다. 여기서 현재 checkout 의 parser 를 부르면
+  # 같은 계약에 engsys check 와 반대 답이 나오고, 어느 쪽이 유효한지 알 방법이 없어진다.
+  ENGSYS_PINNED=1 "$plugin_source/bin/engsys" check --project "$project_dir"
   plugin_root=$(materialize_plugin_view "$project_dir" "$plugin_source")
   unset ENGSYS_SYSTEM_ROOT
   # IMPORTANT: CLAUDE_PLUGIN_ROOT·CLAUDE_PROJECT_DIR는 hook process에만 주입된다. skill이
