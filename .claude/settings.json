@@ -1,4 +1,15 @@
 {
+  "extraKnownMarketplaces": {
+    "engineering-system": {
+      "source": {
+        "source": "github",
+        "repo": "pis-o-cake/engineering-system"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "engsys@engineering-system": true
+  },
   "hooks": {
     "PreToolUse": [
       {

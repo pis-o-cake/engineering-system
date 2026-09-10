@@ -526,6 +526,52 @@ detect_authoring() {
   declare a type on each document, then add it to documentation.authoring.assign"
 }
 
+# 표준의 origin 에서 marketplace 좌표를 얻는다. 프로젝트가 이 값을 적으면 어떤 Claude Code
+# 로 열든 — CLI 든 데스크톱 앱이든 — skill 과 hook 이 붙는다. engsys claude 를 알 필요가 없다.
+marketplace_repo() {
+  origin=$(git -C "$system_root" remote get-url origin 2>/dev/null || true)
+  case "$origin" in
+    https://github.com/*) repo=${origin#https://github.com/} ;;
+    git@github.com:*) repo=${origin#git@github.com:} ;;
+    *) return 1 ;;
+  esac
+  repo=${repo%.git}
+  repo=${repo%/}
+  [ -n "$repo" ] || return 1
+  printf '%s' "$repo"
+}
+
+marketplace_name() {
+  manifest="$system_root/.claude-plugin/marketplace.json"
+  [ -f "$manifest" ] || return 1
+  name_value=$(sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | sed -n '1p')
+  [ -n "$name_value" ] || return 1
+  printf '%s' "$name_value"
+}
+
+# 이 파일은 프로젝트가 commit 한다. 표준은 없을 때만 쓰고 이미 있는 것은 덮지 않는다.
+write_project_plugin_settings() {
+  dir=$1
+  mkdir -p "$dir/.claude"
+  settings="$dir/.claude/settings.json"
+  if [ -e "$settings" ]; then
+    printf '%s
+' 'kept the existing .claude/settings.json'
+    return 0
+  fi
+  if ! plugin_repo=$(marketplace_repo) || ! plugin_market=$(marketplace_name); then
+    cp "$system_root/templates/project/.claude/settings.json" "$settings"
+    printf '%s
+' 'wrote .claude/settings.json without the marketplace declaration'
+    printf '%s
+' '  the system checkout has no GitHub origin; add extraKnownMarketplaces yourself'
+    return 0
+  fi
+  sed -e "s|__MARKETPLACE__|$plugin_market|g" -e "s|__REPO__|$plugin_repo|g" \
+    "$system_root/templates/project/.claude/settings.json" >"$settings"
+  printf '%s\n' "wrote .claude/settings.json declaring engsys@$plugin_market from $plugin_repo"
+}
+
 write_project_hook() {
   dir=$1
   mkdir -p "$dir/.githooks"
@@ -654,12 +700,9 @@ init() {
     cp "$system_root/templates/project/.claude/rules/engineering-system.md" "$route"
   fi
 
-  # skill 은 지시문이라 세션이 그것을 읽었는지에 결과가 달라진다. merge request 판정은
-  # 저장소에 들어 있는 이 설정이 부르므로 어떤 세션에서 열든 같게 돈다.
-  gate="$project_dir/.claude/settings.json"
-  if [ ! -e "$gate" ]; then
-    cp "$system_root/templates/project/.claude/settings.json" "$gate"
-  fi
+  # skill 과 hook 을 세션마다 설치하지 않아도 되도록 이 파일이 표준을 가리킨다. 저장소에
+  # 들어 있으므로 어떤 Claude Code 로 열든 같게 돈다.
+  write_project_plugin_settings "$project_dir"
 
   [ "$hooks" = false ] || write_project_hook "$project_dir"
 

@@ -3,6 +3,7 @@ type: adr
 id: 0007
 status: accepted
 date: 2026-09-08
+superseded-in-part-by: 0023
 ---
 
 # 0007. 활성화는 install script 하나로 두고 배포 채널은 origin/main으로 한다

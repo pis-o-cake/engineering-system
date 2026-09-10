@@ -1,0 +1,17 @@
+{
+  "name": "engineering-system",
+  "owner": {
+    "name": "pis-o-cake",
+    "url": "https://github.com/pis-o-cake/engineering-system"
+  },
+  "metadata": {
+    "description": "Engineering System standard: commit, branch, merge request and documentation contracts."
+  },
+  "plugins": [
+    {
+      "name": "engsys",
+      "source": "./",
+      "description": "Lock-aware Engineering System workflows: contract-aware skills and documentation guardrails."
+    }
+  ]
+}

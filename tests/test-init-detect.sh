@@ -115,6 +115,30 @@ grep -Fq 'kept the existing .githooks/pre-push' "$temporary/result"
 grep -Fq 'left core.hooksPath as .husky' "$temporary/result"
 [ "$(git -C "$project" config --get core.hooksPath)" = .husky ]
 
+# 프로젝트가 표준을 가리키게 해서 세션마다 skill 을 설치하지 않아도 되게 한다. 이 파일은
+# 프로젝트가 commit 하므로 어떤 Claude Code 로 열든 같은 것이 붙는다.
+new_project marketplace-project
+printf 'check:\n\techo ok\n' >"$project/Makefile"
+init --detect
+grep -Fq 'declaring engsys@' "$temporary/result"
+grep -Fq '"enabledPlugins"' "$project/.claude/settings.json"
+grep -Fq '"extraKnownMarketplaces"' "$project/.claude/settings.json"
+grep -Fq 'merge-request-hook' "$project/.claude/settings.json"
+if grep -Fq '__MARKETPLACE__' "$project/.claude/settings.json"; then
+  printf 'the marketplace placeholder was not filled in\n' >&2
+  exit 1
+fi
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$project/.claude/settings.json"
+
+# 프로젝트가 이미 가진 설정은 덮지 않는다.
+new_project owned-settings-project
+printf 'check:\n\techo ok\n' >"$project/Makefile"
+mkdir -p "$project/.claude"
+printf '{ "hooks": {} }\n' >"$project/.claude/settings.json"
+init --detect
+grep -Fq 'kept the existing .claude/settings.json' "$temporary/result"
+grep -Fq '"hooks": {}' "$project/.claude/settings.json"
+
 # gate 는 launcher 가 없으면 원인을 알리고 push 를 막는다.
 new_project gate-project
 printf 'check:\n\techo ok\n' >"$project/Makefile"

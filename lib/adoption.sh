@@ -445,6 +445,23 @@ doctor() {
   fi
 
   if [ "$project_dir" != "$system_root" ]; then
+    # 이 선언이 있으면 팀원은 clone 하고 열기만 해도 skill 과 hook 을 받는다. 없으면 각자
+    # 세션을 어떻게 열었는지에 따라 결과가 달라진다.
+    if grep -q '"enabledPlugins"' "$project_dir/.claude/settings.json" 2>/dev/null; then
+      doctor_report ok 'project declares the Engineering System plugin for any Claude Code session'
+      # 선언된 hook 은 engsys 를 PATH 에서 찾는다. plugin 은 배선을 나르고 판정하는 코드는
+      # 나르지 않으므로, PATH 가 비면 붙어 있어도 아무것도 판정하지 않는다.
+      if command -v engsys >/dev/null 2>&1; then
+        doctor_report ok 'the declared hooks can reach engsys on PATH'
+      else
+        doctor_report fail 'the declared hooks cannot reach engsys; the plugin carries no checker' \
+          'run: install.sh in the system checkout, then open a new shell'
+        failures=$((failures + 1))
+      fi
+    else
+      doctor_report warn 'project does not declare the Engineering System plugin' \
+        "run: engsys init --project $project_dir, or copy templates/project/.claude/settings.json"
+    fi
     project_hooks=$(git -C "$project_dir" config --get core.hooksPath 2>/dev/null || true)
     if [ "$project_hooks" = .githooks ] && [ -f "$project_dir/.githooks/pre-push" ]; then
       doctor_report ok 'project push gate is registered'
