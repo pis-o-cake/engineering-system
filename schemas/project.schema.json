@@ -94,7 +94,7 @@
           "required": ["provider", "project"],
           "additionalProperties": false,
           "properties": {
-            "provider": {"type": "string", "enum": ["github", "gitlab"]},
+            "provider": {"type": "string", "enum": ["github", "gitlab", "jira"]},
             "project": {"type": "string", "minLength": 1},
             "default-assignee": {"type": "string", "minLength": 1},
             "labels": {
