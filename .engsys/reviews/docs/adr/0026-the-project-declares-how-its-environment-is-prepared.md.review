@@ -1,0 +1,27 @@
+engsys-document-review: 1
+document: docs/adr/0026-the-project-declares-how-its-environment-is-prepared.md
+blob: 9e255c70e41dff5661543b26dd66940bc0b95246
+decision: pass
+reviewer: Claude Opus 5 (assistant)
+audience: 기술 책임자와 유지보수자
+purpose: 개발 환경 준비의 책임을 어디에 두었고 어떤 비용을 감수했는가
+
+결론: 프로젝트 개발 환경의 진단·준비를 계약의 두 선택적 키(commands.environment-check /
+environment-setup)로 옮기고, engsys 는 실행과 종료 코드 판정만 맡는다. 환경 미준비는 종료 코드
+3 으로 통과(0)·검사 실패(1) 어느 쪽과도 구분한다.
+
+근거: 배경 절이 실제로 겪은 실패 경로를 적는다 — verify 가 commands.verify 를 프로젝트 개발
+환경에서 실행하므로 venv 가 없으면 setup 의 마지막 단계에서 표준의 설치 실패처럼 끝났다.
+결정 항목마다 구현이 대응한다(bin/engsys 의 env status·prepare, require_ready_environment,
+doctor 의 ENV 줄, templates/project/.githooks/pre-push 의 코드 3 처리).
+검증 근거는 tests/test-environment.sh 이며, 외부 런타임 없이 네 상태가 갈리는지 확인한다.
+
+편집: 배경 절의 "문제의 핵심이다" 라는 자평성 문장을 걷어내고, 세 상태가 어느 자리에서 같은
+모양으로 끝났는지를 적는 문장으로 바꿨다. 나머지는 ADR 유형이 요구하는 결정·배경·대안·영향
+구성을 이미 갖추고 있어 그대로 두었다. 대안 절은 실제로 검토해 거절한 다섯 가지를 비용과 함께
+남겼다(표준이 직접 설치, 메시지만 추가, 미준비를 통과 처리, check 필수화, setup 없이 check 만).
+
+한계로 남긴 것: environment-check 가 무엇을 보는지는 프로젝트가 정하므로, 느슨하게 선언하면
+verify 가 여전히 환경 문제로 떨어진다는 사실을 영향 절에 명시했다. ADR 0018 의 단계 구성이
+일곱에서 열로 바뀌는 것도 영향 절에 적었다. 이 검토는 작성자 자신의 검토이며 독립 검토가 아니다.
+

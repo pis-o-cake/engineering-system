@@ -59,7 +59,7 @@ engsys setup
 
 경로를 적을 필요가 없다. 현재 디렉토리가 대상이다.
 
-`setup` 은 여덟 단계를 차례로 밟는다.
+`setup` 은 열 단계를 차례로 밟는다.
 
 | 단계 | 하는 일 |
 |---|---|
@@ -68,9 +68,14 @@ engsys setup
 | 3. 개발자 활성화 | `engsys` 가 PATH 에 있는지 본다. 없으면 `install.sh` 를 실행할지 묻는다 |
 | 4. 대상 프로젝트 | 프로젝트를 훑어 검사 명령·소스 경로·branch 이름을 **감지하고, 만들 계약 전문을 먼저 보여 준 뒤** 만들지 묻는다 |
 | 5. Git hook | `commit-msg` 와 `pre-push` 를 심을지 묻고, `core.hooksPath` 가 없으면 세울지 묻는다. 이미 고쳐 쓰던 hook 이 있으면 덮지 않는다 |
-| 6. 검사 | 계약이 올바른지 확인하고, 프로젝트의 기존 test 까지 돌릴지 묻는다 |
-| 7. 최종 진단 | `doctor` 를 한 번 더 돌린다. 남은 문제가 있으면 성공으로 끝내지 않는다 |
-| 8. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
+| 6. 검사 | 계약이 올바른지 확인한다. **여기까지가 표준의 설치·연결이다** |
+| 7. 프로젝트 개발 환경 | 프로젝트가 `commands.environment-check` 를 선언했으면 상태를 보고, 미준비면 준비 명령을 실행할지 묻는다 |
+| 8. 검증 | 프로젝트의 기존 test 까지 돌릴지 묻는다. 환경이 준비되지 않았으면 돌리지 않고, 그 사실을 통과로 적지 않는다 |
+| 9. 최종 진단 | `doctor` 를 한 번 더 돌린다. 남은 문제가 있으면 성공으로 끝내지 않는다 |
+| 10. 남은 것 | 아직 선언하지 않은 것과 commit 할 파일을 알려 준다 |
+
+6 단계까지 통과했는데 7 단계가 막히면 **표준은 붙은 것이고 이 머신의 프로젝트 환경만 남은 것이다.**
+`setup` 은 그 둘을 다른 문장으로 보고한다.
 
 **파일을 바꾸기 전에는 반드시 먼저 보여 주고 묻는다.** 그냥 진행하려면 `--yes` 를 준다. 반대로
 터미널이 없고 `--yes` 도 없으면 시작하지 않는다 — 물어볼 수 없는데 진행하면 아무것도 안 하고
@@ -128,6 +133,7 @@ cd /내/프로젝트 && engsys setup
 
 ```sh
 engsys doctor      # 지금 무엇이 빠졌는지, 각각 어떤 명령으로 고치는지
+engsys env status  # 이 머신에서 프로젝트 검사를 돌릴 수 있는 상태인지
 engsys verify      # 계약·문서·프로젝트 test 를 전부 실행
 ```
 
@@ -233,6 +239,9 @@ engsys verify --project /path/to/project
 감지는 최상위 디렉토리만 본다. `backend/pyproject.toml`처럼 한 단계 아래에 있는 스택은 찾지
 못하므로 `--verify 'cd backend && poe check'`처럼 직접 준다.
 
+개발 환경 명령은 감지하지 않는다. 표준이 패키지 관리자 목록을 갖는 순간 그 지식이 곧 낡으므로,
+`--environment-check`·`--environment-setup`으로 직접 선언하거나 나중에 계약에 적는다.
+
 복사한 hook은 프로젝트가 소유하므로 표준이 덮어쓰지 않는다. template이 바뀌었는지는
 `engsys hooks status`가 알린다.
 
@@ -263,9 +272,50 @@ mapping과 sequence, single-quoted scalar, `[a, b]` 형태의 inline list다. �
 [project schema](schemas/project.schema.json)이고, 그 전체 검증은 시스템 레포의 test가 한다
 ([ADR 0002](docs/adr/0002-contract-schema-is-canonical.md)).
 
-`check`는 adapter와 lock만 빠르게 검사한다. `verify`는 그 뒤 project가 선언한 native test와
-generated document check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 —
-반영은 위 "표준 버전 올리기"의 `upgrade`가 맡는다.
+`check`는 adapter와 lock만 빠르게 검사한다. 여기까지 통과했다면 표준의 설치와 연결은 끝난 것이고,
+남은 실패는 프로젝트 쪽에 있다. `verify`는 그 뒤 project가 선언한 native test와 generated document
+check를 실행한다. profile 변경과 package 추가는 기존 lock을 바꾸지 않는다 — 반영은 위
+"표준 버전 올리기"의 `upgrade`가 맡는다.
+
+### 프로젝트 개발 환경은 프로젝트가 준비한다
+
+`commands.verify`는 그 프로젝트의 개발 환경 — venv, `node_modules`, toolchain — 에서만 돈다.
+그 환경이 없으면 shell이 실행 파일을 찾지 못한 채 끝나고, 그 실패는 표준이 잘못 붙은 것과 같은
+모양으로 보인다. 아래 두 명령을 선언하면 engsys가 두 원인을 갈라서 보고한다.
+
+```yaml
+commands:
+  verify: 'uv run pytest'
+  environment-check: 'uv run python -c "import app"'   # 상태만 본다
+  environment-setup: 'uv sync'                         # 명시적으로 요청할 때만 돈다
+```
+
+표준은 패키지 관리자를 알지 못한다. 하는 일은 이 두 문자열을 프로젝트 디렉토리에서 실행하고 종료
+코드를 읽는 것뿐이므로, `uv`·Poetry·npm·pnpm·Docker·자체 스크립트 중 무엇을 쓸지는 프로젝트가
+고른다. 두 키 모두 선택이며, 선언하지 않으면 이 기능이 생기기 전과 똑같이 동작한다.
+
+```sh
+engsys env status --project /path/to/project    # 준비됐는지, 아니면 왜 아닌지
+engsys env prepare --project /path/to/project   # 선언한 준비 명령을 실행
+engsys env prepare --project /path/to/project --dry-run   # 무엇을 실행할지만 본다
+```
+
+`environment-setup`을 실행하는 자리는 `engsys env prepare`와 `engsys setup`의 동의 단계뿐이다.
+`verify`도 `check`도 Git hook도 그 명령을 부르지 않으므로, push 한 번이 네트워크와 디스크를 쓰거나
+프로젝트 파일을 바꾸는 일은 없다.
+
+`engsys verify`의 세 결과는 종료 코드로도 갈린다.
+
+| 상태 | 종료 코드 | 읽는 법 |
+|---|---|---|
+| 검증 통과 | 0 | 표준도 환경도 프로젝트 검사도 모두 끝났다 |
+| 환경 미준비 | 3 | 표준은 붙었고, 프로젝트 검사는 시작하지 않았다 |
+| 검증 실패 | 그 밖 | 환경은 있고 프로젝트의 검사가 떨어졌다 |
+
+미준비는 통과가 아니다. `engsys verify`가 3으로 끝나면 push gate는 계속 막는다
+([ADR 0026](docs/adr/0026-the-project-declares-how-its-environment-is-prepared.md)).
+`engsys doctor`도 표준의 문제와 환경을 다른 칸에 세므로, `0 problem(s) to fix` 아래에
+`1 environment step(s)`만 남았다면 고칠 곳은 이 머신의 프로젝트 환경이다.
 
 ### OS 마다 명령이 갈릴 때
 
@@ -281,7 +331,8 @@ commands:
 `engsys verify`가 `uname`으로 판정해 알아서 고른다. 양쪽 머신에서 치는 명령은 똑같고, 고른 키는
 출력에 찍힌다 — `Running project verification (commands.verify-windows): ...`. 접미사는
 `-macos`·`-linux`·`-windows`뿐이며, 접미사 없는 기본 선언은 그대로 필수다.
-`documentation.generated[].command`도 같은 방식으로 `command-windows`를 갖는다.
+`documentation.generated[].command`와 `commands.environment-check`·`environment-setup`도 같은
+방식으로 변형을 갖는다.
 
 `documentation.generated`는 `output`과 `command`의 순서에 관계없이 읽는다. 각 항목은 두 값을
 모두 가진 block mapping이어야 한다. 지원하지 않는 inline mapping·multiline scalar는 오류로

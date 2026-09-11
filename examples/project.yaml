@@ -9,6 +9,8 @@ project:
 
 commands:
   verify: make check
+  environment-check: make env-check
+  environment-setup: make env-setup
 
 vcs:
   commit:

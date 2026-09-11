@@ -43,6 +43,7 @@ Usage:
   engsys doctor [--project <directory>]
   engsys hooks <status|update> [--project <directory>] [--force] [--adopt]
   engsys sync [--project <directory>]
+  engsys env <status|prepare> [--project <directory>] [--dry-run]
   engsys verify [--project <directory>] [--revision <commit>]
   engsys review <status|record|check> [options]
   engsys docs check [--project <directory>] [--path <document>]
@@ -70,6 +71,10 @@ Options for init:
   --name <name>               Project name (default: directory name)
   --profile <profile>         System profile (default: baseline)
   --verify <command>          Project-native verification command (required)
+  --environment-check <command>
+                              Command that judges whether the dev environment is ready
+  --environment-setup <command>
+                              Command that prepares the dev environment (never run automatically)
   --source <name=path>        Source-of-truth path; repeatable
   --policy <path>             Documentation policy path
   --architecture <path>       Current architecture document path
@@ -224,17 +229,62 @@ contract_command() {
 }
 
 # 이 platform 의 변형이 있으면 그것을, 없으면 기본 선언을 쓴다. 고르는 주체는 계약이지 사람이 아니다.
-project_verify_key() {
-  platform=${2:-$(current_platform)}
-  for key in "verify-$platform" verify; do
+contract_command_key() {
+  platform=${3:-$(current_platform)}
+  for key in "$2-$platform" "$2"; do
     [ -z "$(contract_command "$1" "$key")" ] || { printf '%s' "$key"; return 0; }
   done
+}
+
+project_verify_key() {
+  contract_command_key "$1" verify "${2:-}"
 }
 
 project_verify_command() {
   key=$(project_verify_key "$1" "${2:-}")
   [ -n "$key" ] || return 0
   contract_command "$1" "$key"
+}
+
+# 환경이 준비되지 않아 검사를 시작하지 못한 것은 검사에 떨어진 것과 다른 사실이다. 한 코드로
+# 뭉치면 읽는 사람이 표준의 설치 실패로 읽고, 통과로 뭉치면 검사하지 않은 것을 통과시킨다.
+environment_exit_code=3
+
+environment_setup_advice() {
+  advice_contract=$1
+  advice_project=$2
+  advice_key=$(contract_command_key "$advice_contract" environment-setup)
+  if [ -n "$advice_key" ]; then
+    printf '%s\n' "engsys: prepare it:  engsys env prepare --project $advice_project" >&2
+    printf '%s\n' "engsys: that runs commands.$advice_key: $(contract_command "$advice_contract" "$advice_key")" >&2
+  else
+    printf '%s\n' 'engsys: this project declares no commands.environment-setup' >&2
+    printf '%s\n' 'engsys: prepare the environment yourself, or declare that command in .engsys/project.yaml' >&2
+  fi
+}
+
+# 선언이 없으면 판정할 것이 없다. 없는 선언을 미준비로 읽으면 이 기능 이전의 계약이 전부 막힌다.
+environment_is_declared() {
+  [ -n "$(contract_command_key "$1" environment-check "${2:-}")" ]
+}
+
+# 준비 명령은 절대 부르지 않는다. 부르는 자리는 사람이 그것을 요청한 흐름뿐이다.
+require_ready_environment() {
+  ready_contract=$1
+  ready_project=$2
+  ready_key=$(contract_command_key "$ready_contract" environment-check "${3:-}")
+  [ -n "$ready_key" ] || return 0
+  ready_command=$(contract_command "$ready_contract" "$ready_key")
+  printf '%s\n' "Checking project environment (commands.$ready_key): $ready_command"
+  ready_status=0
+  run_declared_command "$ready_project" "$ready_command" || ready_status=$?
+  if [ "$ready_status" -ne 0 ]; then
+    printf '%s\n' "Project environment is not ready: $ready_project" >&2
+    printf '%s\n' "engsys: commands.$ready_key exited $ready_status; the project's own checks did not run" >&2
+    environment_setup_advice "$ready_contract" "$ready_project"
+    exit "$environment_exit_code"
+  fi
+  printf '%s\n' "Project environment is ready (commands.$ready_key)"
 }
 
 write_status_list() {
@@ -284,7 +334,16 @@ write_project_contract() {
       printf '%s\n' '  source-of-truth: {}'
     fi
     printf '\n%s\n' 'commands:'
-    printf '  verify: '; yaml_quote "$verify"; printf '\n\n'
+    printf '  verify: '; yaml_quote "$verify"; printf '\n'
+    # environment_check 와 environment_setup 은 init 의 scope 에서 읽는다. 이 함수는 POSIX shell 이
+    # 직접 참조할 수 있는 위치 인자를 이미 모두 쓴다.
+    if [ -n "${environment_check:-}" ]; then
+      printf '  environment-check: '; yaml_quote "$environment_check"; printf '\n'
+    fi
+    if [ -n "${environment_setup:-}" ]; then
+      printf '  environment-setup: '; yaml_quote "$environment_setup"; printf '\n'
+    fi
+    printf '\n'
     printf '%s\n' 'documentation:'
     if [ -n "$policy" ]; then
       printf '  policy: '; yaml_quote "$policy"; printf '\n'
@@ -605,6 +664,8 @@ init() {
   profile=baseline
   name=
   verify=
+  environment_check=
+  environment_setup=
   sources=
   policy=
   architecture=
@@ -627,6 +688,8 @@ init() {
       --profile) require_value "$@"; profile=$2; shift 2 ;;
       --name) require_value "$@"; name=$2; shift 2 ;;
       --verify) require_value "$@"; verify=$2; shift 2 ;;
+      --environment-check) require_value "$@"; environment_check=$2; shift 2 ;;
+      --environment-setup) require_value "$@"; environment_setup=$2; shift 2 ;;
       --source)
         require_value "$@"
         source_name=${2%%=*}
@@ -897,7 +960,7 @@ check() {
   # 오타 난 변형은 아무 platform 에서도 실행되지 않는다. 조용히 무시하면 검사하지 않은 것을 통과시킨다.
   unknown_key=$(sed -n '/^commands:/,/^[A-Za-z]/p' "$contract" \
     | sed -n 's/^  \([A-Za-z0-9_-]*\):.*$/\1/p' \
-    | grep -vxE 'verify|verify-(macos|linux|windows)' | sed -n '1p')
+    | grep -vxE '(verify|environment-check|environment-setup)(-(macos|linux|windows))?' | sed -n '1p')
   [ -z "$unknown_key" ] || die "project contract has an unknown commands key: $unknown_key"
   grep -Fq 'lock-version: 1' "$lock" || die "lock has unsupported lock-version"
   unknown_key=$(top_level_keys "$lock" | grep -vxE 'lock-version|system|profile|packages' | sed -n '1p')
@@ -946,6 +1009,80 @@ sync() {
   printf '%s\n' "Synchronized generated paths: $project_dir/.engsys/generated-paths.txt"
 }
 
+# 개발 환경은 언어와 도구마다 다르고 표준은 그 목록을 가질 수 없다. 프로젝트가 두 명령을
+# 선언하고 표준은 실행과 판정만 한다. 준비는 사람이 이 명령을 부른 흐름에서만 일어난다.
+env_command() {
+  env_action=${1:-status}
+  case "$env_action" in
+    status|prepare) shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "unknown env action: $env_action" ;;
+  esac
+  project_dir=$(pwd)
+  env_dry_run=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --project) require_value "$@"; project_dir=$2; shift 2 ;;
+      --dry-run) env_dry_run=true; shift ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown env option: $1" ;;
+    esac
+  done
+  project_dir=$(normalise_project_dir "$project_dir")
+  contract="$project_dir/.engsys/project.yaml"
+  [ -f "$contract" ] || die "no Engineering System contract in $project_dir
+  adopt it first:  engsys init --project $project_dir --detect --hooks"
+
+  case "$env_action" in
+    status) env_status "$contract" "$project_dir" ;;
+    prepare) env_prepare "$contract" "$project_dir" ;;
+  esac
+}
+
+env_status() {
+  status_contract=$1
+  status_project=$2
+  status_key=$(contract_command_key "$status_contract" environment-check)
+  if [ -z "$status_key" ]; then
+    printf '%s\n' "Project environment: not declared ($status_project)"
+    printf '%s\n' '      declare commands.environment-check in .engsys/project.yaml to have engsys judge it'
+    return 0
+  fi
+  require_ready_environment "$status_contract" "$status_project"
+  printf '%s\n' "Ready to run this project's own checks: $status_project"
+}
+
+env_prepare() {
+  prepare_contract=$1
+  prepare_project=$2
+  prepare_key=$(contract_command_key "$prepare_contract" environment-setup)
+  [ -n "$prepare_key" ] || die "project contract has no commands.environment-setup
+  declare it in .engsys/project.yaml, or prepare the environment with the project's own instructions"
+  prepare_command=$(contract_command "$prepare_contract" "$prepare_key")
+  if [ "$env_dry_run" = true ]; then
+    printf '%s\n' "Would run (commands.$prepare_key): $prepare_command"
+    printf '%s\n' 'Nothing was run. Re-run without --dry-run to prepare the environment.'
+    return 0
+  fi
+  printf '%s\n' "Preparing project environment (commands.$prepare_key): $prepare_command"
+  prepare_status=0
+  run_declared_command "$prepare_project" "$prepare_command" || prepare_status=$?
+  if [ "$prepare_status" -ne 0 ]; then
+    printf '%s\n' "Project environment preparation failed: $prepare_project" >&2
+    printf '%s\n' "engsys: commands.$prepare_key exited $prepare_status" >&2
+    printf '%s\n' "engsys: that command belongs to the project; its output above says why" >&2
+    exit "$prepare_status"
+  fi
+  printf '%s\n' "Ran the project's environment setup: $prepare_project"
+  # 준비됐다고 말할 자격은 준비 명령이 아니라 진단 명령에 있다. 둘이 어긋나면 다음 verify 에서
+  # 다시 막히므로, 여기서 확인하고 같은 코드로 끝낸다.
+  if environment_is_declared "$prepare_contract"; then
+    env_status "$prepare_contract" "$prepare_project"
+  else
+    printf '%s\n' 'Project environment: not declared; engsys did not judge the result'
+  fi
+}
+
 verify() {
   project_dir=$(pwd)
   verify_revision=
@@ -968,6 +1105,9 @@ verify() {
 
   contract="$project_dir/.engsys/project.yaml"
   verify_platform=$(current_platform)
+  # 프로젝트의 native 명령은 그 프로젝트의 개발 환경에서만 돈다. 환경이 없어 나는 실패를
+  # 검사 실패로 흘리면 표준의 설치 문제와 섞인다. 여기서 갈라 두고, 준비는 하지 않는다.
+  require_ready_environment "$contract" "$project_dir" "$verify_platform"
   verify_key=$(project_verify_key "$contract" "$verify_platform")
   [ -n "$verify_key" ] || die "project contract has no commands.verify"
   verify_command=$(contract_command "$contract" "$verify_key")
@@ -1157,6 +1297,7 @@ case "$command" in
   doctor) shift; doctor "$@" ;;
   hooks) shift; hooks "$@" ;;
   sync) shift; exec_locked_revision sync "$@"; sync "$@" ;;
+  env) shift; exec_locked_revision env "$@"; env_command "$@" ;;
   verify) shift; exec_locked_revision verify "$@"; verify "$@" ;;
   review)
     shift

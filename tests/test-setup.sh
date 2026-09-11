@@ -42,8 +42,10 @@ expect '미리보기, 쓰지 않음'
 expect 'detected verify command: make check'
 expect 'detected branch model: env-branch'
 expect 'Nothing was written'
-expect '[7] 최종 진단'
-expect '[8] 남은 것'
+expect '[7] 프로젝트 개발 환경'
+expect '[8] 검증'
+expect '[9] 최종 진단'
+expect '[10] 남은 것'
 [ -f "$project/.engsys/project.yaml" ]
 [ -x "$project/.githooks/commit-msg" ]
 [ "$(git -C "$project" config --get core.hooksPath)" = .githooks ]
@@ -93,7 +95,7 @@ if "$system_root/bin/engsys" setup --project "$project" --yes >"$temporary/out" 
   cat "$temporary/out" >&2
   exit 1
 fi
-grep -Fq '멈춘 곳: [7] 최종 진단' "$temporary/out"
+grep -Fq '멈춘 곳: [9] 최종 진단' "$temporary/out"
 grep -Fq '위 FAIL 항목이 남아 있다' "$temporary/out"
 
 printf 'ok setup checks each step before it changes anything\n'

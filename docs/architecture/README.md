@@ -28,8 +28,9 @@ package·skill·hook의 목록과 version처럼 선언에서 결정적으로 얻
 
 - `bin/engsys` — 프로젝트가 실행하는 유일한 진입점. dependency 없는 POSIX sh다.
   `setup`만 대화형이며, 나머지는 CI와 script가 부를 수 있도록 비대화형으로 둔다.
-  계약 생성(`init`), 검사(`check`), 진단(`doctor`), 프로젝트 검증(`verify`), 문서 구조 검사(`docs`),
-  문서 검토(`review`), lock 변경(`upgrade`), Claude Code 실행(`claude`)을 담당한다.
+  계약 생성(`init`), 검사(`check`), 진단(`doctor`), 개발 환경 진단·준비(`env`),
+  프로젝트 검증(`verify`), 문서 구조 검사(`docs`), 문서 검토(`review`), lock 변경(`upgrade`),
+  Claude Code 실행(`claude`)을 담당한다.
 - `install.sh` — 개발자 활성화. shell profile 한 줄과 이 clone의 `core.hooksPath`만 바꾼다.
   프로젝트에는 쓰지 않는다 ([ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)).
 - `lib/plugin-runtime.sh` — lock revision의 cache와 Claude plugin view 조합.
@@ -54,7 +55,7 @@ engsys claude
 ```
 
 ```text
-engsys <check|sync|verify|docs|review|vcs> --project P
+engsys <check|sync|env|verify|docs|review|vcs> --project P
   → P의 lock revision이 이 checkout의 commit과 다르거나 checkout에 미커밋 수정이 있으면
       그 revision의 clean worktree를 확보하고 그쪽 bin/engsys로 실행을 넘김
   → locked revision을 준비하지 못하거나 cache가 수정됐으면 실패
@@ -71,14 +72,28 @@ engsys verify --revision <commit>
 ```text
 engsys verify
   → engsys check (adapter·lock 구조 검사)
+  → commands.environment-check (선언했을 때만; 실패하면 종료 코드 3으로 멈춤)
   → commands.verify (프로젝트가 선언한 native 검증)
   → documentation.generated[].command (생성 문서 최신 여부)
 ```
 
-두 명령 모두 `-macos`·`-linux`·`-windows` 접미사를 붙인 변형을 선언할 수 있다. engsys가 `uname`으로
+```text
+engsys env status   → commands.environment-check 만 실행하고 판정
+engsys env prepare  → commands.environment-setup 실행 후 다시 environment-check 로 확인
+```
+
+`commands.verify`·`commands.environment-check`·`commands.environment-setup`·
+`documentation.generated[].command`는 `-macos`·`-linux`·`-windows` 접미사를 붙인 변형을 선언할 수 있다. engsys가 `uname`으로
 platform을 판정해 변형이 있으면 그것을, 없으면 기본 선언을 실행한다. 실행한 키는 출력에 찍힌다.
 선언하지 않은 접미사는 어느 platform에서도 실행되지 않으므로 `engsys check`가 막는다
 ([ADR 0020](../adr/0020-platform-splits-belong-to-the-project.md)).
+
+프로젝트 개발 환경은 표준이 준비하지 않는다. `commands.environment-check`가 상태를 판정하고
+`commands.environment-setup`이 준비하며, 준비 명령은 `engsys env prepare`와 `engsys setup`의 동의
+단계에서만 실행된다. `verify`·`check`·Git hook은 그 명령을 부르지 않는다. 환경 미준비는 종료 코드
+`3`이라 통과(0)와도 검사 실패(1)와도 구분되며, 그 상태에서 프로젝트의 native 명령은 시작하지 않으므로
+push gate는 계속 막는다. 표준은 언어별 설치 절차를 갖지 않는다
+([ADR 0026](../adr/0026-the-project-declares-how-its-environment-is-prepared.md)).
 
 `engsys upgrade --apply`는 새 lock으로 위 verify 경로를 실행한다. 성공하면 새 lock을 유지하고,
 실패하거나 중단되면 이전 lock을 복원한다. native command가 바꾼 프로젝트 파일은 그 command의
@@ -90,6 +105,7 @@ platform을 판정해 변형이 있으면 그것을, 없으면 기본 선언을 
 |---|---|---|
 | 생성 문서 직접 수정 | `PreToolUse`에서 차단 | `engsys verify`가 generator 결과와 비교 |
 | 계약 형식 | 없음 | `engsys check`가 최상위 key·필수 항목·선언한 block이 읽혔는지 검사. 전체 형식은 `tools/validate-contract.py` |
+| 프로젝트 개발 환경 | 없음 | `commands.environment-check`를 선언했을 때 `engsys verify`가 먼저 실행하고, 미준비면 종료 코드 3으로 멈춤 |
 | 카탈로그 사본 일치 | 없음 | `tools/check-consistency.py` |
 | 이 레포의 historical metadata·local link | lifecycle skill의 검토 안내 | `tools/check-documentation.py` |
 | 커밋 메시지 | `write-commit` skill이 계약과 프로젝트 선언을 읽음 | 프로젝트의 `commit-msg` hook이 `engsys vcs check-message` 실행 |

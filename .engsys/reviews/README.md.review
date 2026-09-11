@@ -1,33 +1,28 @@
 engsys-document-review: 1
 document: README.md
-blob: 0e582a3d5856595524032254285246c4f70893e5
+blob: df9a83b777ef30c5f10f0a6351d066d85598e18c
 decision: pass
-reviewer: claude-opus-5 (agent)
-audience: 표준을 쓰는 개발자와 리뷰어
-purpose: gate 를 무엇이 부르고 engsys 를 어디서 찾는가
+reviewer: Claude Opus 5 (assistant)
+audience: 표준을 처음 붙이는 개발자와 채택 프로젝트의 유지보수자
+purpose: 무엇을 선언하고 어떤 명령으로 채택·운영하는가
 
-README 는 표준을 쓰는 개발자와 리뷰어가 읽는 운영 절차 문서다. 이번 편집은 「닫지 못한 것」 절의
-마지막 두 문단이다. 다른 절과 YAML 예시는 손대지 않았다.
+결론: README 에 "프로젝트 개발 환경은 프로젝트가 준비한다" 절을 넣고, setup 단계표를 여덟에서
+열 단계로 고쳤다. 독자가 알아야 할 것은 두 가지다 — 계약에 선언할 두 키의 형태, 그리고
+engsys verify 의 세 결과가 종료 코드 0·3·그 밖으로 갈린다는 사실이다.
 
-바꾼 이유: 그 문단이 "init 이 남기는 .claude/settings.json 이 gh pr create 앞에서 같은 판정을
-부른다" 로 적혀 있었는데, gate 를 등록하는 자리가 plugin 의 hook catalog 로 옮겼다. 그대로 두면
-독자가 settings.json 에서 hook 항목을 찾다가 없는 것을 보고 설정이 빠졌다고 판단한다.
+근거: 새 절의 YAML 예시와 명령 예시는 실제 인터페이스와 일치한다(env status·prepare·--dry-run).
+종료 코드 표의 3 은 tests/test-environment.sh 가 단언하는 값이고, doctor 의 출력 문구
+"0 problem(s) to fix" 와 "1 environment step(s)" 도 구현 출력 그대로다. setup 단계표의 7·8 단계는
+lib/adoption.sh 의 setup_body 에 새로 들어간 '프로젝트 개발 환경'·'검증' 단계와 같은 이름이다.
 
-편집한 것: 부르는 주체를 plugin 이 등록한 hook 으로 고치고, 강제의 근거는 여전히 저장소에 든
-선언이라는 문장을 유지했다 — settings.json 이 plugin 을 붙이고 plugin 이 gate 를 나른다. 이
-연결을 명시하지 않으면 "선언이 강제한다" 는 원칙과 "plugin 이 나른다" 는 사실이 따로 읽힌다.
-ADR 0022 와 0025 를 나란히 연결했다.
+편집: 초안에서 "검사 실패로 흘리면 표준의 설치 문제와 섞인다" 처럼 비유에 기대던 문장을, 실제로
+무슨 일이 일어나는지 적는 문장으로 바꿨다(shell 이 실행 파일을 찾지 못한 채 끝나고, 그 실패가
+표준이 잘못 붙은 것과 같은 모양으로 보인다). "표준은 uv 도 Poetry 도 npm 도 모른다" 라는 열거식
+수사는 선택지를 그대로 나열하는 문장으로 고쳤다. 표 안과 본문의 굵은 글씨 세 곳은 문장으로 풀었다.
+setup 단계표 뒤에는 6 단계까지 통과하고 7 단계에서 막히는 경우가 무엇을 뜻하는지 한 문장 덧붙였다.
+채택 절에는 개발 환경 명령을 감지하지 않는다는 사실과 그 이유를 적었다.
 
-문단을 하나 더했다: launcher 를 찾는 순서와, 로그인 셸이 아닌 곳에서 도는 경우가 있어 PATH 만
-믿으면 gate 가 꺼진 채로 돈다는 사실이다. 이것이 이번 결함의 실제 내용이고, 다음에 같은 증상을
-본 사람이 원인을 바로 찾을 수 있어야 한다.
-
-확인한 것: 판정 범위 문단을 별도 문단으로 떼어 두 주제가 섞이지 않게 했다. 문서 전체에서
-settings.json 이 hook 을 갖는다고 읽히는 다른 서술이 없는지 확인했다. 90행과 290행의 settings.json
-언급은 marketplace 선언에 대한 것이라 그대로 유효하다.
-
-한계: Windows 에서 고친 hook 이 실제로 도는 것은 아직 확인하지 않았다. 그 사실은 ADR 0025 의
-한계로 남겼고 README 에는 넣지 않았다.
-
-engsys docs check 와 tests/test-all.sh 는 통과한다.
+한계: README 는 사용법을 싣고 결정의 근거는 ADR 0026 에, 검증 조건은
+docs/verification/environment.md 에 링크로 넘긴다. environment-check 를 어느 수준으로 선언해야
+하는지는 프로젝트마다 다르므로 이 문서가 정하지 않는다. 이 검토는 작성자 자신의 검토다.
 

@@ -35,7 +35,15 @@
         "verify": {"type": "string", "minLength": 1},
         "verify-macos": {"type": "string", "minLength": 1},
         "verify-linux": {"type": "string", "minLength": 1},
-        "verify-windows": {"type": "string", "minLength": 1}
+        "verify-windows": {"type": "string", "minLength": 1},
+        "environment-check": {"type": "string", "minLength": 1},
+        "environment-check-macos": {"type": "string", "minLength": 1},
+        "environment-check-linux": {"type": "string", "minLength": 1},
+        "environment-check-windows": {"type": "string", "minLength": 1},
+        "environment-setup": {"type": "string", "minLength": 1},
+        "environment-setup-macos": {"type": "string", "minLength": 1},
+        "environment-setup-linux": {"type": "string", "minLength": 1},
+        "environment-setup-windows": {"type": "string", "minLength": 1}
       }
     },
     "vcs": {

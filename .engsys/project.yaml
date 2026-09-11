@@ -10,6 +10,7 @@ project:
 
 commands:
   verify: 'sh tests/test-all.sh'
+  environment-check: 'command -v python3 >/dev/null 2>&1'
 
 vcs:
   commit:

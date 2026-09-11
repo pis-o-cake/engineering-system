@@ -326,9 +326,47 @@ setup_body() {
     [ -z "$setup_output" ] || printf '%s\n' "$setup_output" >&2
     die '계약 검사가 실패했다. 위 오류를 먼저 고친다'
   fi
-  setup_ok '계약과 lock 이 engsys check 를 통과한다'
-  if setup_ask 'engsys verify 실행 (프로젝트의 native test 포함, 시간이 걸린다)'; then
-    "$system_root/bin/engsys" verify --project "$project_dir" || return 1
+  setup_ok '계약과 lock 이 engsys check 를 통과한다 — 표준의 설치·연결은 여기서 끝난다'
+
+  # 여기부터는 이 머신의 프로젝트 개발 환경이다. 표준은 언어별 설치 절차를 모르고, 알아서도
+  # 안 된다. 프로젝트가 선언한 명령만 실행하며, 준비는 이 단계에서 동의를 받아야 돈다.
+  setup_say '프로젝트 개발 환경'
+  setup_contract="$project_dir/.engsys/project.yaml"
+  setup_env_key=$(contract_command_key "$setup_contract" environment-check)
+  setup_env_ready=unknown
+  if [ -z "$setup_env_key" ]; then
+    setup_note 'commands.environment-check 선언이 없다. 환경 준비 여부는 engsys 가 판정하지 않는다'
+    setup_note '선언하면 미준비를 검증 실패와 구분해 보고한다'
+  elif "$system_root/bin/engsys" env status --project "$project_dir"; then
+    setup_env_ready=true
+  else
+    setup_env_ready=false
+    setup_env_prepare_key=$(contract_command_key "$setup_contract" environment-setup)
+    if [ -z "$setup_env_prepare_key" ]; then
+      setup_warn 'commands.environment-setup 선언이 없다. 프로젝트 안내대로 직접 준비한다'
+    elif setup_ask "환경 준비 실행 (commands.$setup_env_prepare_key)"; then
+      if "$system_root/bin/engsys" env prepare --project "$project_dir"; then
+        setup_env_ready=true
+      else
+        setup_warn '환경 준비가 실패했다. 위 출력은 프로젝트 명령의 것이다'
+      fi
+    else
+      setup_note '건너뛴다. engsys env prepare 로 나중에 준비한다'
+    fi
+  fi
+
+  setup_say '검증'
+  if [ "$setup_env_ready" = false ]; then
+    setup_warn '환경이 준비되지 않아 engsys verify 를 돌리지 않는다. 미준비를 통과로 기록하지 않는다'
+  elif setup_ask 'engsys verify 실행 (프로젝트의 native test 포함, 시간이 걸린다)'; then
+    setup_verify_status=0
+    "$system_root/bin/engsys" verify --project "$project_dir" || setup_verify_status=$?
+    if [ "$setup_verify_status" -eq "$environment_exit_code" ]; then
+      setup_env_ready=false
+      setup_warn '환경이 준비되지 않아 검증이 끝나지 않았다. engsys env prepare 로 준비한다'
+    elif [ "$setup_verify_status" -ne 0 ]; then
+      return 1
+    fi
   else
     setup_note '나중에 engsys verify 로 확인한다'
   fi
@@ -336,8 +374,14 @@ setup_body() {
   setup_say '최종 진단'
   # 중간 단계가 경고만 내고 넘어갔을 수 있다. 마지막에 한 번 더 전체를 보고, 남은 문제가 있으면
   # 성공으로 끝내지 않는다. 그러지 않으면 FAIL 을 본 사람이 무엇이 남았는지 알 수 없다.
-  if "$system_root/bin/engsys" doctor --project "$project_dir"; then
+  setup_doctor_status=0
+  "$system_root/bin/engsys" doctor --project "$project_dir" || setup_doctor_status=$?
+  if [ "$setup_doctor_status" -eq 0 ]; then
     setup_ok 'doctor 가 고칠 문제를 찾지 못했다'
+  elif [ "$setup_doctor_status" -eq "$environment_exit_code" ]; then
+    # 표준은 다 붙었다. 남은 것은 이 머신의 프로젝트 환경이고, 그것은 채택의 실패가 아니다.
+    setup_ok '표준의 설치·연결은 끝났다'
+    setup_warn "프로젝트 개발 환경이 남았다: engsys env prepare --project $project_dir"
   else
     setup_warn '위 FAIL 항목이 남아 있다. 각 줄이 실행할 명령을 알려 준다'
     return 1
@@ -350,19 +394,26 @@ setup_body() {
   grep -q '^  review:' "$project_dir/.engsys/project.yaml" 2>/dev/null \
     && setup_ok '편집 검토 범위가 선언돼 있다' \
     || setup_note '편집 검토 범위가 없다. 실제로 검토한 문서부터 documentation.review.scopes 에 넣는다'
+  [ -n "$setup_env_key" ] || setup_note \
+    'commands.environment-check·environment-setup 을 선언하면 팀원의 환경 준비도 이 명령이 안내한다'
   setup_note '.engsys/ 와 .githooks/ 를 commit 한다. 그래야 팀원이 같은 계약을 받는다'
   setup_note '팀원은 각자 install.sh 를 돌리고 engsys hooks update 로 hook 을 켠다'
+  setup_note '팀원의 프로젝트 환경은 engsys env status 로 보고 engsys env prepare 로 준비한다'
   printf '\n%s\n' '상태는 언제든 engsys doctor 로 다시 본다.'
 }
 
+# env 는 표준이 고칠 수 없는 상태다. 표준의 설치·연결 문제와 같은 칸에 찍으면 읽는 사람이
+# 둘을 한 덩어리로 보고, 프로젝트의 환경 문제를 표준의 설치 실패로 보고하게 된다.
 doctor_report() {
   case "$1" in
     ok) printf 'ok    %s\n' "$2" ;;
+    note) printf '·     %s\n' "$2" ;;
+    env) printf 'ENV   %s\n' "$2" >&2 ;;
     warn) printf 'warn  %s\n' "$2" ;;
     fail) printf 'FAIL  %s\n' "$2" >&2 ;;
   esac
   [ -z "${3:-}" ] || case "$1" in
-    fail) printf '      %s\n' "$3" >&2 ;;
+    fail|env) printf '      %s\n' "$3" >&2 ;;
     *) printf '      %s\n' "$3" ;;
   esac
 }
@@ -385,6 +436,7 @@ doctor() {
   done
   project_dir=$(normalise_project_dir "$project_dir")
   failures=0
+  environment_pending=0
 
   printf '%s\n' "Engineering System: $system_root"
   revision=$(system_revision)
@@ -519,8 +571,36 @@ doctor() {
     failures=$((failures + 1))
   fi
 
+  # 여기부터는 표준의 상태가 아니라 이 머신의 프로젝트 개발 환경이다. 표준이 고칠 수 없고,
+  # 고쳐서도 안 된다. 진단만 하고 무엇을 실행할지 알린다.
+  printf '\n%s\n' "Project environment: $project_dir"
+  environment_key=$(contract_command_key "$contract" environment-check)
+  if [ -z "$environment_key" ]; then
+    doctor_report note 'project declares no commands.environment-check' \
+      'engsys cannot judge whether this project can run its own checks here'
+  elif run_declared_command "$project_dir" "$(contract_command "$contract" "$environment_key")" \
+      >/dev/null 2>&1; then
+    doctor_report ok "project environment is ready (commands.$environment_key)"
+  else
+    environment_setup_key=$(contract_command_key "$contract" environment-setup)
+    if [ -n "$environment_setup_key" ]; then
+      doctor_report env 'project environment is not ready' \
+        "run: engsys env prepare --project $project_dir"
+    else
+      doctor_report env 'project environment is not ready' \
+        'this project declares no commands.environment-setup; prepare it with the project instructions'
+    fi
+    environment_pending=$((environment_pending + 1))
+  fi
+
   printf '\n%s\n' "$failures problem(s) to fix"
+  if [ "$environment_pending" -gt 0 ]; then
+    printf '%s\n' "$environment_pending environment step(s) before this project can be verified"
+  fi
   [ "$failures" -eq 0 ] || exit 1
+  # 표준은 붙었고 프로젝트 환경만 남았다는 사실은 성공과도 실패와도 다르다. 같은 코드로 끝내면
+  # 호출한 쪽이 "검증까지 끝났다" 와 구분할 수 없다.
+  [ "$environment_pending" -eq 0 ] || exit "$environment_exit_code"
 }
 
 # 선언한 block 이 파싱되지 않으면 검사는 조용히 0건으로 통과한다. 들여쓰기를 잘못 쓴 계약이

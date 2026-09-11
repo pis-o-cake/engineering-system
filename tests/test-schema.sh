@@ -26,6 +26,8 @@ git -C "$test_dir" init -q
   --project "$test_dir" \
   --name schema-fixture \
   --verify 'printf project-verification' \
+  --environment-check 'printf environment-check' \
+  --environment-setup 'printf environment-setup' \
   --source 'runtime=src/' \
   --policy docs/documentation-policy.md \
   --architecture docs/architecture/README.md \
