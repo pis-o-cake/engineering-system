@@ -10,9 +10,17 @@ vocabulary, the subject limit, and the forbidden trailers. Read `vcs.commit` in 
 `.engsys/project.yaml` for the values this project chose — subject language, subject ending, and
 the scope vocabulary. Do not copy either into the project.
 
-Decide the scope of the commit before the wording. One commit carries one purpose. A subject that
-needs a list to describe the change is the signal to split the commit, not to shorten the list.
-The native check warns about that and still lets it through; splitting is your judgement.
+Decide the scope of the commit before the wording. One commit carries one purpose, and the
+contract's `commit.one-purpose` says how to judge that. The unit is the revert: ask whether
+reverting this commit alone would still make sense. Changes that stop working when only one side
+is reverted belong together even when they touch different kinds of files — code and its tests, a
+test runner and the seed it reads. A file kind is not a purpose.
+
+A subject that needs a list to describe the change is the signal to split the commit, not to
+shorten the list. The native check warns about that and still lets it through. Merging is the same
+judgement in the other direction, and it is the one that gets skipped: before a push, a change that
+continues work already committed on the same artifact is amended or squashed into it rather than
+added as another commit.
 
 Write the header as the contract's format. Use a declared type and, when the project declares a
 scope vocabulary, a declared scope. Adding a scope means adding it to the project declaration in
