@@ -21,13 +21,13 @@ types:
         pattern: '결정|채택|Decision'
       - key: 'context'
         heading: '배경과 제약'
-        pattern: '문제|배경|제약|맥락|Context'
+        pattern: '문제|배경|제약|맥락|Context|Background|Problem|Constraint'
       - key: 'rationale'
         heading: '근거와 대안'
         pattern: '근거|이유|대안|Rationale|Alternatives'
       - key: 'consequence'
         heading: '영향'
-        pattern: '결과|영향|비용|Consequences'
+        pattern: '결과|영향|비용|Consequences|Consequence|Impact|Cost'
 
   architecture:
     filename: slug
@@ -38,16 +38,16 @@ types:
     sections:
       - key: 'overview'
         heading: '구조 요약'
-        pattern: '개요|요약|overview|구조'
+        pattern: '개요|요약|overview|구조|Overview|Summary|Structure'
       - key: 'components'
         heading: '구성요소와 책임'
-        pattern: '구성|component|책임|모듈'
+        pattern: '구성|component|책임|모듈|Component|Responsibilit|Module'
       - key: 'flows'
         heading: '주요 흐름'
-        pattern: '흐름|flow|시나리오|경로'
+        pattern: '흐름|flow|시나리오|경로|Flow|Scenario|Path'
       - key: 'constraints'
         heading: '제약과 근거'
-        pattern: '정본|source of truth|제약|policy|갱신'
+        pattern: '정본|source of truth|제약|policy|갱신|Source of truth|Constraint|Policy'
 
   design-proposal:
     filename: numbered
@@ -59,10 +59,10 @@ types:
     sections:
       - key: 'summary'
         heading: '제안 요약'
-        pattern: '요약|개요|제안|목표|범위'
+        pattern: '요약|개요|제안|목표|범위|Summary|Overview|Proposal|Goal|Scope'
       - key: 'design'
         heading: '설계'
-        pattern: '설계|구성|동작|흐름|모델|구현'
+        pattern: '설계|구성|동작|흐름|모델|구현|Design|Component|Behavior|Flow|Model|Implementation'
 
   project-scope:
     filename: slug
@@ -74,10 +74,10 @@ types:
     sections:
       - key: 'scope'
         heading: '전체 범위'
-        pattern: '범위'
+        pattern: '범위|Scope'
       - key: 'done'
         heading: '기능별 완료 기준'
-        pattern: '완료 기준|DoD|인수 기준'
+        pattern: '완료 기준|DoD|인수 기준|Done criteria|Definition of done|Acceptance criteria'
 
   work-plan:
     filename: slug
@@ -88,13 +88,13 @@ types:
     sections:
       - key: 'baseline'
         heading: '기준 시점과 일정'
-        pattern: '기준|일정|현황|기준 시점'
+        pattern: '기준|일정|현황|기준 시점|Baseline|Schedule|Status'
       - key: 'tasks'
         heading: '작업표'
-        pattern: '작업|task|WBS|칸반|담당'
+        pattern: '작업|task|WBS|칸반|담당|Task|Work|Owner'
       - key: 'blockers'
         heading: '장애 요인과 조치'
-        pattern: '장애|blocker|막힌|대기|필요한 조치|위험'
+        pattern: '장애|blocker|막힌|대기|필요한 조치|위험|Blocker|Waiting|Action|Risk'
 
   brief:
     filename: dated
@@ -106,10 +106,10 @@ types:
     sections:
       - key: 'summary'
         heading: '보고 요약'
-        pattern: '요약|보고 요약|결론|현황'
+        pattern: '요약|보고 요약|결론|현황|Summary|Conclusion|Status'
       - key: 'impact'
         heading: '주요 결과와 영향'
-        pattern: '결과|영향|범위|일정|비용|품질'
+        pattern: '결과|영향|범위|일정|비용|품질|Result|Impact|Scope|Schedule|Cost|Quality'
 
   meeting-record:
     filename: dated
@@ -121,13 +121,13 @@ types:
     sections:
       - key: 'meeting'
         heading: '회의 정보'
-        pattern: '회의 개요|기본정보|일시|참석'
+        pattern: '회의 개요|기본정보|일시|참석|Meeting|Attendees|Date'
       - key: 'decision'
         heading: '결정 사항'
-        pattern: '결정'
+        pattern: '결정|Decision'
       - key: 'action'
         heading: '조치 사항'
-        pattern: '조치|action|후속'
+        pattern: '조치|action|후속|Action|Follow-up'
 
   verification-spec:
     filename: slug
@@ -138,16 +138,16 @@ types:
     sections:
       - key: 'scope'
         heading: '검증 범위'
-        pattern: '범위|정하는 것|대상'
+        pattern: '범위|정하는 것|대상|Scope|Target'
       - key: 'conditions'
         heading: '시험 조건'
-        pattern: '규약|조건|환경|공통'
+        pattern: '규약|조건|환경|공통|Condition|Environment|Convention'
       - key: 'criteria'
         heading: '항목별 판정 기준'
-        pattern: '기준|지표|판정|항목'
+        pattern: '기준|지표|판정|항목|Criteria|Metric|Verdict|Item'
       - key: 'evidence'
         heading: '실행과 증빙'
-        pattern: '산출물|증빙|증거|기록'
+        pattern: '산출물|증빙|증거|기록|Evidence|Artifact|Record'
 
   verification-result:
     filename: dated
@@ -159,16 +159,16 @@ types:
     sections:
       - key: 'verdict'
         heading: '판정 요약'
-        pattern: '판정|결론|요약'
+        pattern: '판정|결론|요약|Verdict|Conclusion|Summary'
       - key: 'conditions'
         heading: '대상과 실행 조건'
-        pattern: '조건|대상|환경|실행'
+        pattern: '조건|대상|환경|실행|Condition|Target|Environment|Execution'
       - key: 'results'
         heading: '기준별 결과'
-        pattern: '기준별|항목별|결과'
+        pattern: '기준별|항목별|결과|Result'
       - key: 'evidence'
         heading: '증거와 재현'
-        pattern: '증거|원자료|재현'
+        pattern: '증거|원자료|재현|Evidence|Raw data|Reproduc'
 
   experiment-report:
     filename: dated
@@ -180,16 +180,16 @@ types:
     sections:
       - key: 'conclusion'
         heading: '결론과 적용 범위'
-        pattern: '결론|판정|확인한 것'
+        pattern: '결론|판정|확인한 것|Conclusion|Verdict|Finding'
       - key: 'method'
         heading: '실험 조건'
-        pattern: '방법|조건|측정|설계|절차|환경'
+        pattern: '방법|조건|측정|설계|절차|환경|Method|Condition|Measurement|Design|Procedure|Environment'
       - key: 'results'
         heading: '결과'
-        pattern: '결과|실측|값|비교|측정값'
+        pattern: '결과|실측|값|비교|측정값|Result|Measured|Value|Comparison'
       - key: 'limits'
         heading: '한계와 후속 조치'
-        pattern: '한계|적용 범위|말할 수 없는|후속|제약'
+        pattern: '한계|적용 범위|말할 수 없는|후속|제약|Limit|Applicability|Follow-up|Constraint'
 
   review-report:
     filename: dated
@@ -201,13 +201,13 @@ types:
     sections:
       - key: 'summary'
         heading: '검토 요약'
-        pattern: '요약|말하는 것|검토 범위|결론'
+        pattern: '요약|말하는 것|검토 범위|결론|Summary|Scope|Conclusion'
       - key: 'findings'
         heading: '발견 사항'
-        pattern: '발견|지적|결함|Critical|P0|항목'
+        pattern: '발견|지적|결함|Critical|P0|항목|Finding|Defect|Issue'
       - key: 'followup'
         heading: '조치와 잔여 위험'
-        pattern: '조치|우선순위|잔여|남은|후속'
+        pattern: '조치|우선순위|잔여|남은|후속|Action|Priorit|Residual|Remaining|Follow-up'
 
   runbook:
     filename: slug
@@ -218,19 +218,19 @@ types:
     sections:
       - key: 'applies'
         heading: '적용 상황'
-        pattern: '적용|대상|넘기는 것|역할|범위|전제'
+        pattern: '적용|대상|넘기는 것|역할|범위|전제|Applies|When to use|Scope|Role|Target'
       - key: 'precheck'
         heading: '실행 전 확인'
-        pattern: '실행 전|사전 확인|전제 조건|준비|사전 점검'
+        pattern: '실행 전|사전 확인|전제 조건|준비|사전 점검|Pre-check|Before running|Preparation|Preflight'
       - key: 'procedure'
         heading: '절차'
-        pattern: '절차|기동|실행|운영|단계|설치'
+        pattern: '절차|기동|실행|운영|단계|설치|Procedure|Steps|Run|Operation|Install'
       - key: 'confirm'
         heading: '성공 확인'
-        pattern: '성공|확인 후|검증|점검 결과'
+        pattern: '성공|확인 후|검증|점검 결과|Success|Verif|Confirm'
       - key: 'recovery'
         heading: '실패와 복구'
-        pattern: '실패|장애|복구|되돌리|대응'
+        pattern: '실패|장애|복구|되돌리|대응|Failure|Recovery|Rollback|Incident'
 
   ui-guideline:
     filename: slug
@@ -241,13 +241,13 @@ types:
     sections:
       - key: 'scope'
         heading: '적용 범위'
-        pattern: '범위|무엇을|대상|적용'
+        pattern: '범위|무엇을|대상|적용|Scope|Target|Applies'
       - key: 'rules'
         heading: '컴포넌트와 표현 규칙'
-        pattern: '규칙|토큰|컴포넌트|레이아웃|요구'
+        pattern: '규칙|토큰|컴포넌트|레이아웃|요구|Rule|Token|Component|Layout|Requirement'
       - key: 'checks'
         heading: '검사 기준'
-        pattern: '검증|검사|기준|확인'
+        pattern: '검증|검사|기준|확인|Check|Verif|Criteria'
 
   prototype-record:
     filename: slug
@@ -259,13 +259,13 @@ types:
     sections:
       - key: 'target'
         heading: '대상과 version'
-        pattern: '대상|범위|version|판본'
+        pattern: '대상|범위|version|판본|Target|Scope|Version'
       - key: 'screens'
         heading: '화면과 상태'
-        pattern: '화면|상태|screen|플로우'
+        pattern: '화면|상태|screen|플로우|Screen|State|Flow'
       - key: 'handoff'
         heading: '구현 인계 사항'
-        pattern: '인계|구현|연동|handoff|차이'
+        pattern: '인계|구현|연동|handoff|차이|Handoff|Implementation|Integration|Difference'
 
   # guide 와 ledger 는 대상·필드가 위치마다 달라 절을 강제하지 않는다. metadata 와 근거 링크만 검사한다.
   guide:
