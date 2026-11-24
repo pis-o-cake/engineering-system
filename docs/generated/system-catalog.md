@@ -12,7 +12,7 @@
 - version: `0.1.0-draft` (draft)
 - path: `packages/docs-gov`
 
-소유 책임:
+Owned responsibilities:
 
 - documentation lifecycle classification
 - documentation impact prompt
@@ -32,14 +32,14 @@ Claude Code hook:
 
 - `PreToolUse` matcher `Edit|MultiEdit|Write` → `claude-code/hooks/block-generated-edit.sh` (timeout 3s)
 - `PostToolUse` matcher `Edit|MultiEdit|Write` → `claude-code/hooks/check-document-structure.sh` (timeout 10s)
-- `SessionStart` 모든 호출 → `claude-code/hooks/session-status.sh` (timeout 5s)
+- `SessionStart` all calls → `claude-code/hooks/session-status.sh` (timeout 5s)
 
 ### foundation
 
 - version: `0.1.0-draft` (draft)
 - path: `packages/foundation`
 
-소유 책임:
+Owned responsibilities:
 
 - project contract
 - bootstrap and upgrade workflow
@@ -54,14 +54,14 @@ Claude Code skill:
 
 Claude Code hook:
 
-- 없음
+- none
 
 ### pipeline
 
 - version: `0.1.0-draft` (draft)
 - path: `packages/pipeline`
 
-소유 책임:
+Owned responsibilities:
 
 - project contract verification command
 - explicit Engineering System verification entrypoint
@@ -73,14 +73,14 @@ Claude Code skill:
 
 Claude Code hook:
 
-- 없음
+- none
 
 ### vcs-gov
 
 - version: `0.1.0-draft` (draft)
 - path: `packages/vcs-gov`
 
-소유 책임:
+Owned responsibilities:
 
 - commit message contract and its native check
 - merge request body contract and its native check
@@ -102,7 +102,7 @@ Claude Code hook:
 
 ### baseline
 
-언어와 framework에 독립적인 최소 Engineering System profile
+Minimal Engineering System profile, independent of language and framework
 
 package:
 

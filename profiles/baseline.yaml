@@ -1,6 +1,6 @@
 profile:
   name: baseline
-  description: 언어와 framework에 독립적인 최소 Engineering System profile
+  description: Minimal Engineering System profile, independent of language and framework
 
 project-contract:
   required:
