@@ -5,54 +5,62 @@ status: accepted
 date: 2026-09-09
 ---
 
-# 0015. 프로젝트가 복사한 hook 은 진단하고 덮어쓰지 않는다
+# 0015. Hooks copied into a project are diagnosed, not overwritten
 
-`engsys hooks status` 가 프로젝트의 hook 사본과 현재 template 의 차이를 보고하고,
-`engsys hooks update` 가 명시적으로 갱신한다. 사본이 근거한 template 과 기록 시점의 사본을 함께
-기록해 "설치 직후"와 "프로젝트가 고쳐서 유지하는 것"을 구분한다.
+`engsys hooks status` reports the difference between a project's hook copy and the current
+template, and `engsys hooks update` updates it explicitly. Recording both the template the copy is
+based on and the copy as of recording distinguishes "just installed" from "modified and maintained
+by the project".
 
-## 결정
+## Decision
 
-- `.engsys/hooks.txt` 에 hook 마다 두 해시를 기록한다. 사본이 근거한 template 의 해시와 기록 시점의
-  사본 해시다. `init --hooks` 와 `hooks update` 가 이 기록을 남긴다.
-- 상태는 다섯이다. `current`(사본 = template), `owned`(프로젝트가 고쳤고 현재 template 을 확인함),
-  `outdated`(고치지 않았는데 template 이 바뀜), `modified`(고쳤고 그 뒤 template 이 바뀌었거나 기록이
-  없음), `missing`.
-- `hooks update` 는 `missing` 과 `outdated` 만 그대로 갱신한다. `modified` 는 `--force` 없이는
-  바꾸지 않고 무엇이 다른지와 두 선택지를 출력한다.
-- `--adopt` 는 사본을 그대로 두고 현재 template 을 확인한 것으로 기록한다. 이후 template 이 다시
-  바뀔 때만 알린다.
-- `doctor` 가 같은 상태를 보고한다. `upgrade` 는 hook 을 건드리지 않는다.
+- `.engsys/hooks.txt` records two hashes per hook: the hash of the template the copy is based on,
+  and the hash of the copy at recording time. `init --hooks` and `hooks update` write this record.
+- There are five states: `current` (copy = template), `owned` (the project modified it and has
+  acknowledged the current template), `outdated` (not modified, but the template changed),
+  `modified` (modified, and the template changed afterwards or there is no record), and `missing`.
+- `hooks update` updates only `missing` and `outdated` as is. It does not change `modified`
+  without `--force`; instead it prints what differs and the two options.
+- `--adopt` leaves the copy as it is and records the current template as acknowledged. It reports
+  again only when the template changes later.
+- `doctor` reports the same states. `upgrade` does not touch hooks.
 
-## 배경과 제약
+## Context and constraints
 
-`init --hooks` 가 심는 `pre-push` 와 `commit-msg` 는 프로젝트가 소유한다
-([ADR 0008](0008-init-detects-declarations-and-seeds-the-project-gate.md)). 표준이 덮어쓰지 않는
-것은 맞지만, 그 결과 template 을 고쳐도 이미 채택한 프로젝트가 그 변경을 알 방법이 없었다.
+The `pre-push` and `commit-msg` hooks planted by `init --hooks` are owned by the project
+([ADR 0008](0008-init-detects-declarations-and-seeds-the-project-gate.md)). It is right that the
+standard does not overwrite them, but as a result, projects that had already adopted the standard
+had no way of learning about changes to the template.
 
-이 저장소에서 `pre-push` template 을 두 번 고쳤다. 전송 commit 판정([ADR
-0013](0013-the-push-gate-judges-the-commit-it-sends.md))과 branch 이름 검사 호출이다. 두 변경 모두
-`public-ai-qa` 에 도달하지 않았고, 도달하지 않았다는 사실도 드러나지 않았다.
+This repository changed the `pre-push` template twice: the sent-commit verdict
+([ADR 0013](0013-the-push-gate-judges-the-commit-it-sends.md)) and the call to the branch name
+check. Neither change reached `public-ai-qa`, and the fact that they had not reached it was not
+visible either.
 
-제약은 소유권이다. 프로젝트가 고친 hook 을 표준이 조용히 되돌리면 그 프로젝트의 검사가 사라진다.
-이 저장소의 `pre-push` 는 자기 test 전체를 돌리므로 template 으로 덮으면 gate 가 없어진다.
+The constraint is ownership. If the standard silently reverts a hook the project modified, that
+project's checks disappear. This repository's `pre-push` runs its entire test suite, so
+overwriting it with the template would remove the gate.
 
-## 근거와 대안
+## Rationale and alternatives
 
-- **`upgrade` 가 hook 도 갱신한다**: 한 명령으로 끝나지만 프로젝트가 고친 사본을 되돌린다. 실제로
-  구현 중 이 저장소의 `pre-push` 를 덮어썼고 git 으로 복구했다. 소유권을 지키려면 갱신은 별도
-  명령이어야 한다.
-- **template 해시만 기록한다**: 처음 구현이 그랬다. 설치 직후와 프로젝트가 고친 뒤 유지하기로 한
-  상태를 구분할 수 없어 사본을 고쳐도 `owned` 로 보고했다. 두 해시가 필요하다.
-- **차이를 diff 로 출력한다**: hook 이 길면 출력이 화면을 덮는다. 실행할 `diff` 명령을 알려 주고
-  판단은 사람이 한다.
-- **template 에 version 을 적는다**: 사본이 그 줄만 고쳐도 어긋난다. 내용 해시가 정확하다.
+- **Have `upgrade` update hooks too**: one command would do everything, but it reverts copies the
+  project modified. During implementation it actually overwrote this repository's `pre-push`,
+  which was restored with git. Preserving ownership requires updating to be a separate command.
+- **Record only the template hash**: the first implementation did this. It could not distinguish
+  "just installed" from "modified by the project and kept", so it reported `owned` even when the
+  copy had been modified. Two hashes are needed.
+- **Print the difference as a diff**: a long hook would flood the screen. The tool prints the
+  `diff` command to run, and a person makes the judgement.
+- **Write a version into the template**: a copy that edits only that line would drift. A content
+  hash is exact.
 
-## 영향
+## Consequences
 
-- 이미 채택한 프로젝트는 기록이 없어 처음에는 `modified` 로 보인다. `hooks update --adopt` 로
-  현재 사본을 기준으로 잡거나 `--force` 로 template 을 받는다.
-- `.engsys/hooks.txt` 가 계약 디렉토리에 하나 늘어난다. 프로젝트가 commit 한다.
-- template 을 고치면 채택 프로젝트가 `doctor` 와 `hooks status` 에서 그 사실을 본다. 반영은 각
-  프로젝트가 결정한다.
-- `.claude/rules/engineering-system.md` 도 같은 성격의 사본이지만 이번 범위에 넣지 않았다.
+- Projects that have already adopted the standard have no record, so they first appear as
+  `modified`. They either take the current copy as the baseline with `hooks update --adopt` or
+  take the template with `--force`.
+- The contract directory gains one file, `.engsys/hooks.txt`. The project commits it.
+- When the template changes, adopting projects see it in `doctor` and `hooks status`. Each project
+  decides whether to apply it.
+- `.claude/rules/engineering-system.md` is a copy of the same kind, but it was not included in
+  this scope.

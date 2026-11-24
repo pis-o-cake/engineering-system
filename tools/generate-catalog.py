@@ -85,7 +85,7 @@ def _render_package(name, entry):
         "- version: `%s` (%s)" % (package.get("version", "?"), package.get("status", "?")),
         "- path: `%s`" % entry["path"],
         "",
-        "소유 책임:",
+        "Owned responsibilities:",
         "",
     ]
     for responsibility in package.get("owns") or []:
@@ -100,7 +100,7 @@ def _render_package(name, entry):
         for skill in skills:
             lines.append("- `%s` (`%s/%s`)" % (os.path.basename(skill), entry["path"], skill))
     else:
-        lines.append("- 없음")
+        lines.append("- none")
     lines.append("")
 
     hooks = adapter.get("hooks") or []
@@ -109,13 +109,13 @@ def _render_package(name, entry):
     if hooks:
         for hook in hooks:
             matcher = hook.get("matcher")
-            scope = "matcher `%s`" % matcher if matcher else "모든 호출"
+            scope = "matcher `%s`" % matcher if matcher else "all calls"
             lines.append(
                 "- `%s` %s → `%s` (timeout %ss)"
                 % (hook["event"], scope, hook["command"], hook["timeout"])
             )
     else:
-        lines.append("- 없음")
+        lines.append("- none")
     lines.append("")
     return lines
 

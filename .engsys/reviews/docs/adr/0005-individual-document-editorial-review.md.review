@@ -1,12 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0005-individual-document-editorial-review.md
-blob: 4ea7fb80fd213cd91f99eb38da2bf1716855c518
+blob: cbf423f06e5e27e23600810aea6e0141aa1c7714
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: 문서 편집 검토를 왜 어떻게 강제하는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: How are documents reviewed one at a time, and what does the review check guarantee?
 
-도입 문단 두 문장을 추가했다. 검토 단위와 push gate 차단, 그리고 "품질·승인을 증명하지
-않는다"는 보장 범위를 함께 담았다 — 뒤 문장을 빼면 검사 결과를 승인으로 읽을 수 있다.
-문제·결정·대안과 비용·보장 범위 절은 바꾸지 않았다.
+Records that documents get an individual editorial review and that the native check and push gate block missing receipts and post-review body changes, without proving sentence quality or report approval.
+Translated from Korean to English; frontmatter, command names (`engsys review record/check`) and the `review-document` skill name are unchanged.
+Headings: 문제 -> Problem, 결정 -> Decision, 대안과 비용 -> "Alternatives and Costs" (kept as costs, not renamed to Consequences, because the section is about costs; "Cost" satisfies the contract pattern), 보장 범위 -> Scope of the Guarantee.
+상급자 rendered as "managers"; 자기 검토 as self-review.
+The guarantee limits (no proof of truthfulness, independence or quality) are preserved verbatim in meaning. No Korean literals retained.
 

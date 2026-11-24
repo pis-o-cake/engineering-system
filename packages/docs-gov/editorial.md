@@ -1,52 +1,69 @@
-# 문서 편집 기준
+# Document editorial criteria
 
-독자가 문서만 읽고 필요한 판단이나 작업을 할 수 있어야 한다. 작성 전에 독자와 문서가
-답할 질문을 정한다. 분량은 그 질문에 필요한 근거와 절차에 맞춘다.
+A reader must be able to make the needed judgment or do the needed work from the document alone.
+Before writing, decide who the reader is and what question the document answers. Match the length
+to the evidence and procedure that question needs.
 
-| 문서 | 처음에 알려줄 것 | 남겨야 할 내용 |
+| Document | What to tell first | What must remain |
 |---|---|---|
-| 보고·의사결정 자료 | 결론, 사업·일정 영향, 결정 또는 지원 요청 | 근거, 선택지와 비용, 미확정 사항, 다음 조치 |
-| 현행 아키텍처 | 현재 구조와 주요 제약 | 경계·관계·흐름, 구현 정본, 결정 기록 링크 |
-| 운영 절차 | 적용 상황과 전제 조건 | 실행 순서, 성공 판정, 실패 시 조치와 복구 |
-| 설계·ADR | 문제와 선택한 결정 | 당시 근거, 실제 검토한 대안, 비용과 제약 |
-| 실험·검토 기록 | 관찰 시점, 결론과 적용 범위 | 재현 조건, 측정값, 증거 위치, 한계 |
+| Reports and decision material | Conclusion, business and schedule impact, the decision or support requested | Evidence, options and their costs, undetermined items, next actions |
+| Current architecture | Current structure and major constraints | Boundaries, relationships and flows, the implementation's source of truth, links to decision records |
+| Operating procedures | When it applies and its preconditions | Execution order, success verdict, actions and recovery on failure |
+| Design and ADR | The problem and the decision chosen | The rationale at the time, the alternatives actually considered, costs and constraints |
+| Experiment and review records | Time of observation, conclusion and applicability | Reproduction conditions, measured values, location of evidence, limitations |
 
-보고 자료의 본문은 개발 과정에 참여하지 않은 상급자도 이해할 수 있게 쓴다. 코드 식별자와
-명령은 그대로 보존하고, 설명에 쓰는 전문 용어는 독자에게 필요한 만큼 풀어 쓴다. 기술 상세는
-근거 절이나 부록으로 배치한다. 요청할 결정이 없다면 억지로 승인 항목을 만들지 않는다.
+Write the body of report material so that a superior who did not take part in development can
+understand it. Keep code identifiers and commands unchanged, and spell out the technical terms used
+in explanations as far as the reader needs. Place technical detail in an evidence section or an
+appendix. If there is no decision to request, do not invent an approval item.
 
-## 편집할 때 확인할 것
+## What to check while editing
 
-- 첫 문단에서 결과나 핵심 상태를 알 수 있는가? 문서의 성격을 장황하게 선언하지 않는다.
-- 각 절이 독자의 질문에 답하는가? 작업 순서·대화 회차·사용자와의 실랑이는 최종 설명에서 덜어낸다.
-- 사실, 해석, 제안, 미확정을 구분했는가? 관찰을 근거 없이 일반화하거나 성공을 과장하지 않는다.
-- 같은 설명을 표·본문·요약에서 반복하지 않는가? 반복 대신 내용을 한 곳에 모으고 연결한다.
-- 이미 수정한 설명 뒤에 옛 설명이나 정정 문장을 남겨두지 않았는가? 기록 문서는 시점별 상태를 구분한다.
-- 굵은 글씨·경고·괄호·화살표가 문장의 관계를 대신하지 않는가? 판단에 필요한 강조만 남긴다.
-- 비유, 자평, 훈계, 극적인 대조가 사실 전달을 방해하지 않는가? 구체적인 상태와 결과로 바꾼다.
-- 축약하면서 결정 이유, 수치, 단위, 조건, 반례, 명령, 출처를 잃지 않았는가?
+- Does the first paragraph show the result or the key state? Do not declare the document's nature at length.
+- Does each section answer the reader's question? Remove work order, conversation rounds and back-and-forth with the user from the final explanation.
+- Are facts, interpretations, proposals and undetermined items kept apart? Do not generalize observations without evidence or overstate success.
+- Is the same explanation repeated across a table, the body and a summary? Instead of repeating, gather the content in one place and link to it.
+- Is an old explanation or a correction sentence left behind after an explanation was already fixed? Record documents distinguish the state at each point in time.
+- Do bold text, warnings, parentheses or arrows stand in for the relationship between sentences? Keep only the emphasis needed for a judgment.
+- Do metaphors, self-assessment, lecturing or dramatic contrasts get in the way of conveying facts? Replace them with concrete states and results.
+- Did shortening lose decision reasons, numbers, units, conditions, counterexamples, commands or sources?
 
-줄 수나 금지어 개수로 합격을 결정하지 않는다. 표는 비교할 항목이 있을 때, 목록은 나란히
-확인하거나 실행할 항목이 있을 때 쓴다. 필요한 설명은 연결된 문장으로 쓴다.
+Do not decide a pass by line count or by the number of banned words. Use a table when there are
+items to compare, and a list when there are items to check or run side by side. Write the
+necessary explanation as connected sentences.
 
-## 수정 예시
+## Rewriting examples
 
-운영 절차에서 “무엇이 조용히 틀리는가에 지면을 쓴다. 화면은 정상이고 로그도 조용하다”는
-서술은 “이관 전에 프롬프트 초기값, 접근 허용 범위, 프록시 IP 설정을 확인한다. 기동 성공만으로는
-이 설정들의 정확성을 확인할 수 없다”로 바꾼다. 이어서 실제 확인 명령과 기대 결과를 적는다.
+The examples quote Korean text because adopting projects write their documents in Korean. Each
+quote is followed by an English rendering.
 
-현행 아키텍처에서 “문서가 오래 자급자족이라 적어 왔으나 코드는 그렇지 않다”는 서술은
-“도메인 사이에 순환 의존성이 있어 개별 도메인을 그대로 분리할 수 없다”로 바꾼다.
-확인한 관계와 제약을 설명하고, 과거 문서의 오류를 조사한 과정은 검토 기록으로 연결한다.
+In an operating procedure, the statement “무엇이 조용히 틀리는가에 지면을 쓴다. 화면은 정상이고
+로그도 조용하다” ("This spends its pages on what goes wrong silently. The screen looks normal and
+the logs are quiet.") is rewritten as “이관 전에 프롬프트 초기값, 접근 허용 범위, 프록시 IP 설정을
+확인한다. 기동 성공만으로는 이 설정들의 정확성을 확인할 수 없다” ("Before migration, check the
+prompt defaults, the allowed access range and the proxy IP settings. A successful startup alone
+does not confirm that these settings are correct."). Then write the actual check commands and the
+expected results.
 
-보고서에서 “대공사·세션 최대 규모 리팩터”는 보고 근거가 되지 않는다. 실제 변경 범위,
-변경 이유, 검증 결과와 남은 위험을 쓴다. 측정하지 않은 비용 절감이나 품질 향상은 추가하지 않는다.
+In a current architecture document, the statement “문서가 오래 자급자족이라 적어 왔으나 코드는
+그렇지 않다” ("The documents long described it as self-sufficient, but the code is not.") is
+rewritten as “도메인 사이에 순환 의존성이 있어 개별 도메인을 그대로 분리할 수 없다” ("There are
+circular dependencies between domains, so an individual domain cannot be split out as it is.").
+Describe the confirmed relationships and constraints, and link the process of investigating the
+errors in past documents to a review record.
 
-## 완료 조건
+In a report, “대공사·세션 최대 규모 리팩터” ("a major overhaul, the largest refactor of the
+session") is not grounds for a report. Write the actual scope of the change, the reason for it, the
+verification results and the remaining risks. Do not add cost savings or quality improvements that
+were not measured.
 
-작성·수정한 문서는 한 편씩 끝까지 읽고 위 기준으로 편집한다. 최종 내용에 대해 독자, 질문,
-구체적인 검토 결과와 본문 해시를 기록한다. 해결되지 않은 모순이나 근거 없는 결론이 있으면
-합격을 기록하지 않는다. 생성 문서·외부 원문은 본문을 직접 편집하지 않는다.
+## Completion conditions
 
-검토 누락과 검토 후 변경은 native gate가 검사한다. 이 검사는 글의 품질이나 검토자의 독립성을
-증명하지 않는다. 보고 승인과 사실 판단의 책임은 기존 검토자에게 있다.
+Read each written or revised document to the end, one at a time, and edit it against the criteria
+above. For the final content, record the reader, the question, concrete review findings and the
+body hash. If an unresolved contradiction or an unsupported conclusion remains, do not record a
+pass. Do not edit the bodies of generated documents or external originals directly.
+
+Missing reviews and changes after review are checked by the native gate. This check does not prove
+the quality of the writing or the reviewer's independence. Responsibility for approving reports and
+judging facts stays with the existing reviewers.

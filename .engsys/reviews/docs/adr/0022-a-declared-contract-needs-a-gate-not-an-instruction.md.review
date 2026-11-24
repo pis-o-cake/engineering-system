@@ -1,26 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0022-a-declared-contract-needs-a-gate-not-an-instruction.md
-blob: 53ed73458f0335c545485e30ba6330e7e643d45c
+blob: 2790a41be118190e50d25a2a5eb82b5d041df1b3
 decision: pass
-reviewer: claude-opus-5 (agent)
-audience: 기술 책임자와 표준 유지보수자
-purpose: 이 결정 중 무엇이 아직 유효하고 무엇이 대체됐는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: How is the merge request contract enforced rather than merely instructed?
 
-ADR 0022 는 accepted 상태의 frozen 기록이다. 본문은 한 글자도 고치지 않았다. frontmatter 에
-superseded-in-part-by: 0025 한 줄만 더했다.
-
-이유: 그 문서의 결정 절이 gate 를 `.claude/settings.json` 의 hook 으로 등록한다고 적었다. ADR
-0025 가 그것을 plugin 의 hook catalog 로 옮긴다. 0022 만 읽은 사람은 settings.json 에서 hook
-항목을 찾다가 없는 것을 보고 설정이 빠졌다고 판단하게 된다.
-
-전체를 superseded 로 바꾸지 않은 이유: 0022 의 핵심 결정은 그대로 유효하다 — merge request 계약을
-기계가 판정한다는 것, 판정 범위, --body-file 을 요구한다는 것, 그리고 "gate 를 부르는 것은 저장소에
-든 선언이지 세션이 읽은 skill 이 아니다" 라는 원칙이다. 마지막 항목은 표현만 바뀌었고 뜻은 같다.
-그 선언이 이제 enabledPlugins 이고 plugin 이 gate 를 나른다.
-
-바뀐 근거는 이 문서가 아니라 ADR 0025 의 배경 절에 있다. frozen 기록에 나중의 관측을 덧붙이면
-그 문서가 당시 판단이 아니게 된다.
-
-확인한 것: docs check 와 check-documentation.py 가 이 frontmatter 키를 받는다. 본문·날짜·상태·
-결정 서술은 원본 그대로다. 같은 키를 ADR 0007 에서 이미 썼다.
+Records the decision that merge request bodies are judged by engsys vcs check-merge-request, called from a PreToolUse hook before gh pr create, instead of relying on a skill instruction.
+Translated from Korean to English as a frozen record; frontmatter including superseded-in-part-by: 0025 is unchanged, as are the PR #20/#21/#22 incident, the --body-file rule and the five rejected alternatives.
+Headings mapped to Decision / Context and constraints / Rationale and alternatives / Consequences.
+Contract keys (section-heading-prefix, forbidden-body-contains, writing, excluded) and commands kept verbatim; no Korean literals retained.
+The limitation that writing style is not machine-judged is kept as stated.
 

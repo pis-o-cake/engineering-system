@@ -5,61 +5,69 @@ status: accepted
 date: 2026-09-09
 ---
 
-# 0010. SessionStart는 검토 backlog만 세고 구조는 다시 검사하지 않는다
+# 0010. SessionStart counts only the review backlog and does not recheck structure
 
-세션 시작 hook에서 전체 구조 검사를 뺀다. 검토 기록이 없는 문서 수만 세고, launcher를 부르지
-않는다. 실측 7.2초가 0.16초가 된다.
-[ADR 0009](0009-document-structure-feedback-at-write-time.md)의 SessionStart 결정을 대체한다.
+The full structure check is removed from the session start hook. It counts only documents without a
+review receipt and does not call the launcher. The measured time drops from 7.2 seconds to 0.16 seconds.
+This supersedes the SessionStart decision in [ADR 0009](0009-document-structure-feedback-at-write-time.md).
 
-## 결정
+## Decision
 
-- `SessionStart` hook은 계약의 `documentation.review.scopes` 안에서 **검토 기록 파일이 없는 문서
-  수**만 센다. 구조 findings는 세지 않는다.
-- hook은 `engsys`를 실행하지 않는다. 계약과 파일 존재만 읽으므로 `CLAUDE_PLUGIN_ROOT` 없이도
-  동작한다.
-- 선언한 scope 전체를 `git ls-files`에 한 번에 넘긴다. scope마다 git을 띄우면 선언이 늘어난 만큼
-  느려진다.
-- hook timeout을 20초에서 5초로 내린다.
+- The `SessionStart` hook counts only **documents without a review receipt file** within the
+  contract's `documentation.review.scopes`. It does not count structure findings.
+- The hook does not run `engsys`. It reads only the contract and file existence, so it works
+  without `CLAUDE_PLUGIN_ROOT`.
+- All declared scopes are passed to `git ls-files` at once. Spawning git per scope would slow down
+  in proportion to the number of declarations.
+- The hook timeout is lowered from 20 seconds to 5 seconds.
 
-## 배경과 제약
+## Background and Constraints
 
-ADR 0009는 `SessionStart`가 `docs check`와 `review check`를 각각 한 번씩 돌게 했다. 그 문서의
-영향 절은 "문서가 많은 프로젝트에서 느려지면 timeout에서 잘린다"를 미확정으로 남겼다.
+ADR 0009 had `SessionStart` run `docs check` and `review check` once each. That document's
+consequences section left "if they get slow in a project with many documents, they are cut off at
+the timeout" unconfirmed.
 
-`public-ai-qa`(배정 문서 77편, `review.scopes` 77)에서 실측했다.
+Measured on `public-ai-qa` (77 assigned documents, 77 in `review.scopes`):
 
-| 항목 | 실측 |
+| Item | Measured |
 |---|---|
-| `docs check` 전건 | 5.1초 |
-| `review check` 전건 | 2.2초 |
-| `SessionStart` 합계 | **7.2초, 출력 없음** |
+| `docs check`, all documents | 5.1 s |
+| `review check`, all documents | 2.2 s |
+| `SessionStart` total | **7.2 s, no output** |
 
-그 저장소는 findings 0·pending 0이라 hook이 정상적으로 침묵했다. 즉 깨끗한 저장소에서 세션마다
-7.2초를 쓰고 아무것도 말하지 않는다. timeout에는 걸리지 않았으므로 남은 문제는 비용 대비 값이다.
+That repository had 0 findings and 0 pending, so the hook was correctly silent. In other words, in
+a clean repository it spends 7.2 seconds every session and says nothing. It did not hit the
+timeout, so the remaining issue is value for cost.
 
-비용의 대부분은 `docs check`다. 문서마다 awk를 여러 번 띄운다.
+Most of the cost is `docs check`, which spawns awk several times per document.
 
-## 근거와 대안
+## Rationale and Alternatives
 
-- **구조 검사를 SessionStart에서 뺀다**: 구조는 `PostToolUse`가 작성 시점에 그 문서만 정확히 보고
-  (0.145초), 나머지는 push gate가 본다. `SessionStart`의 고유한 값은 이 세션이 만들지 않은 검토
-  backlog다. 그것만 남긴다.
-- **구조를 싸게 근사한다**: frontmatter만 훑어 `type` 누락을 세는 안이다. 유형 계약을 두 곳에서
-  해석하게 되어, 안내와 검사가 서로 다른 필수 구성을 갖는 상태를 만든다.
-  [design 0002](../design/0002-document-authoring-contracts.md)가 금지한 상태다.
-- **검토 기록도 본문 해시로 대조한다**: 정확하지만 세션마다 전 문서를 다시 해시한다. 파일 존재만
-  보면 0.16초이고, 놓치는 것은 "검토 후 본문이 바뀐 문서" 하나다. 그것은 대개 세션 중에 생기고
-  `engsys review check`와 push gate가 잡는다.
-- **SessionStart를 없앤다**: backlog를 알려 주는 층이 사라진다. 0.16초면 유지할 값이 있다.
-- **`docs check` 자체를 최적화한다**: 문서마다 awk를 띄우는 구조를 고치면 이 hook도 함께 싸진다.
-  검사기 전체를 다시 쓰는 변경이라 이번에 하지 않았다. push gate와 `verify`에서 5.1초는 backend
-  검사에 묻히므로 지금 급하지 않다.
+- **Remove the structure check from SessionStart**: `PostToolUse` checks structure precisely for
+  just that document at write time (0.145 s), and the push gate covers the rest. The value unique
+  to `SessionStart` is the review backlog that this session did not create. Only that is kept.
+- **Approximate structure cheaply**: this option would skim only frontmatter and count missing
+  `type`. The type contract would then be interpreted in two places, producing a state in which the
+  guidance and the check have different required compositions.
+  [design 0002](../design/0002-document-authoring-contracts.md) forbids that state.
+- **Also compare review receipts against the body hash**: accurate, but every document would be
+  rehashed every session. Checking only file existence takes 0.16 seconds, and the one thing it
+  misses is "documents whose body changed after review". That usually happens during a session, and
+  `engsys review check` and the push gate catch it.
+- **Remove SessionStart**: the layer that reports the backlog disappears. At 0.16 seconds it is
+  worth keeping.
+- **Optimize `docs check` itself**: fixing the structure that spawns awk per document would make
+  this hook cheaper too. That change means rewriting the whole checker, so it was not done this
+  time. In the push gate and `verify`, 5.1 seconds is buried under the backend checks, so it is not
+  urgent now.
 
-## 영향
+## Consequences
 
-- `public-ai-qa` 기준 7.2초에서 0.16초가 됐다. 같은 저장소, 같은 선언에서 잰 값이다.
-- `SessionStart`는 `documentation.review.scopes`를 선언한 프로젝트에서만 말한다. 선언이 없으면
-  아무것도 출력하지 않는다.
-- 검토 후 본문이 바뀐 문서는 이 hook이 세지 않는다. 그 상태는 `engsys verify`와 push gate가 잡는다.
-- ADR 0009의 다른 결정 — `PostToolUse`의 작성 시점 구조 검사, 검토 기록 검사를 옮기지 않는 것,
-  `Stop` hook을 쓰지 않는 것 — 은 그대로 유효하다.
+- On `public-ai-qa`, the time went from 7.2 seconds to 0.16 seconds. Both values were measured on
+  the same repository with the same declarations.
+- `SessionStart` speaks only in projects that declare `documentation.review.scopes`. Without the
+  declaration it prints nothing.
+- This hook does not count documents whose body changed after review. That state is caught by
+  `engsys verify` and the push gate.
+- The other decisions of ADR 0009 (the write-time structure check in `PostToolUse`, not moving the
+  review receipt check, and not using a `Stop` hook) remain in effect.

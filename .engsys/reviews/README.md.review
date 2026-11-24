@@ -1,33 +1,20 @@
 engsys-document-review: 1
 document: README.md
-blob: 0e582a3d5856595524032254285246c4f70893e5
+blob: 1d0e9a079f37bf50e84f55e087c2a05e873aabec
 decision: pass
-reviewer: claude-opus-5 (agent)
-audience: 표준을 쓰는 개발자와 리뷰어
-purpose: gate 를 무엇이 부르고 engsys 를 어디서 찾는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Developers and reviewers who use the standard
+purpose: How to attach the standard to a project and what each command and gate checks
 
-README 는 표준을 쓰는 개발자와 리뷰어가 읽는 운영 절차 문서다. 이번 편집은 「닫지 못한 것」 절의
-마지막 두 문단이다. 다른 절과 YAML 예시는 손대지 않았다.
-
-바꾼 이유: 그 문단이 "init 이 남기는 .claude/settings.json 이 gh pr create 앞에서 같은 판정을
-부른다" 로 적혀 있었는데, gate 를 등록하는 자리가 plugin 의 hook catalog 로 옮겼다. 그대로 두면
-독자가 settings.json 에서 hook 항목을 찾다가 없는 것을 보고 설정이 빠졌다고 판단한다.
-
-편집한 것: 부르는 주체를 plugin 이 등록한 hook 으로 고치고, 강제의 근거는 여전히 저장소에 든
-선언이라는 문장을 유지했다 — settings.json 이 plugin 을 붙이고 plugin 이 gate 를 나른다. 이
-연결을 명시하지 않으면 "선언이 강제한다" 는 원칙과 "plugin 이 나른다" 는 사실이 따로 읽힌다.
-ADR 0022 와 0025 를 나란히 연결했다.
-
-문단을 하나 더했다: launcher 를 찾는 순서와, 로그인 셸이 아닌 곳에서 도는 경우가 있어 PATH 만
-믿으면 gate 가 꺼진 채로 돈다는 사실이다. 이것이 이번 결함의 실제 내용이고, 다음에 같은 증상을
-본 사람이 원인을 바로 찾을 수 있어야 한다.
-
-확인한 것: 판정 범위 문단을 별도 문단으로 떼어 두 주제가 섞이지 않게 했다. 문서 전체에서
-settings.json 이 hook 을 갖는다고 읽히는 다른 서술이 없는지 확인했다. 90행과 290행의 settings.json
-언급은 marketplace 선언에 대한 것이라 그대로 유효하다.
-
-한계: Windows 에서 고친 hook 이 실제로 도는 것은 아직 확인하지 않았다. 그 사실은 ADR 0025 의
-한계로 남겼고 README 에는 넣지 않았다.
-
-engsys docs check 와 tests/test-all.sh 는 통과한다.
+README.md is now the English default README for developers and reviewers who use the standard, with a
+language switcher to README.ko.md (GitHub convention: README.md + README.<lang>.md).
+Translated every section of the previous Korean README without dropping commands, flags, ADR links,
+limits or conditions: setup's eight steps, teammate prerequisites, failure handling, Windows/LF notes,
+locked-revision execution, adoption, check scope, OS-specific commands, commit/MR gate, branch model,
+tracker contract, document types and editorial review.
+Added two subheadings (Attaching to Claude Code, Branch model) to split long sections; content unchanged.
+Kept Korean where it is real output or contract value: setup's failure output block (the CLI prints
+Korean), the example commit/PR titles, the label example `결함`, and MR section `영향 및 후속 작업` /
+`없음` with English glosses.
+Limitation: setup's Korean CLI output is shown as-is; the CLI itself was not localized in this change.
 

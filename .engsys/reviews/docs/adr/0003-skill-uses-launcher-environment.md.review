@@ -1,12 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0003-skill-uses-launcher-environment.md
-blob: e5eeefa4b73cf91fe12b478e14095fe523ab0fa6
+blob: c9265b81c792cbaaa823fcbe8a8e521c3846a6cf
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: skill 이 plugin 경로를 어떻게 얻는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: Which environment variable should skills use to locate the plugin, and why?
 
-도입 문단 두 문장을 추가했다. ENGSYS_PLUGIN_ROOT 사용과 CLAUDE_PLUGIN_ROOT 가 hook 전용이라는
-사실은 결정 절에 있던 내용이다. skill 전체가 동작하지 않던 발견 경위는 맥락 절에 남겨 두고
-도입에 옮기지 않았다. 재검토 조건(Claude Code 가 skill 환경에 plugin 경로를 노출하면)도 그대로다.
+Records that skills use only ENGSYS_PLUGIN_ROOT exported by the `engsys claude` launcher, while CLAUDE_PLUGIN_ROOT is reserved for hook commands.
+Translated from Korean to English; frontmatter, variable names, `/bin/engsys`, tests/test-launcher.sh and the five-skill count are unchanged.
+Headings mapped to Context, Decision, Alternatives and Consequences; lead paragraph kept before the first section.
+"lock으로 revision을 고정" rendered as pinning the revision with the lock, matching the locked-revision terminology.
+The revisit condition (Claude Code exposing the plugin path to skills) is preserved. No Korean literals retained.
 

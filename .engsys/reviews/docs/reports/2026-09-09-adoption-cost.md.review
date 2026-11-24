@@ -1,35 +1,14 @@
 engsys-document-review: 1
 document: docs/reports/2026-09-09-adoption-cost.md
-blob: d47491afa358215babebe34ee5285611aaea2808
+blob: 8201abba2b39a706d567e83364b2b131dda14c66
 decision: pass
-reviewer: claude-opus-5 (agent)
-audience: 표준 채택을 판단하는 사람
-purpose: 문서 검사를 붙이면 실행 비용이 얼마나 늘고 무엇을 더 잡는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Maintainers and decision-makers evaluating adoption
+purpose: What did the 2026-09-09 experiment measure about document check cost and detection?
 
-docs/reports/2026-09-09-adoption-cost.md 는 실험·검토 기록이다. 독자는 이 표준을 채택할지
-판단하는 사람이고, 답할 질문은 "문서 검사를 붙이면 실행 비용이 얼마나 늘고 무엇을 더 잡는가"다.
-
-이번 편집은 「한계와 후속 조치」 마지막 문장 하나다. 측정값·시험 조건·판정 기준·한계 서술은
-한 글자도 손대지 않았다.
-
-바꾼 이유: 그 문장이 "이번 GitHub CI 구성에 포함하지 않았다"로 끝났는데, 그 구성은 이후
-제거됐다. .github 에는 pull_request_template.md 만 남아 있고 workflow 는 없다. 문장이 가리키는
-대상이 사라져, 지금 읽는 사람은 존재하지 않는 CI 를 찾게 된다.
-
-무엇을 보존하고 무엇을 고쳤나: 이 문장이 담은 사실은 두 개다. (1) 사내 프로젝트의 서버 CI 는
-중앙 설정 권한이 없다, (2) 그래서 이 실험에 넣지 않았다. 둘 다 지금도 참이며 그대로 뒀다.
-사라진 것은 (2)의 서술 방식뿐이라 "이 실험의 범위 밖이다"로 바꿨다. 시점 주석을 덧붙이는 대신
-문장을 고친 이유는, 이 문장이 관찰이 아니라 범위 설명이기 때문이다. 실험 기록에서 보존해야 할
-것은 그때 무엇을 측정했고 무엇을 보았는가이고, 그것은 손대지 않았다.
-
-확인한 것: 문서 전체를 다시 읽어 CI 를 전제한 다른 서술이 없는지 봤다. 없다. 「실험 조건」의
-native·managed 정의와 「결과」 표는 CI 와 무관하다. 원자료 링크 두 개는 그대로 유효하다.
-
-발견 경로를 남긴다: 사람이 다른 목적으로 이 문서를 읽다가 지적했다. 본문 해시가 그대로여서
-검토 기록은 계속 reviewed 였고 구조 검사도 통과했다. 이 유형의 세 번째 사례이며 Issue #27 에
-기록했다.
-
-한계: 실험 자체는 재실행하지 않았다. 이번 편집은 측정과 무관한 범위 설명 한 문장이다.
-
-engsys docs check 와 tools/check-documentation.py 는 통과한다.
+docs/reports/2026-09-09-adoption-cost.md is the 2026-09-09 experiment report; its conclusion is that the bundled document checks dropped from a median 8.95 s to 4.14 s and the paired additional delay from 8.17 s to 3.32 s, meeting the 5 s criterion, and that this is execution cost only, not human productivity.
+Translated from Korean in full: conclusion and applicability, method and conditions, results table (all values and units kept), the attribution to check-structure.sh, the 1,815 to 1,070 line entry-file note, raw data links, limitations and follow-up.
+Historical facts were not updated to the current implementation; "Experiment conditions" became "Method and conditions" so the case-sensitive pattern matches.
+No Korean literals retained; the native command stays as inline code.
+Compared against HEAD; no numbers, conditions or limitations dropped. Limitation: self-review by the translator.
 

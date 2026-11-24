@@ -54,6 +54,8 @@ documentation:
     assign:
       - path: 'README.md'
         type: 'guide'
+      - path: 'README.ko.md'
+        type: 'guide'
       - path: 'docs/adr'
         type: 'decision-record'
       - path: 'docs/architecture'
@@ -76,6 +78,7 @@ documentation:
     scopes:
       - 'docs'
       - 'README.md'
+      - 'README.ko.md'
   lifecycle:
     design:
       path: 'docs/design'

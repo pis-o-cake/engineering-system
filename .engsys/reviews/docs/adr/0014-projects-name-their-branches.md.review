@@ -1,14 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0014-projects-name-their-branches.md
-blob: ad2686d2c84ff05bd8d94ff0210160d10106e425
+blob: 8bfc1d8b1c0d0e2b3dfc2387ed7d2576be9a68c0
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: branch 이름을 누가 정하고 도구가 그것을 어떻게 읽는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: Who names branches, and what does the branch model define instead?
 
-대체 관계 한 줄만 추가했다. 결정·배경·대안·날짜·status 는 그대로다.
-"나머지 결정은 그대로다"를 같은 문장에 넣었다. 이 ADR 의 역할 분리와 base-branch 설계는 유효하고
-기본값 항목만 바뀌었다.
-과거 판단을 고치지 않았다. 기본값을 둔 당시 근거는 본문에 남아 있고, 그것이 남의 팀 이름을
-물려주는 결과를 낳았다는 사실만 뒤에 붙였다.
+Records the decision that the vcs-gov branch model defines only roles and promotion direction, while the project declares branch names and prefixes in vcs.branch.
+Translated from Korean to English as a frozen record; decisions, date, check list items and the ADR 0017 supersession note are unchanged.
+Headings mapped to Decision / Context and constraints / Rationale and alternatives / Consequences.
+All identifiers (required-roles, branch-defaults, engsys vcs base-branch, check-settings, init --detect, public-ai-qa) kept verbatim; no Korean literals retained.
+Checked against the HEAD Korean text for dropped facts: the local-rule constraint on server protected branches appears in both Context and Consequences as in the source.
 

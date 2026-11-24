@@ -1,14 +1,13 @@
 engsys-document-review: 1
 document: docs/adr/0018-adoption-is-a-guided-sequence.md
-blob: 4500765039adec44f69d0ad9b5d0ff216fabd7c5
+blob: ba1bf5a9eb50572d1c847c834fd9011379c0c489
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: 채택 절차를 어떻게 안내하는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: How does a first-time adopter set up the standard without breaking non-interactive use?
 
-결정 절에 최종 진단 항목을 추가했다. 마지막에 doctor 를 다시 돌리고 남은 문제가 있으면 성공으로
-끝내지 않는다는 것과, 그 이유(중간 단계가 경고만 내고 넘어갈 수 있다)를 함께 적었다.
-같은 결정("단계마다 확인하고 진행한다")의 빠진 항목을 채운 것이라 새 ADR 을 만들지 않았다.
-단계별 진행은 마지막에 무엇이 남았는지 말할 수 있어야 성립한다.
-날짜와 status 는 그대로다.
+Records the decision to add engsys setup as a seven-step guided adoption with per-step confirmation, while other commands stay non-interactive, plus init --dry-run.
+Translated from Korean to English as a frozen record; the step order, --yes and no-terminal behavior, failure output rules and the docs check warning change are preserved.
+Headings mapped to Decision / Context and constraints / Rationale and alternatives / Consequences.
+Commands and the ADR 0007 link kept verbatim; no Korean literals retained.
 

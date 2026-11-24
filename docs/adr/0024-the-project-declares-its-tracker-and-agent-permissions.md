@@ -5,62 +5,74 @@ status: accepted
 date: 2026-09-10
 ---
 
-# 0024. 추적 도구와 agent 권한은 프로젝트가 선언한다
+# 0024. The project declares its tracker and agent permissions
 
-표준은 미결 항목을 언제 등록하고 무엇을 반드시 적고 무엇으로 닫는지를 갖는다. 어느 도구에
-어떤 label 로 쓸지와 agent 가 어디까지 스스로 해도 되는지는 프로젝트가 `vcs.tracker` 에
-선언한다. 표준은 tracker 이름도 label 이름도 권한 값도 갖지 않는다.
+The standard holds when an unresolved item is registered, what it must record, and what closes it.
+Which tool to write to with which labels, and how far an agent may act on its own, are declared by
+the project in `vcs.tracker`. The standard holds no tracker name, no label name and no permission
+value.
 
-## 결정
+## Decision
 
-- `packages/vcs-gov/tracker-contract.yaml` 이 항목의 종류와 종료 조건의 성격, 필수 정보, 중복
-  확인, 등록 시점 네 가지, 추출 규칙, 종료 증거, 비용 기록의 두 축을 갖는다.
-- 프로젝트는 `vcs.tracker` 에 `provider` · `project` · `default-assignee` · `labels` · `agent` 를
-  선언한다. `engsys vcs tracker` 가 해석한 값을 답하고 `engsys vcs check-tracker` 가 선언을
-  판정한다. 선언이 없으면 도구는 답하지 않는다.
-- `agent` 의 값은 `allowed` 와 `ask` 뿐이다. `accept-risk` 와 `commit-deadline` 은 계약이
-  `always-human` 으로 고정하며, 프로젝트가 `allowed` 로 열 수 없다.
-- merge request 본문의 「영향 및 후속 작업」에 후속을 뜻하는 표현이 있는데 추적 항목 링크가
-  없으면 gate 가 막는다. 링크의 형식만 보고 항목의 내용은 보지 않는다.
-- `track-unresolved` skill 이 조회·중복 확인·등록·근거 갱신을 한 흐름으로 제공하고,
-  `write-merge-request` 가 마지막 절을 쓰기 전에 그것으로 넘긴다.
+- `packages/vcs-gov/tracker-contract.yaml` holds the item kinds and the nature of their closing
+  conditions, the required information, the duplicate check, the four registration points, the
+  extraction rules, the closing evidence, and the two axes of cost recording.
+- The project declares `provider`, `project`, `default-assignee`, `labels` and `agent` in
+  `vcs.tracker`. `engsys vcs tracker` answers with the resolved values, and
+  `engsys vcs check-tracker` judges the declaration. Without a declaration, the tools give no
+  answer.
+- The only values for `agent` are `allowed` and `ask`. The contract fixes `accept-risk` and
+  `commit-deadline` as `always-human`, and a project cannot open them up as `allowed`.
+- If the `영향 및 후속 작업` (Impact and follow-up work) section of a merge request body contains
+  an expression indicating follow-up work but no tracked item link, the gate blocks it. It checks
+  only the link format, not the item's content.
+- The `track-unresolved` skill provides lookup, duplicate check, registration and evidence update as
+  one flow, and `write-merge-request` hands off to it before writing the last section.
 
-## 배경과 제약
+## Context and constraints
 
-[docs/design/0003](../design/0003-unresolved-item-ledger.md) 은 미결을 담당자와 종료 조건을 가진
-업무 항목에 연결하고 문서는 그 상태를 다시 관리하지 않기로 정했다. 그 제안은 실제 변경을
-수기로 운영한 뒤 반복되는 것만 계약으로 올리는 순서를 적었다.
+[docs/design/0003](../design/0003-unresolved-item-ledger.md) decided to link unresolved items to
+work items that have an assignee and a closing condition, with documents no longer managing that
+state themselves. That proposal laid out an order: operate real changes manually first, then promote
+only what recurs into the contract.
 
-수기 운영을 먼저 하면 얻는 것보다 잃는 것이 크다. 사람이 skill 이름을 기억해서 부르고 양식을
-채워야 하면, 바쁠 때 가장 먼저 생략된다. 생략된 기록으로는 이 절차가 쓸 만한지 판단할 수 없다.
-그래서 순서를 바꿔 기존 작업 흐름에 먼저 연결하고, 그 흐름이 만든 항목과 merge request 자체를
-운영 증거로 쓴다. 별도 수기 대장을 만들지 않는다.
+Operating manually first loses more than it gains. If people have to remember the skill name, call
+it, and fill in a form, it is the first thing skipped when they are busy. Skipped records cannot
+show whether this procedure is worth using. So the order is reversed: the procedure is connected to
+the existing workflow first, and the items that workflow creates, along with the merge requests
+themselves, serve as operating evidence. No separate manual ledger is created.
 
-제약은 [ADR 0017](0017-the-standard-holds-no-branch-names.md) 이 branch 이름에 대해 정한 것과
-같다. 이 저장소의 원장은 GitHub Issues 이고 `public-ai-qa` 는 GitLab Issues 다. 표준이 둘 중
-하나를 이름으로 가지면 선언을 빠뜨린 프로젝트가 남의 도구를 물려받는다.
+The constraint is the same one [ADR 0017](0017-the-standard-holds-no-branch-names.md) set for branch
+names. This repository's ledger is GitHub Issues, and `public-ai-qa` uses GitLab Issues. If the
+standard named one of them, a project that omitted the declaration would inherit someone else's
+tool.
 
-권한에는 제약이 하나 더 있다. 등록할 때마다 확인받으면 자동화의 효과가 사라지고, 전부 맡기면
-사람이 져야 할 판단이 사라진다. 위험 수용과 기한 확약은 그 경계에 있다.
+Permissions carry one more constraint. Asking for confirmation at every registration removes the
+benefit of automation, and delegating everything removes judgements a person has to own. Risk
+acceptance and deadline commitment sit on that boundary.
 
-## 근거와 대안
+## Rationale and alternatives
 
-- **표준이 tracker 를 하나 정한다**: 구현이 짧아진다. 그러나 팀마다 도구가 다르고, 한 팀 안에서도
-  표준 저장소와 제품 저장소가 다른 곳을 쓴다. 실제로 지금 그렇다.
-- **권한을 등록 시점마다 묻는다**: 안전하지만 자동화의 이유가 사라진다. 선언으로 한 번 정하고
-  그 안에서 움직이는 편이 낫다. 되돌릴 수 없는 판단만 계약이 사람에게 고정한다.
-- **누락 확인을 hook 이 아니라 사람 검토에 맡긴다**: 지금까지의 방식이고, 후속 작업을 적고도
-  어디서 추적하는지 적지 않은 본문이 실제로 나왔다. 기계가 판정할 수 있는 것은 기계가 본다.
-- **항목의 내용까지 gate 가 판정한다**: 종료 조건이 충분한지, 담당자가 맞는지는 기계가 판정할 수
-  없다. 링크의 존재만 본다.
+- **Have the standard pick one tracker**: the implementation would be shorter. But teams use
+  different tools, and even within one team the standard repository and the product repository use
+  different places. That is the case right now.
+- **Ask for permission at every registration**: safe, but it removes the reason for automation. It
+  is better to decide once through the declaration and operate within it. The contract fixes to a
+  person only the judgements that cannot be undone.
+- **Leave the missing-link check to human review instead of a hook**: this was the approach until
+  now, and bodies that listed follow-up work without saying where it was tracked did appear. What a
+  machine can judge, the machine checks.
+- **Have the gate judge item content too**: a machine cannot judge whether a closing condition is
+  sufficient or whether the assignee is right. It checks only that the link exists.
 
-## 영향
+## Consequences
 
-- `vcs.tracker` 를 선언하지 않은 프로젝트는 아무 변화가 없다. `tracker` 와 `check-tracker` 는
-  아무것도 출력하지 않고, gate 의 누락 확인은 계약이 선언한 표현이 본문에 있을 때만 동작한다.
-- 후속 작업을 적으면서 링크를 빼면 merge request 를 열 수 없다. 남은 것이 없으면 「없음」으로
-  적는다.
-- `accept-risk` 와 `commit-deadline` 을 `allowed` 로 선언한 프로젝트는 `check-tracker` 에서
-  실패한다. 이 둘은 선언으로 열 수 없다.
-- 이 결정으로 표준에 책임이 하나 늘었다. 채택 여부는 결정 항목 #27 에서 세 가지 성격의 사례를
-  각각 한 건 운영한 뒤 판단한다.
+- Nothing changes for a project that does not declare `vcs.tracker`. `tracker` and `check-tracker`
+  output nothing, and the gate's missing-link check runs only when the body contains an expression
+  the contract declares.
+- A merge request that lists follow-up work but omits the link cannot be opened. If nothing remains,
+  write `없음` (none).
+- A project that declares `accept-risk` or `commit-deadline` as `allowed` fails `check-tracker`.
+  These two cannot be opened up by declaration.
+- This decision adds one responsibility to the standard. Whether to adopt it is decided in decision
+  item #27, after operating one case of each of the three kinds.

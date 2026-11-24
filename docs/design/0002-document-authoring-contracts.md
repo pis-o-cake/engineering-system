@@ -4,370 +4,398 @@ status: draft
 scope: docs-gov-document-authoring
 ---
 
-# 문서 분류와 작성 기준안
+# Document Classification and Authoring Standard (Proposal)
 
-문서는 독자가 내려야 할 판단과 수행할 작업을 기준으로 분류한다. 유형마다 본문 순서와 필수 정보를
-정하고, 구조 검사와 최종본 검토를 통과해야 작성을 완료한다. `public-ai-qa`의 기능 범위 문서
-편집본을 출발점으로 삼는다.
+Documents are classified by the decision the reader must make and the work the reader must carry
+out. Each type defines its body order and required information, and authoring is complete only after
+the document passes the structure check and the final review. The starting point is the edited
+feature-scope document of `public-ai-qa`.
 
-이 문서는 도입 제안이다. 폴더 이동, 기존 정책 변경, 검사기 확장은 별도 구현 대상이다.
+This document is an adoption proposal. Folder moves, changes to existing policy and checker
+extensions are separate implementation work.
 
-## 1. 보관 구조
+## 1. Storage layout
 
-문서 유형과 보관 폴더는 별도로 정한다. 운영 절차와 검증 결과의 작성 기준은 달라야 하지만,
-그 차이만으로 `operations`, `verification` 폴더를 만들 필요는 없다.
+Document type and storage folder are decided separately. Runbooks and verification results need
+different authoring rules, but that difference alone does not justify `operations` and
+`verification` folders.
 
-2026-09-08 확인한 public-ai-qa에는 operations 문서 2편, verification 문서 2편이 있다.
-dev에는 직접 문서 17편, meeting에는 9편이 있다. 운영·검증은 소수의 공통 문서이고,
-dev는 범위·일정·실측·리뷰·서버 안내를 함께 보관한다. 현재 규모에서는 아래 안을 권고한다.
+As checked on 2026-09-08, public-ai-qa had 2 documents in operations and 2 in verification. dev held
+17 documents directly, and meeting held 9. Operations and verification are a handful of shared
+documents, while dev mixes scope, schedule, measurements, reviews and server guides. At the current
+scale, the layout below is recommended.
 
-| 현재 폴더 | 권고 | 이유와 재분리 조건 |
+| Current folder | Recommendation | Reason and condition for splitting again |
 |---|---|---|
-| `dev` | 폐지하고 목적에 따라 배정 | 개발 중 작성했다는 분류는 독자의 탐색 기준이 되기 어렵다 |
-| `operations` | 공통 이관 문서는 docs 바로 아래, 환경별 절차는 infra 옆에 배치 | 실행 대상과 관리 주체를 따라간다. 독립 운영팀이 여러 서비스의 절차집을 관리할 때 분리 |
-| `verification` | 공통 기준·시험계획은 docs 바로 아래, 실행 결과는 reports나 해당 spike에 배치 | 갱신하는 기준과 특정 실행의 결과를 구분한다. 반복 검수의 기준·증빙 묶음이 커지면 분리 |
-| `meeting` | `reports`로 통합 | 진행 보고·회의록·실측·리뷰를 날짜가 있는 기록으로 탐색 |
-| `mockup` | 해당 frontend로 배치 | 화면 코드와 자산·인계 자료의 관리 주체 일치 |
-| `adr`, `design` | 유지 | 누적 결정·승인 기록의 번호·baseline·참조 경계 보존 |
-| `architecture` | 현재는 유지 | 현재 구조와 생성 데이터 모델의 정본 경로 보존. 문서 수만으로 분리·통합하지 않음 |
+| `dev` | Remove and assign each document by purpose | "Written during development" is hardly a criterion readers browse by |
+| `operations` | Shared handover documents directly under docs; environment-specific procedures next to infra | Follows the execution target and the owner. Split out when an independent operations team manages runbooks for several services |
+| `verification` | Shared criteria and test plans directly under docs; execution results in reports or the relevant spike | Separates criteria that are updated from the results of a specific run. Split out when the criteria and evidence set for repeated acceptance testing grows large |
+| `meeting` | Merge into `reports` | Progress reports, meeting records, measurements and reviews are browsed as dated records |
+| `mockup` | Move to the relevant frontend | Aligns the owner of the screen code with the owner of its assets and handoff material |
+| `adr`, `design` | Keep | Preserves the numbering, baselines and reference boundaries of accumulated decisions and approval records |
+| `architecture` | Keep for now | Preserves the canonical paths of the current structure and the generated data model. Not split or merged on document count alone |
 
-폴더는 독립된 관리 책임이나 함께 탐색해야 할 자료 묶음이 있을 때 만든다. 편수가 적다는 이유만으로
-통합하지도, 문서 유형이 다르다는 이유만으로 분리하지도 않는다. 공통 문서 몇 편은 docs 바로 아래에
-둘 수 있다. 파일이 늘어 실제 탐색이 어려워질 때 관찰된 주제별로 분리한다.
+A folder is created when there is an independent ownership responsibility or a set of material that
+must be browsed together. Folders are not merged just because they hold few documents, nor split just
+because the document types differ. A few shared documents can sit directly under docs. When the
+number of files grows and browsing actually becomes hard, split by the topics observed.
 
 ```text
 docs/
-  README.md                 문서 탐색
-  documentation-policy.md   프로젝트 적용 규칙
-  scope.md                  개발 범위와 완료 기준
-  wbs.html                  현재 일정과 담당 작업
-  handover.md               공통 운영·복구·이관 절차
-  kpi-measurement-spec.md    공통 KPI 측정 기준
-  integration-test-plan.html 통합시험 범위·계획
-  adr/                      중요한 기술 결정
-  architecture/             현재 구조와 제약
-  design/                   구현 전 설계와 승인 당시 기록
-  reports/                  날짜별 보고·회의·검증·리뷰 기록
-    data/                   해당 기록의 원자료
+  README.md                 document navigation
+  documentation-policy.md   project-specific rules
+  scope.md                  development scope and done criteria
+  wbs.html                  current schedule and assigned work
+  handover.md               shared operation, recovery and handover procedures
+  kpi-measurement-spec.md    shared KPI measurement criteria
+  integration-test-plan.html integration test scope and plan
+  adr/                      significant technical decisions
+  architecture/             current structure and constraints
+  design/                   pre-implementation designs and records as approved
+  reports/                  dated report, meeting, verification and review records
+    data/                   raw data for those records
 
-backend/README.md           백엔드 개발 진입점
-frontend/<app>/README.md    프론트엔드 개발 진입점
-frontend/<app>/DESIGN.md    현재 UI 구현 규약
-frontend/<app>/mockup/      해당 앱의 prototype과 인계 자료
-infra/README.md             인프라 안내와 운영 절차 진입점
-infra/devloop/README.md     Windows 개발 서버 구성·동기화 절차
-spike/<topic>/              독립 실행 가능한 기술 실험
-  README.md                실험 목적, 실행법, 결과 링크
-  YYYY-MM-DD-result.md      특정 실행의 결과
-  data/                    입력·결과·측정 원자료
+backend/README.md           backend development entry point
+frontend/<app>/README.md    frontend development entry point
+frontend/<app>/DESIGN.md    current UI implementation conventions
+frontend/<app>/mockup/      the app's prototypes and handoff material
+infra/README.md             infrastructure guide and runbook entry point
+infra/devloop/README.md     Windows dev server setup and sync procedure
+spike/<topic>/              independently runnable technical experiments
+  README.md                experiment purpose, how to run, result links
+  YYYY-MM-DD-result.md      results of a specific run
+  data/                    input, result and measurement raw data
 ```
 
-`docs/mockup`의 앱별 자료는 해당 frontend의 `mockup`으로 모으는 안을 권고한다.
-같은 앱의 목업을 두 곳에서 관리하지 않는다. 공용 prototype이 실제로 있을 때만 공용 위치를 유지한다.
+The recommendation is to gather the per-app material in `docs/mockup` into the `mockup` folder of the
+relevant frontend. Prototypes of the same app are not managed in two places. A shared location is kept
+only when a shared prototype actually exists.
 
-`reports`에는 기준일과 대상이 있는 결과·회의 기록만 둔다. 현재 설정, 실행 안내, TODO, 검증 기준을
-넣지 않는다. 파일명은 `YYYY-MM-DD-topic.md`이며, 보고·회의·검증·리뷰의 작성 차이는 `type`으로
-구분한다. 문서 지도는 날짜와 주제로 안내하고, 같은 근거의 상세본과 보고 요약은 서로 연결한다.
-독립 spike의 실험 보고서는 실행 코드 옆에 유지하고 docs에서 링크한다.
+`reports` holds only result and meeting records that have a reference date and a target. It does not
+hold current configuration, run instructions, TODOs or verification criteria. File names are
+`YYYY-MM-DD-topic.md`, and the authoring differences between reports, meetings, verification and
+reviews are expressed through `type`. The document map guides readers by date and topic, and a
+detailed version and the report summary built on the same evidence link to each other. Experiment
+reports of an independent spike stay next to its run code and are linked from docs.
 
-이 트리는 작성 문서의 정리 대상만 표시한다. 기존 `docs/analysis`의 외부 원문은 원래 위치에 보존한다.
+This tree shows only the authored documents being reorganized. External originals in the existing
+`docs/analysis` are preserved where they are.
 
-`design`은 승인 전 구현안과 승인 기록을 보존하는 용도다. 현재 동작 설명은 `architecture`에 둔다.
-새 설계는 사전 합의가 필요한 변경에만 만들며, 단순 수정마다 설계서를 추가하지 않는다.
+`design` preserves implementation proposals before approval and their approval records. Descriptions
+of current behavior belong in `architecture`. A new design is created only for changes that need prior
+agreement; a design document is not added for every simple fix.
 
-### 기존 자료 배정
+### Assignment of existing material
 
-| 현재 자료 | 배정 위치 | 기준 |
+| Current material | Assigned location | Basis |
 |---|---|---|
-| `01-feature-slices.md`, `02-wbs.html` | `docs/scope.md`, `docs/wbs.html` | 범위와 현재 작업을 각각 한 파일에서 관리 |
-| 진행 현황 snapshot·회의 기록 | `docs/reports/YYYY-MM-DD-topic.md` | 보고·회의 시점의 상태 보존 |
-| 운영 코드의 성능·비용·인용 실측 | `docs/reports/YYYY-MM-DD-topic.md` | 실행 시점·대상·기준을 가진 결과 |
-| 코드·설계 리뷰, mockup 차이 검토 | `docs/reports/YYYY-MM-DD-topic-review.md` | 발견 사항과 영향·조치 확인 |
-| 독립 probe의 결과 | 해당 `spike/<topic>/` | 실행 코드와 실험 증거를 함께 보관 |
-| `operations/handover.md` | `docs/handover.md` | 기관 설정·개인정보 대응까지 포함하는 공통 운영 문서 |
-| `operations/dev-server-windows.md` | `infra/devloop/README.md` | 실행 스크립트와 환경 절차를 함께 관리 |
-| `verification`의 기준·계획 2편 | 같은 이름으로 `docs/` 바로 아래 | 기준·계획을 실측 결과와 구분 |
-| 실측 JSON·CSV·원본 | 결과 문서와 같은 영역의 `data/` | 결과의 재현과 추적 |
-| 비용 누적 장부 | 관련 실험 영역의 CSV 또는 데이터 파일 | 기록마다 새 산문 보고서를 만들지 않음 |
+| `01-feature-slices.md`, `02-wbs.html` | `docs/scope.md`, `docs/wbs.html` | Scope and current work are each managed in one file |
+| Progress snapshots and meeting records | `docs/reports/YYYY-MM-DD-topic.md` | Preserves the state as of the report or meeting |
+| Measurements of performance, cost and citations in production code | `docs/reports/YYYY-MM-DD-topic.md` | Results with an execution time, target and criteria |
+| Code and design reviews, reviews of mockup differences | `docs/reports/YYYY-MM-DD-topic-review.md` | Findings, their impact and confirmation of actions |
+| Results of independent probes | The relevant `spike/<topic>/` | Run code and experimental evidence kept together |
+| `operations/handover.md` | `docs/handover.md` | A shared operations document that also covers agency configuration and personal-data handling |
+| `operations/dev-server-windows.md` | `infra/devloop/README.md` | Run scripts and environment procedures managed together |
+| The 2 criteria and plan documents in `verification` | Directly under `docs/` with the same names | Separates criteria and plans from measured results |
+| Measurement JSON, CSV and originals | `data/` in the same area as the result document | Reproduction and traceability of results |
+| Cumulative cost ledger | CSV or data file in the related experiment area | No new prose report for each entry |
 
-폴더 이동 때는 링크·frontmatter 경로·검사 범위·검토 기록 경로를 함께 바꾼다.
-날짜, 승인 상태, baseline, 원자료는 보존한다. 내용이 다른 동명 파일은 비교 후 배정한다.
+When folders move, links, frontmatter paths, check scopes and review receipt paths change together.
+Dates, approval status, baselines and raw data are preserved. Same-named files with different content
+are compared before assignment.
 
-### 비교한 안
+### Options compared
 
-| 안 | 장점 | 비용·판단 |
+| Option | Advantages | Cost and assessment |
 |---|---|---|
-| 지금처럼 유형별 폴더 유지 | 기존 링크 유지, 분야별 담당팀에 적합 | 작은 프로젝트에서도 위치 선택이 늘고 dev와 중첩. 현재는 권고하지 않음 |
-| 모든 문서를 docs 한 곳에 배치 | 위치 규칙이 가장 단순 | 누적 결정·설계·보고 기록까지 섞여 탐색이 어려움 |
-| 공통 문서·코드 인접 안내·누적 기록으로 배치 | 현재 기준과 과거 기록을 구분하고 작은 분류 폴더를 줄임 | 이동·링크 정비가 필요. 현재 규모의 권고안 |
+| Keep type-based folders as now | Existing links remain; suits teams that each own a discipline | Even small projects face more location choices, and it overlaps with dev. Not recommended at present |
+| Put every document in docs | Simplest location rule | Accumulated decision, design and report records get mixed in, and browsing becomes hard |
+| Organize into shared documents, code-adjacent guides and accumulated records | Separates current standards from past records and reduces small classification folders | Requires moves and link cleanup. Recommended at the current scale |
 
-## 2. 공통 작성 계약
+## 2. Common authoring contract
 
-문서는 재사용할 설명, 합의할 범위, 보존할 판단·증거가 있을 때 만든다. 작은 코드 수정과 routine
-테스트 실행은 코드·테스트·MR 기록으로 충분하다. 한 작업에서 설계서·ADR·실험 보고서를 모두 만들지 않는다.
-독립 실험 코드가 없으면 결과 문서를 둘 목적으로 spike 디렉토리를 새로 만들지 않는다.
+A document is created when there is an explanation to reuse, a scope to agree on, or a judgment or
+evidence to preserve. For small code changes and routine test runs, the code, tests and MR record are
+enough. One piece of work does not produce a design document, an ADR and an experiment report all at
+once. Without independent experiment code, no spike directory is created just to hold a result
+document.
 
-작성 전에 유형, 주 독자, 문서가 답할 질문을 정한다. 유형은 문서의 `type`으로, 독자와 질문은
-최종 검토 기록으로 남긴다. 본문 첫 문단은 실제 결론·범위·적용 상황부터 시작한다.
+Before writing, decide the type, the primary readers and the question the document answers. The type
+is recorded in the document's `type`, and the readers and question in the final review receipt. The
+first paragraph of the body starts with the actual conclusion, scope or situation of use.
 
-| 규칙 | 적용 기준 |
+| Rule | Applies as |
 |---|---|
-| 한 문서의 역할 | 승인, 이해, 실행, 검증, 탐색 중 주된 목적 하나를 정한다 |
-| 본문에 남길 정보 | 독자의 판단·행동에 필요한 결과, 근거, 조건, 제약, 절차 |
-| 상세 정보 | 재현 명령·원자료·긴 목록은 해당 절이나 부록에 두고 연결한다 |
-| 중복 | 같은 수치·설명은 한 곳에서 관리한다. 요약은 판단을 전달하고 상세는 증거를 제공한다 |
-| 사실 구분 | 관찰 결과, 해석, 제안, 미확정을 문장으로 구분한다 |
-| 불확실성 | 모르는 값은 확인 항목과 영향을 적는다. 담당자·기한·승인·이유를 추정하지 않는다 |
-| 생략 | 선택 절은 해당 사항이 없으면 생략한다. 빈 제목이나 상투적인 ‘해당 없음’을 늘어놓지 않는다 |
-| 완료 | 읽을 수 있는 완성본과 검토 기록을 남긴다. 도구 실행 성공만으로 문서 품질을 판정하지 않는다 |
+| One role per document | Choose one primary purpose among approval, understanding, execution, verification and navigation |
+| What stays in the body | The results, evidence, conditions, constraints and procedures the reader needs to judge or act |
+| Detail | Put reproduction commands, raw data and long lists in the relevant section or an appendix and link to them |
+| Duplication | Manage each figure or explanation in one place. Summaries convey the judgment; details supply the evidence |
+| Separating facts | Distinguish observed results, interpretation, proposals and unresolved points in the wording |
+| Uncertainty | For unknown values, write what needs confirmation and its impact. Do not guess owners, deadlines, approvals or reasons |
+| Omission | Omit optional sections that do not apply. Do not line up empty headings or a stock ‘해당 없음’ (“not applicable”) |
+| Completion | Leave a readable finished version and a review receipt. Do not judge document quality by a successful tool run alone |
 
-다음 유형의 필수 절은 제시한 순서를 따른다. 선택 절은 필요한 위치에 추가한다.
-필수 절의 질문에 답하지 않은 문서는 초안으로 남긴다. 확인할 수 없는 사실은 그 사유와 판단 영향을 명시한다.
+The required sections of each type below follow the given order. Optional sections are added where
+needed. A document that does not answer the questions of its required sections remains a draft. For
+facts that cannot be confirmed, state the reason and the effect on the judgment.
 
 ### ADR — `decision-record`
 
-- **독자·질문:** 기술 책임자와 유지보수자. 무엇을 왜 선택했고 어떤 비용을 감수했는가?
-- **필수 순서:** 결정 → 배경과 제약 → 근거와 대안 → 영향.
-- **필수 내용:** 선택한 방안, 적용 범위, 실제 검토한 대안과 제외 이유, 제약·후속 작업. 운영에 적용 전이면 그 상태를 밝힌다.
-- **제외:** 구현 일지, 파일별 변경 목록, 검토하지 않은 가상 대안, 현재 진척률.
-- **갱신:** accepted 이후 결정 변경은 새 ADR로 기록한다. 기존 기록에는 대체 관계를 연결한다.
+- **Readers and question:** Technical leads and maintainers. What was chosen, why, and what cost was accepted?
+- **Required order:** decision → context and constraints → rationale and alternatives → consequences.
+- **Required content:** The chosen option, its scope, the alternatives actually considered and why they were excluded, constraints and follow-up work. If it is not yet applied in operation, say so.
+- **Exclude:** Implementation logs, per-file change lists, hypothetical alternatives that were never considered, current progress percentage.
+- **Updates:** After acceptance, a change of decision is recorded in a new ADR. The existing record links to the superseding one.
 
-### 현재 구조 — `architecture`
+### Current structure — `architecture`
 
-- **독자·질문:** 개발자와 운영자. 지금 어떤 구성요소가 어떤 책임과 경계로 동작하는가?
-- **필수 순서:** 구조 요약 → 구성요소와 책임 → 주요 흐름 → 제약과 근거.
-- **필수 내용:** 주요 의존 관계, 데이터·요청 흐름, 장애·권한 경계, 구현 위치와 관련 ADR 링크.
-- **선택:** 관계가 복잡할 때 구조도·시퀀스 다이어그램. 생성된 데이터 모델은 링크로 연결한다.
-- **제외·갱신:** 과거 설계와의 논쟁, 작업 이력, 구현 예정 기능을 현재 사실처럼 적지 않는다. 구조 변경과 함께 갱신한다.
+- **Readers and question:** Developers and operators. Which components operate now, with what responsibilities and boundaries?
+- **Required order:** structure summary → components and responsibilities → main flows → constraints and rationale.
+- **Required content:** Main dependencies, data and request flows, failure and permission boundaries, implementation locations and links to related ADRs.
+- **Optional:** Structure or sequence diagrams when relationships are complex. Generated data models are linked.
+- **Exclude and updates:** Do not write debates with past designs, work history or planned features as if they were current fact. Update together with structural changes.
 
-### 구현 전 설계 — `design-proposal`
+### Pre-implementation design — `design-proposal`
 
-- **독자·질문:** 검토자와 구현 담당자. 이 범위와 방법으로 구현해도 되는가?
-- **필수 순서:** 제안 요약 → 목표와 제외 범위 → 설계 → 검증 기준 → 미결 사항.
-- **필수 내용:** 동작·인터페이스·데이터 계약, 실패 처리, 주요 선택 이유. 미결이 없으면 마지막 절을 생략한다.
-- **조건부 필수:** 대안 간 선택이 있으면 비교 근거, 기존 동작을 바꾸면 호환·전환·복구 방안.
-- **제외·갱신:** 진행률과 구현 일지는 넣지 않는다. 승인 후 당시 범위를 보존하고 결과 문서를 연결한다.
+- **Readers and question:** Reviewers and implementers. May this be implemented with this scope and approach?
+- **Required order:** proposal summary → goals and out-of-scope → design → verification criteria → open issues.
+- **Required content:** Behavior, interface and data contracts, failure handling, reasons for the key choices. If there are no open issues, omit the last section.
+- **Conditionally required:** Comparison rationale when choosing between alternatives; compatibility, migration and recovery plans when existing behavior changes.
+- **Exclude and updates:** No progress rates or implementation logs. After approval, preserve the scope as approved and link the result documents.
 
-### 개발 범위 — `project-scope`
+### Project scope — `project-scope`
 
-- **독자·질문:** 프로젝트 책임자와 참여자. 무엇을 제공하며 어디까지 하면 완료인가?
-- **필수 순서:** 전체 범위 → 결정·확인 사항 → 기능별 완료 기준. 결정·확인 사항이 없으면 생략한다.
-- **필수 내용:** 포함·제외 범위, 기능 간 선행 관계, 관찰 가능한 완료 조건, 범위 변경의 승인 근거.
-- **선택:** 데이터·화면 배정 부록. 승인한 기능 범위 편집본의 구성을 예시로 사용한다.
-- **제외·갱신:** SDK 호출법, 파일별 코드 설명, 완료율은 제외한다. 승인 범위는 보존하고 변경은 이력으로 연결한다.
+- **Readers and question:** The project lead and participants. What is delivered, and at what point is it done?
+- **Required order:** overall scope → decisions and items to confirm → done criteria per feature. Omit decisions and items to confirm when there are none.
+- **Required content:** In-scope and out-of-scope items, dependencies between features, observable completion conditions, the approval basis for scope changes.
+- **Optional:** An appendix assigning data and screens. The structure of the approved, edited feature-scope document serves as the example.
+- **Exclude and updates:** Exclude SDK usage, per-file code explanations and completion percentages. Preserve the approved scope and link changes as history.
 
-### 작업 계획 — `work-plan`
+### Work plan — `work-plan`
 
-- **독자·질문:** 프로젝트 책임자와 실행 담당자. 누가 무엇을 언제까지 해야 하며 무엇이 막고 있는가?
-- **필수 구성:** 기준 시점·주요 일정 → 작업표 → 장애 요인과 필요한 조치.
-- **작업표 필드:** 작업 ID, 산출물·완료 조건, 담당자, 기한, 상태, 선행 작업, 근거 링크.
-- **규칙:** 미배정 담당자는 미배정으로, 미합의 기한은 미정으로 표시한다. 완료는 산출물이나 검증 근거와 연결한다.
-- **제외·갱신:** 설계 설명과 완료된 실험의 전문을 넣지 않는다. 작업 상태의 정본으로 갱신하고 종료 후 닫는다.
+- **Readers and question:** The project lead and the people doing the work. Who must do what by when, and what is blocking it?
+- **Required structure:** baseline date and key milestones → task table → blockers and required actions.
+- **Task table fields:** Task ID, deliverable and done condition, owner, due date, status, predecessor tasks, evidence link.
+- **Rules:** Mark an unassigned owner as unassigned and an unagreed due date as TBD. Link completion to a deliverable or verification evidence.
+- **Exclude and updates:** Do not include design explanations or the full text of completed experiments. Update it as the source of truth for task status and close it when the work ends.
 
-### 보고자료 — `brief`
+### Brief — `brief`
 
-- **독자·질문:** 상급자와 의사결정자. 현재 결과와 영향은 무엇이며 어떤 판단·지원이 필요한가?
-- **필수 순서:** 보고 요약 → 주요 결과와 영향 → 결정·지원 요청. 요청이 없으면 마지막 절을 생략한다.
-- **필수 내용:** 보고 기준일, 범위·일정·품질·비용 중 영향을 받은 항목, 주장별 근거 링크.
-- **조건부 필수:** 요청이 있으면 선택지, 권고안, 판단 기한, 지연 영향. 모르는 기한은 만들지 않는다.
-- **제외·갱신:** 디버깅 과정과 코드 식별자 나열은 제외한다. 제출 시점의 기록을 보존하며 상세 결과를 복제하지 않는다.
+- **Readers and question:** Senior managers and decision makers. What are the current results and their impact, and what decision or support is needed?
+- **Required order:** report summary → key results and impact → decision or support request. Omit the last section when there is no request.
+- **Required content:** The report's reference date, which of scope, schedule, quality and cost is affected, and an evidence link for each claim.
+- **Conditionally required:** When there is a request: options, the recommendation, the decision deadline and the impact of delay. Do not invent a deadline that is not known.
+- **Exclude and updates:** Exclude the debugging process and lists of code identifiers. Preserve the record as of submission and do not duplicate detailed results.
 
-### 회의록 — `meeting-record`
+### Meeting record — `meeting-record`
 
-- **독자·질문:** 참석자와 후속 담당자. 무엇을 결정했고 누가 무엇을 해야 하는가?
-- **필수 순서:** 회의 정보 → 결정 사항 → 조치 사항 → 미결 안건.
-- **필수 내용:** 일시·참석자·안건, 결정 내용과 적용 범위, 조치별 담당자·기한. 결정·조치가 없으면 그 사실을 짧게 적는다.
-- **조건부 필수:** 이해관계나 결정 이유를 설명하는 논의만 요약한다. 합의되지 않은 제안을 결정으로 기록하지 않는다.
-- **제외·갱신:** 발언 순서의 전사, 보고자료 재수록은 제외한다. 확인된 회의록은 보존하고 후속 결정은 새 기록에 남긴다.
+- **Readers and question:** Attendees and follow-up owners. What was decided, and who must do what?
+- **Required order:** meeting information → decisions → action items → open agenda items.
+- **Required content:** Date and time, attendees and agenda; decisions and their scope; owner and due date for each action. If there are no decisions or actions, say so briefly.
+- **Conditionally required:** Summarize only the discussion that explains stakes or the reasons for a decision. Do not record unagreed proposals as decisions.
+- **Exclude and updates:** Exclude transcripts in speaking order and re-inclusion of briefs. Preserve confirmed meeting records and record later decisions in new records.
 
-### 검증 기준 — `verification-spec`
+### Verification spec — `verification-spec`
 
-- **독자·질문:** 검증 담당자와 검수자. 어떤 조건과 방법으로 통과 여부를 판단하는가?
-- **필수 순서:** 검증 범위 → 시험 조건 → 항목별 판정 기준 → 실행·증빙 방법.
-- **항목별 필드:** 기준 ID, 대상, 입력·사전 조건, 절차, 기대 결과·허용 오차, 필요한 증거.
-- **측정 규칙:** 표본·반복 횟수, 분모·제외 조건, 단위·산식·통계량을 지정한다. 미합의 기준으로 통과 판정을 내리지 않는다.
-- **제외·갱신:** 실행 결과와 측정 후 바꾼 합격선을 섞지 않는다. 기준 개정 시 version과 적용 시점을 남긴다.
+- **Readers and question:** Verifiers and acceptance reviewers. Under what conditions and by what method is pass or fail judged?
+- **Required order:** verification scope → test conditions → verdict criteria per item → execution and evidence method.
+- **Per-item fields:** Criterion ID, target, inputs and preconditions, procedure, expected result and tolerance, required evidence.
+- **Measurement rules:** Specify samples and number of repetitions, denominator and exclusion conditions, units, formulas and statistics. Do not issue a pass verdict on criteria that have not been agreed.
+- **Exclude and updates:** Do not mix in execution results or pass thresholds changed after measurement. When criteria are revised, record the version and effective date.
 
-### 검증 결과 — `verification-result`
+### Verification result — `verification-result`
 
-- **독자·질문:** 검토자와 기능 인수자. 이 구현이 지정한 기준을 충족했는가?
-- **필수 순서:** 판정 요약 → 대상과 실행 조건 → 기준별 결과 → 미충족·미검증 항목 → 증거와 재현.
-- **필수 내용:** 검증 기준 version, 실행 시점, 대상 commit·설정, 표본·반복 횟수, 기대값과 관측값, 원자료.
-- **판정:** 통과·실패·미실행·판정 불가를 구분한다. 전체 통과에는 모든 필수 기준의 통과 근거가 필요하다.
-- **제외·갱신:** 단위테스트 통과를 배포 준비·검수 완료로 확대하지 않는다. 재실행 결과는 새 실행 기록으로 보존한다.
+- **Readers and question:** Reviewers and those accepting the feature. Does this implementation meet the specified criteria?
+- **Required order:** verdict summary → target and execution conditions → results per criterion → unmet and unverified items → evidence and reproduction.
+- **Required content:** Verification spec version, execution time, target commit and configuration, samples and number of repetitions, expected and observed values, raw data.
+- **Verdict:** Distinguish pass, fail, not run and inconclusive. An overall pass requires pass evidence for every required criterion.
+- **Exclude and updates:** Do not stretch passing unit tests into deployment readiness or completed acceptance. Preserve re-run results as new run records.
 
-### 실험 결과 — `experiment-report`
+### Experiment report — `experiment-report`
 
-- **독자·질문:** 기술 선택을 하는 개발자. 무엇을 확인했고 어디까지 적용할 수 있는가?
-- **필수 순서:** 결론과 적용 범위 → 질문·성공 기준 → 실험 조건 → 결과 → 한계와 후속 조치.
-- **필수 내용:** 코드·환경·설정 version, 입력 표본, 반복 횟수, 비교 조건, 수치·단위·실패 사례, 실행 명령·원자료 링크.
-- **판정:** 탐색 실험은 성공 기준을 사전에 두지 않았음을 밝힐 수 있다. 관찰 후 만든 기준을 사전 기준처럼 쓰지 않는다.
-- **제외·갱신:** 시도 순서의 장황한 서사, 재현하지 못한 원인 단정은 제외한다. 채택 결정은 ADR이나 승인 기록에 연결한다.
+- **Readers and question:** Developers making a technology choice. What was confirmed, and how far does it apply?
+- **Required order:** conclusion and applicability → question and success criteria → experiment conditions → results → limitations and follow-up.
+- **Required content:** Versions of code, environment and configuration; input samples; number of repetitions; comparison conditions; figures, units and failure cases; links to run commands and raw data.
+- **Verdict:** An exploratory experiment may state that it set no success criteria in advance. Do not present criteria created after observation as if they had been set in advance.
+- **Exclude and updates:** Exclude long narratives of the order of attempts and assertions about causes that could not be reproduced. Link adoption decisions to an ADR or approval record.
 
-### 코드·설계 리뷰 — `review-report`
+### Code and design review — `review-report`
 
-- **독자·질문:** 수정 담당자와 책임자. 어떤 결함이 어떤 영향을 주며 무엇부터 해결해야 하는가?
-- **필수 순서:** 검토 요약 → 대상과 범위 → 발견 사항 → 조치와 잔여 위험.
-- **발견 사항 필드:** ID, 심각도와 판단 이유, 위치, 발생 조건·증거, 영향, 권고 조치, 확인 상태.
-- **판정:** 확인된 결함과 추가 확인이 필요한 의심을 구분한다. 발견 사항이 없어도 검사 범위와 한계는 남긴다.
-- **제외·갱신:** 검토자의 노력·도구 실행 일지, 수정 확인 없는 ‘해결 완료’는 제외한다. 수정·재검토 결과를 연결한다.
+- **Readers and question:** Fix owners and the responsible lead. Which defects have what impact, and what should be fixed first?
+- **Required order:** review summary → target and scope → findings → actions and residual risk.
+- **Finding fields:** ID, severity and its reasoning, location, trigger condition and evidence, impact, recommended action, confirmation status.
+- **Verdict:** Distinguish confirmed defects from suspicions that need further confirmation. Even when there are no findings, record the scope and limits of the review.
+- **Exclude and updates:** Exclude logs of reviewer effort or tool runs, and ‘resolved’ claims without confirmation of the fix. Link the fix and re-review results.
 
 ### README — `guide`
 
-README는 해당 위치에서 작업을 시작하게 하는 문서다. 대상별로 아래 구성을 선택한다.
+A README is the document that lets someone start work at its location. Choose the structure below by
+target.
 
-| 대상 | 필수 순서 | 반드시 연결할 정보 |
+| Target | Required order | Information that must be linked |
 |---|---|---|
-| 프로젝트 root | 프로젝트 소개 → 시작 → 검사 → 문서·구성 안내 | 실행 전제와 기본 명령, 문서 지도 |
-| backend·frontend | 역할 → 실행 → 검사 → 구조·변경 규약 | 작업 디렉토리, 필요한 설정의 정본, 주요 진입점 |
-| infra | 담당 범위 → 구성·설정 정본 → 운영 절차 안내 | 실제 적용되는 환경과 runbook |
-| spike | 실험 질문·상태 → 실행 → 결과·적용 위치 | 의존성, 입력, 명령, 결과 파일, 운영 반영 위치 |
-| 문서 디렉토리 | 선택 안내 → 문서 목록 | 질문별 링크와 현행·기록 구분 |
-| 데이터 디렉토리 | 데이터 설명 → 필드·단위 → 재현 | 출처·수집 시점, 입력·원본·가공본 구분, 변환 명령 |
+| Project root | project introduction → getting started → checks → documentation and layout guide | Prerequisites and basic commands, documentation map |
+| backend, frontend | role → run → checks → structure and change conventions | Working directory, source of truth for required configuration, main entry points |
+| infra | scope of responsibility → source of truth for components and configuration → runbook guide | The environments actually in use and their runbooks |
+| spike | experiment question and status → run → results and where they are applied | Dependencies, inputs, commands, result files, where it is reflected in operation |
+| Documentation directory | selection guide → document list | Links by question, distinction between current documents and records |
+| Data directory | data description → fields and units → reproduction | Source and collection time, distinction between input, original and processed data, transformation commands |
 
-명령에는 작업 디렉토리와 성공 시 확인할 결과를 적는다. routine 코드 변경마다 README에 완료 내역을
-추가하지 않는다. 설정·API·migration 전체 목록은 생성 문서나 정본에 연결한다.
+For commands, state the working directory and the result to check on success. Do not add completion
+entries to a README for every routine code change. Link full lists of configuration, APIs and
+migrations to generated documents or the source of truth.
 
-### 현재 UI 규약 — `ui-guideline`
+### Current UI guideline — `ui-guideline`
 
-- **독자·질문:** 프론트엔드 개발자와 디자이너. 현재 UI를 어떤 규칙으로 구현·변경하는가?
-- **필수 순서:** 적용 범위 → 화면·상태 → 컴포넌트·표현 규칙 → 검사 기준.
-- **필수 내용:** 상태·전이, 반응형 동작, 공통 컴포넌트·토큰의 정본, 사용자 문구·오류 처리 규칙.
-- **경계:** 접근성 기준은 verification-spec으로 관리하고 여기서 연결한다. 완료 주장은 검증 결과에 둔다.
-- **갱신:** 현재 UI 변경과 함께 갱신한다. 파일명이 `DESIGN.md`여도 승인 당시 설계 기록과 혼동하지 않는다.
+- **Readers and question:** Frontend developers and designers. By what rules is the current UI implemented and changed?
+- **Required order:** scope → screens and states → component and presentation rules → check criteria.
+- **Required content:** States and transitions, responsive behavior, the source of truth for shared components and tokens, rules for user-facing text and error handling.
+- **Boundary:** Accessibility criteria are managed as a verification-spec and linked from here. Completion claims belong in verification results.
+- **Updates:** Update together with changes to the current UI. Even if the file is named `DESIGN.md`, do not confuse it with a design record as approved.
 
-### 목업·인계 — `prototype-record`
+### Prototype and handoff — `prototype-record`
 
-- **독자·질문:** 디자이너와 구현 담당자. 어떤 화면을 확인했고 실제 구현에 무엇이 필요한가?
-- **필수 순서:** 대상·version → 화면과 상태 → 상호작용 → 구현 인계 사항.
-- **필수 내용:** 실행·열람법, 시안과 승인 여부, 입력·출력·오류·빈 상태, 실제 연동과 임시 동작의 구분.
-- **인계 항목:** API 연결, 임시 데이터·목업 전용 요소 제거, 자산 적용, 알려진 차이, 검증 결과 링크.
-- **제외·갱신:** 목업을 현재 구현의 정본으로 선언하지 않는다. 실제 prototype 자산은 보존하고 판본별 기록으로 관리한다.
+- **Readers and question:** Designers and implementers. Which screens were reviewed, and what does the real implementation need?
+- **Required order:** target and version → screens and states → interactions → implementation handoff items.
+- **Required content:** How to run or view it, the drafts and their approval status, input, output, error and empty states, and the distinction between real integration and stub behavior.
+- **Handoff items:** API connection, removal of placeholder data and prototype-only elements, application of assets, known differences, links to verification results.
+- **Exclude and updates:** Do not declare the prototype the source of truth for the current implementation. Preserve real prototype assets and manage them as per-edition records.
 
-### 운영 절차·이관 — `runbook`
+### Runbook and handover — `runbook`
 
-- **독자·질문:** 운영 담당자. 어떤 상황에서 어떻게 실행하고 성공·실패를 판단하는가?
-- **필수 순서:** 적용 상황 → 실행 전 확인 → 절차 → 성공 확인 → 실패·복구.
-- **필수 내용:** 대상 환경, 권한·입력·선행 조건, 단계별 명령과 기대 결과, 중단 조건, 복구 또는 복구 불가 시 조치.
-- **이관 추가:** 인계 대상·접근 권한, 운영 책임·연락 경로, 복구 확인, 잔여 작업, 인수 기준.
-- **제외·갱신:** 운영자가 실행할 수 없는 추상적인 주의사항과 과거 구축 일지는 제외한다. 절차 변경과 함께 갱신한다.
+- **Readers and question:** Operators. In what situation is it run, how, and how are success and failure judged?
+- **Required order:** situation of use → pre-run checks → procedure → success confirmation → failure and recovery.
+- **Required content:** Target environment, permissions, inputs and preconditions, commands and expected results for each step, stop conditions, and actions for recovery or for when recovery is impossible.
+- **Additional for handover:** Handover recipient and access rights, operational responsibility and contact path, recovery confirmation, remaining work, acceptance criteria.
+- **Exclude and updates:** Exclude abstract cautions operators cannot act on and past build logs. Update together with procedure changes.
 
-### 원자료·생성물·외부 원문
+### Raw data, generated output and external originals
 
-| 성질 | 작성·관리 기준 |
+| Nature | Authoring and management rule |
 |---|---|
-| 실험·검증 원자료 | CSV·JSON·로그 등 원래 형식을 보존한다. 결과 문서에서 실행 ID와 경로를 연결한다 |
-| 누적 장부 | 시각·대상·수량·단위·비용 등 고정 필드로 append한다. 요약은 필요할 때 산출한다 |
-| 생성 문서 | generator, 원천, 재생성·검사 명령을 선언한다. 출력은 generator로만 변경한다 |
-| 외부 원문 | 제공자·수신 시점·판본을 기록한다. 원문을 교정하지 않고 해석·대조를 별도 문서에 둔다 |
+| Experiment and verification raw data | Preserve the original format such as CSV, JSON or logs. Link the run ID and path from the result document |
+| Cumulative ledger | Append with fixed fields such as time, target, quantity, unit and cost. Produce summaries when needed |
+| Generated document | Declare the generator, the source, and the regeneration and check commands. Change the output only through the generator |
+| External original | Record the provider, time of receipt and edition. Do not correct the original; keep interpretation and cross-checking in a separate document |
 
-Markdown과 HTML은 같은 내용 계약을 적용한다. 새 보고 HTML은 별도 원고를 복제하지 않고 승인한
-원고에서 생성하는 방식을 우선한다. 화면 목업 HTML은 보고서가 아니라 prototype 자산으로 취급한다.
-새 작성 문서의 유형·상태는 Markdown frontmatter 또는 HTML metadata에 선언한다.
-생성 HTML은 원고의 metadata를 전달하며, prototype 자산은 인계 문서와 자산 검사로 관리한다.
+Markdown and HTML follow the same content contract. For new report HTML, generating it from the
+approved manuscript is preferred over duplicating a separate manuscript. Screen prototype HTML is
+treated as a prototype asset, not a report. The type and status of a newly authored document are
+declared in Markdown frontmatter or HTML metadata. Generated HTML carries the manuscript's metadata,
+and prototype assets are managed through the handoff document and asset checks.
 
-## 3. 문체와 표현
+## 3. Style and wording
 
-본문은 평서형 `~한다`, `~이다`를 기본으로 쓴다. 관찰은 `~를 확인했다`, 제안은 `~를 권고한다`,
-미확정은 `~는 확인이 필요하다`로 구분한다. 표·제목은 짧은 명사구를 쓸 수 있다.
+Body text uses the plain declarative Korean endings `~한다` and `~이다` by default. Observations use
+`~를 확인했다` ("confirmed that ..."), proposals `~를 권고한다` ("recommend ..."), and unresolved
+points `~는 확인이 필요하다` ("... needs confirmation"). Tables and headings may use short noun
+phrases.
 
-| 기준 | 작성 방법 |
+| Criterion | How to write |
 |---|---|
-| 문장 | 주체·행동·조건을 직접 쓴다. 한 문장에 독립적인 주장 하나를 둔다 |
-| 문단 | 하나의 질문에 답한다. 결과·이유·영향이 다른 주제이면 나눈다 |
-| 표현 | 비유, 감탄, 자평, 훈계, 독자를 설득하기 위한 과장을 제거한다 |
-| 인과 | 원인을 검증하지 못했으면 ‘원인이다’ 대신 ‘가능성이 있으며 추가 확인이 필요하다’고 쓴다 |
-| 전문 용어 | 보고자료는 독자가 이해할 말로 설명한다. 코드 식별자·명령·오류명은 그대로 보존한다 |
-| 표 | 비교·배정·판정에 쓴다. 한 행은 한 항목, 각 열은 한 속성으로 구성한다 |
-| 목록 | 단계나 병렬 항목에 쓴다. 설명을 잘게 쪼개 모든 문장을 목록으로 만들지 않는다 |
-| 강조 | 결론·결정 요청·중단 조건에 한정한다. 본문 전체를 굵게 쓰거나 경고 기호를 반복하지 않는다 |
-| 제목 | ‘남은 것은 이것뿐’, ‘조용히 틀리는 것’ 대신 ‘미결 사항’, ‘운영 전 확인’처럼 내용을 예고한다 |
+| Sentences | State the actor, action and condition directly. Put one independent claim in each sentence |
+| Paragraphs | Answer one question. Split when results, reasons and impact are separate topics |
+| Expression | Remove metaphor, exclamation, self-assessment, lecturing and exaggeration meant to persuade the reader |
+| Causation | If the cause was not verified, write ‘가능성이 있으며 추가 확인이 필요하다’ (“is possible and needs further confirmation”) instead of ‘원인이다’ (“is the cause”) |
+| Technical terms | In briefs, explain in words the reader understands. Keep code identifiers, commands and error names as they are |
+| Tables | Use for comparison, assignment and verdicts. One row per item, one attribute per column |
+| Lists | Use for steps or parallel items. Do not chop explanations up until every sentence is a list item |
+| Emphasis | Limit to conclusions, decision requests and stop conditions. Do not bold the whole body or repeat warning symbols |
+| Headings | Instead of ‘남은 것은 이것뿐’ (“all that is left is this”) or ‘조용히 틀리는 것’ (“what silently goes wrong”), preview the content, as in ‘미결 사항’ (“open issues”) or ‘운영 전 확인’ (“pre-operation checks”) |
 
-프로젝트의 커밋 메시지용 명사형·영어 기술용어 규칙은 문서 본문에 확대 적용하지 않는다.
-문서별 독자 기준을 명시해 현재 `CLAUDE.md`의 문서 문체 진입점과 연결한다.
+The project's commit-message rules for noun-form endings and English technical terms are not extended
+to document bodies. Each document states its reader standard, connecting it to the documentation style
+entry point in the current `CLAUDE.md`.
 
-아래 예문의 수치는 문체 설명용 가상 값이다.
+The figures in the examples below are hypothetical values used only to illustrate style.
 
-| 수정 전 | 수정 후 |
+| Before | After |
 |---|---|
-| 뼈대를 얇게 관통시킨 뒤 살을 붙인다 | 실행 환경과 DB 초기화를 먼저 구성한다 |
-| 비용·속도 1차 방어선이다 | 저장 답변은 LLM 호출 없이 반환한다 |
-| 화면은 정상인데 조용히 틀어진다 | 기동 후 접근 허용 범위와 정책값을 별도로 확인한다 |
-| 이제 남은 것은 발주처 회신뿐이다 | 운영 개시 전 발주처의 허용 IP 대역 확인이 필요하다 |
-| 제공자 편차가 원인일 수밖에 없다 | 같은 조건에서 처리시간이 달랐다. 제공자 응답시간은 추가 측정이 필요하다 |
-| 10회 전부 성공했으므로 안정적이다 | 시험한 10회는 모두 성공했다. 장시간 운전과 동시 요청은 미검증이다 |
+| 뼈대를 얇게 관통시킨 뒤 살을 붙인다 (“run a thin skeleton all the way through, then put flesh on it”) | 실행 환경과 DB 초기화를 먼저 구성한다 (“set up the runtime environment and DB initialization first”) |
+| 비용·속도 1차 방어선이다 (“it is the first line of defense for cost and speed”) | 저장 답변은 LLM 호출 없이 반환한다 (“stored answers are returned without an LLM call”) |
+| 화면은 정상인데 조용히 틀어진다 (“the screen looks fine but things silently go wrong”) | 기동 후 접근 허용 범위와 정책값을 별도로 확인한다 (“after startup, check the allowed access range and policy values separately”) |
+| 이제 남은 것은 발주처 회신뿐이다 (“now all that is left is the client's reply”) | 운영 개시 전 발주처의 허용 IP 대역 확인이 필요하다 (“before operation starts, the client's allowed IP range needs to be confirmed”) |
+| 제공자 편차가 원인일 수밖에 없다 (“provider variance has to be the cause”) | 같은 조건에서 처리시간이 달랐다. 제공자 응답시간은 추가 측정이 필요하다 (“processing time differed under the same conditions. Provider response time needs further measurement”) |
+| 10회 전부 성공했으므로 안정적이다 (“all 10 runs succeeded, so it is stable”) | 시험한 10회는 모두 성공했다. 장시간 운전과 동시 요청은 미검증이다 (“all 10 tested runs succeeded. Long-running operation and concurrent requests are unverified”) |
 
-요약은 3문장 이내, 문단은 4문장 이내를 편집 목표로 삼되 자동 합격선으로 사용하지 않는다.
-줄바꿈·문장 분할만으로 분량을 맞추거나, 길이 제한 때문에 필수 근거·명령을 삭제하지 않는다.
+Editorial targets are at most 3 sentences for a summary and at most 4 sentences per paragraph, but
+they are not used as an automatic pass threshold. Do not meet the length only through line breaks or
+sentence splitting, and do not delete required evidence or commands because of the length limit.
 
-## 4. 강제 방법
+## 4. Enforcement design
 
-강제 대상은 유형별 필수 정보와 검토 절차다. 문장의 적절성과 근거의 충분성은 문서를 읽어 판단한다.
+Enforcement covers the required information per type and the review procedure. Whether sentences are
+appropriate and evidence is sufficient is judged by reading the document.
 
-| 단계 | 검사·처리 | 구현 상태 |
+| Stage | Check or handling | Implementation status |
 |---|---|---|
-| 작성 전 | 경로·역할로 유형 선택, 해당 필수 구성만 제공 | 유형별 규칙 추가 필요 |
-| 구조 검사 | 미분류 문서, 필수 절·필드 누락, 잘못된 상태, 빈 필수 내용, 깨진 근거 링크 차단 | 유형·본문 검사 확장 필요 |
-| 편집 검토 | 독자 관점에서 전체를 읽고 중복·근거·판정·문체를 수정 | `review-document` 절차 존재 |
-| 검토 유효성 | 최종 본문과 검토 기록의 해시 일치 확인 | `engsys review check` 존재 |
-| push 검사 | 전송할 commit의 문서·검토 기록 검사 | engineering-system에 연결, 각 프로젝트 연결 확인 필요 |
+| Before writing | Choose the type by path and role; provide only that type's required structure | Per-type rules need to be added |
+| Structure check | Block unclassified documents, missing required sections or fields, invalid status, empty required content and broken evidence links | Type and body checks need to be extended |
+| Editorial review | Read the whole document from the reader's perspective and fix repetition, evidence, verdicts and style | `review-document` procedure exists |
+| Review validity | Confirm that the final body matches the hash in the review receipt | `engsys review check` exists |
+| Push check | Check the documents and review receipts of the commits being pushed | Connected in engineering-system; connection in each project needs confirmation |
 
-### 구조 검사에서 실패시킬 항목
+### What the structure check fails
 
-- 적용 범위 안의 새 작성 문서에 유효한 유형·상태가 없다.
-- 필수 절·필드가 없거나 빈 값이다. 조건부 필수 항목은 적용 여부와 필요한 정보를 확인한다.
-- 검증 결과에 기준 version·대상·증거가 없는데 전체 통과를 주장한다.
-- 근거·원자료 경로가 존재하지 않거나, 생성 문서가 선언된 원천과 다르다.
-- 검토 기록이 없거나 최종 본문과 다르다. 개정한 작성 규칙에 대한 재검토가 요구됐는데 기록이 낡았다.
+- A newly authored document within the applicable scope has no valid type or status.
+- A required section or field is missing or empty. For conditionally required items, confirm whether they apply and what information they need.
+- A verification result claims an overall pass without a criteria version, target or evidence.
+- An evidence or raw-data path does not exist, or a generated document differs from its declared source.
+- A review receipt is missing or differs from the final body; or re-review was required for a revised authoring rule and the receipt is stale.
 
-조건부 항목의 적용 여부와 자연어 ‘통과’ 주장은 정규식만으로 확정하지 않는다.
-새 검증 결과에는 구조화한 `result`와 항목별 판정을 두고, 문장과의 일치는 편집 검토에서 확인한다.
-미확정 항목이 남아도 draft 저장은 허용하며, 최종 판정에 필요한 정보의 누락은 완료를 차단한다.
+Whether a conditional item applies, and natural-language ‘pass’ claims, are not settled by regular
+expressions alone. A new verification result carries a structured `result` and per-item verdicts, and
+their consistency with the prose is checked in editorial review. Saving a draft is allowed while
+unresolved items remain, but missing information needed for the final verdict blocks completion.
 
-### 편집 검토에서 반려할 항목
+### What editorial review rejects
 
-- 첫 부분에서 문서의 결론·적용 범위·실행 목적을 알 수 없다.
-- 성공 주장에 실패·제외 사례가 누락되거나 관측 범위를 넘어 일반화했다.
-- 같은 설명을 여러 절에서 반복하거나 작업 과정을 읽어야 현재 결론을 알 수 있다.
-- 의사결정에 필요한 수치·조건·단점·후속 조치가 빠졌다.
-- 문서 유형을 맞추기 위해 사실·대안·승인·담당자를 만들어 넣었다.
+- The opening does not make clear the document's conclusion, scope or purpose of execution.
+- A success claim omits failures or exclusions, or generalizes beyond the observed range.
+- The same explanation is repeated across sections, or the current conclusion can only be found by reading through the work process.
+- Figures, conditions, drawbacks or follow-up actions needed for the decision are missing.
+- Facts, alternatives, approvals or owners were made up to fit the document type.
 
-검토 기록에는 검토자, 독자, 질문, 본문 해시, 문서별 판단을 남긴다. 확장안에서는 적용한 유형과
-규칙 version도 기록한다. 이는 정책 변경에 따른 재검토 판정에 사용한다.
-자기 검토는 자기 검토로 표시한다. 검토 기록의 존재가 글의 품질이나 보고 승인을 증명하지는 않는다.
+A review receipt records the reviewer, readers, question, body hash and the per-document assessment.
+In the extended proposal it also records the applied type and rule version, which are used to decide
+re-review after policy changes. Self-review is marked as self-review. The existence of a review
+receipt does not prove the quality of the writing or approval of a report.
 
-`CLAUDE.md`는 문서 작성 시 유형을 선택하고 해당 규칙을 읽도록 연결한다. 실제 완료 차단은 native
-검사와 Git hook에 둔다. 서버에서 우회를 막으려면 해당 검사를 필수 CI와 병합 조건에 연결해야 한다.
+`CLAUDE.md` links document authoring to choosing a type and reading that type's rules. Actual
+completion blocking sits in native checks and Git hooks. Preventing bypass on the server requires
+connecting those checks to required CI and merge conditions.
 
-## 5. 적용·전환
+## 5. Adoption and transition
 
-공통 유형·편집 규칙은 `docs-gov`가 소유하고, 프로젝트는 경로 배정·정본·검사 명령만 선언한다.
-유형마다 별도 skill을 만들지 않고, 작성·검토 절차에서 필요한 유형 규칙을 읽게 한다.
-검사 항목과 안내문이 서로 다른 필수 구성을 갖지 않도록 하나의 선언에서 관리한다.
+`docs-gov` owns the common types and editorial rules, and a project declares only path assignments,
+sources of truth and check commands. No separate skill is created per type; the authoring and review
+procedures read the type rules they need. Check items and guidance are managed from a single
+declaration so that they never carry different required structures.
 
-1. 유형별 규칙과 metadata·상태 매핑을 정의한다. 기존 `type`은 대응표로 수용하며 일괄 변경하지 않는다.
-2. public-ai-qa의 dev·operations·verification·meeting·mockup 배정 목록과 링크 변경안을 만든다.
-   기록 경계와 동명 자료를 검토한 뒤 이동한다.
-3. 범위, README, 실험 결과, 보고자료, runbook을 각 한 편씩 적용해 예시를 확정한다.
-4. 새 문서에는 구조 검사를 적용한다. 기존 문서는 파일별 목록으로 적용 유예를 관리하고 실제 검토한 파일부터 전환한다.
-5. 문서 경로를 이동했으면 native 검사 범위와 검토 기록도 갱신한다. 구현 후 프로젝트 lock에 적용 버전을 반영한다.
+1. Define per-type rules and the metadata and status mapping. Existing `type` values are accepted through a mapping table and not changed in bulk.
+2. Prepare the assignment list and link change plan for public-ai-qa's dev, operations, verification, meeting and mockup.
+   Move after reviewing record boundaries and same-named material.
+3. Apply the rules to one document each of scope, README, experiment report, brief and runbook to finalize the examples.
+4. Apply the structure check to new documents. For existing documents, manage deferral through a per-file list and convert the files that have actually been reviewed first.
+5. If document paths move, also update the native check scope and the review receipts. After implementation, reflect the applied version in the project lock.
 
-기존 동결 문서에 새 제목·순서를 일괄 강제하지 않는다. 내용 변경은 기존 lifecycle과 소유자의
-편집 승인 범위를 따른다. 경로 변경과 문체 변경도 구분해 검토하며, 포괄적인 ‘legacy 전체 제외’는 두지 않는다.
+New headings or ordering are not enforced in bulk on existing frozen documents. Content changes follow
+the existing lifecycle and the owner's editing approval scope. Path changes and style changes are also
+reviewed separately, and no blanket ‘exclude all legacy’ rule is defined.
 
-## 6. 구현 완료 기준
+## 6. Implementation done criteria
 
-- 각 문서가 공통 문서·코드 인접 안내·누적 기록 중 목적에 맞는 위치에 배정되고, 링크와 검사 경로가 유효하다.
-- 같은 유형의 신규 문서는 같은 필수 질문에 같은 순서로 답한다. 관련 없는 빈 절은 생성되지 않는다.
-- 필수 절·증거·검토 기록 누락과 검토 후 본문 변경이 각각 실패하는 검사 사례가 있다.
-- 생성 문서·외부 원문·동결 기록의 변경 경계를 지키는 검사 사례가 있다.
-- 보고자료와 실험 결과를 각각 읽어 판단·관측·제안을 구분할 수 있다. 검토자가 실제 문장과 근거를 기록한다.
-- Markdown·보고 HTML·prototype 자산의 검사 대상을 구분하고, 프로젝트별 문서 경로 누락을 확인한다.
+- Each document is assigned to the location that fits its purpose among shared documents, code-adjacent guides and accumulated records, and its links and check paths are valid.
+- New documents of the same type answer the same required questions in the same order. Unrelated empty sections are not generated.
+- Check cases exist that fail separately for missing required sections, missing evidence, missing review receipts and body changes after review.
+- Check cases exist that enforce the change boundaries of generated documents, external originals and frozen records.
+- Reading a brief and an experiment report each, a reader can tell judgment, observation and proposal apart. The reviewer records the actual sentences and evidence.
+- The check targets for Markdown, report HTML and prototype assets are distinguished, and missing per-project document paths are detected.
 
-## 근거
+## Sources
 
-- [기존 편집 기준](../../packages/docs-gov/editorial.md): 독자·목적, 근거 보존, 문서별 최종 검토.
-- [ADR-0005](../adr/0005-individual-document-editorial-review.md): 개별 검토와 검토 누락 차단의 결정·보장 범위.
-- [현재 docs-gov 정책](../../packages/docs-gov/policy.yaml): lifecycle, 생성물 보호, 검토 기록 검사.
-- public-ai-qa 조사 대상: `docs/documentation-policy.md`, `docs/README.md`, `docs/dev/01-feature-slices.md`,
-  `docs/dev/2026-09-07-index-duration.md`, `spike/hwp2pdf-docker-probe/REPORT.md`, 각 component README.
+- [Existing editorial standard](../../packages/docs-gov/editorial.md): readers and purpose, preserving evidence, final per-document review.
+- [ADR-0005](../adr/0005-individual-document-editorial-review.md): the decision on individual review and on blocking missing reviews, and the scope of what it guarantees.
+- [Current docs-gov policy](../../packages/docs-gov/policy.yaml): lifecycle, generated-output protection, review receipt checks.
+- public-ai-qa material surveyed: `docs/documentation-policy.md`, `docs/README.md`, `docs/dev/01-feature-slices.md`,
+  `docs/dev/2026-09-07-index-duration.md`, `spike/hwp2pdf-docker-probe/REPORT.md`, each component README.

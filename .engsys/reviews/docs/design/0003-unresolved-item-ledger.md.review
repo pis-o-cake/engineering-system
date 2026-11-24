@@ -1,36 +1,14 @@
 engsys-document-review: 1
 document: docs/design/0003-unresolved-item-ledger.md
-blob: 1885bb79b6f51331c8688f4aabaa696f2e6d1784
+blob: f2a33cfac0199fe80bc95047ce04c0b540dd0415
 decision: pass
-reviewer: claude-opus-5 (agent)
-audience: 검토자와 구현 담당자
-purpose: 이 범위와 방법으로 미결 연결을 도입해도 되는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Maintainers of the standard and adopting-project leads
+purpose: How should unresolved items from a change be linked and closed?
 
-docs/design/0003 은 검토자와 구현 담당자가 읽는 도입 제안이다. 이번 편집은 세 곳이다 — 머리말의
-범위 문장, 「계약으로 올리지 않는 것」 절을 「무엇을 먼저 구현했나」로 교체, 첫 운영 대상의 종료
-기준을 건수에서 종류로 변경.
-
-바꾼 이유: 초안은 수기 운영 뒤 계약화를 적었는데 실제 순서가 바뀌었다. 문서가 그대로면 구현된
-것과 제안된 것을 독자가 구분할 수 없다. 또 종료 기준이 "실제 변경 10건"이었는데, 같은 종류를
-열 번 반복해도 이 절차가 문장 수정만 잘 처리하는지는 갈리지 않는다. 판단에 필요한 정보는
-건수가 아니라 종류다.
-
-편집한 것: 「무엇을 먼저 구현했나」 절에 순서를 바꾼 이유를 한 문단으로 적고(바쁠 때 가장 먼저
-생략된다, 생략된 기록으로는 판단할 수 없다), 구현한 넷을 목록으로 남겼다. 문서 쪽 계약은
-늘리지 않았다는 사실과 그 판단이 별도라는 것을 마지막 문장에 남겼다. 머리말은 ADR 0024 를
-연결해 무엇이 결정·구현됐는지를 첫 화면에서 알 수 있게 했다.
-
-보존한 것: 세 번째 판정의 정의, 근거가 된 두 사례(ADR 0015·0007), 책임 분리 표, 미결 종류 표,
-업무 항목 양식, 변경 처리 다섯 단계, 정기 확인 범위는 그대로다. 이 제안의 판단은 바뀌지 않았고
-실행 순서만 바뀌었다.
-
-확인한 것: ADR 0024 와 중복 서술이 생기지 않았는지 두 문서를 나란히 읽었다. 0003 은 무엇을 왜
-하려는지를, 0024 는 무엇을 결정했고 무엇을 프로젝트가 갖는지를 담는다. 계약 파일 목록은 0003 에
-한 번만 있고 0024 는 결정 항목으로 적는다. 세 사례 목록은 두 문서에 모두 있으나 0003 은 대상,
-0024 는 판단 시점으로 쓰임이 다르다.
-
-한계: status 는 draft 그대로다. 구현이 들어갔으나 계속 쓸지는 결정 항목에서 판단하므로 approved
-로 올리지 않았다. 그 판단 시점을 첫 운영 대상 절에 남겼다.
-
-engsys docs check 와 tools/check-documentation.py 는 통과한다.
+docs/design/0003-unresolved-item-ledger.md is a draft design proposal; it concludes that anything a change cannot close is linked to a tracked work item with one owner and a person-judgeable closing condition, and that a third verdict ("does the explanation still hold after later changes") stays separate from editorial review.
+Translated from Korean in full: summary, ownership table, five kinds of unresolved items, work item form, five-step change handling, periodic check scope, what was implemented first, first operating targets. Frontmatter, links, paths and identifiers are unchanged.
+Korean kept on purpose: the tracker-body example code block (a literal example as a Korean-language project writes it), the MR section name `영향 및 후속 작업` (a contract value), and the blockquoted MR section example. Each has an English rendering next to it.
+Historical facts (the two 2026-09-10 cases, ADR 0024 implementation, public-ai-qa preconditions) were not updated to the current implementation.
+Reread as an English reader and compared against HEAD; no facts, conditions or numbers dropped. Limitation: self-review by the translator, not an independent reader.
 
