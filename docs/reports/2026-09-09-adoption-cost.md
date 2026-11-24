@@ -4,63 +4,79 @@ status: active
 observed: 2026-09-09
 ---
 
-# 문서 검사 도입 비용과 추가 탐지 실험
+# Document check adoption cost and additional detection experiment
 
-문서 검사를 묶어 실행하는 시간은 이번 macOS 반복 실험에서 중앙값 8.95초에서 4.14초로 줄었다.
-기존 native 문서 검사 대비 추가 지연은 8.17초에서 3.32초로 줄어 사전에 정한 5초 기준을 만족했다.
-이 결과는 검사 실행 비용의 개선이며, 사람의 문서 작성 시간이나 팀 생산성의 개선을 뜻하지 않는다.
+In this repeated macOS experiment, the time to run the bundled document checks fell from a median
+of 8.95 seconds to 4.14 seconds. The additional delay over the existing native document check fell
+from 8.17 seconds to 3.32 seconds, meeting the 5-second criterion set in advance. This result is an
+improvement in check execution cost; it does not mean an improvement in people's document writing
+time or team productivity.
 
-## 결론과 적용 범위
+## Conclusion and applicability
 
-[평가 기준 version 1](../verification/adoption.md)의 기계 검사 조건을 최적화 후 모두 만족했다.
-정상 입력은 5회 모두 통과했고, 주입한 두 오류는 모두 실패했으며, 복원 후 다시 통과했다.
-기존 native 검사도 생성 문서 불일치를 잡으므로 그것을 표준의 추가 효과로 세지 않았다.
-기존 검토 기록이 있는 문서의 본문 변경은 native가 통과하고 표준의 검토 기록 검사가 실패했다.
+After optimization, all mechanical check conditions of
+[evaluation criteria version 1](../verification/adoption.md) were met. Normal input passed in all
+5 runs, both injected errors failed, and the checks passed again after restoration. The existing
+native check also catches the generated-document mismatch, so that was not counted as an additional
+effect of the standard. A body change to a document with an existing review receipt passed native
+and failed the standard's review receipt check.
 
-## 실험 조건
+## Method and conditions
 
-실제 적용 중인 제품 프로젝트의 동일 commit을 임시 clone해 비교했다. 설치된 dependency를
-재사용하고 각 명령을 한 번 warmup한 뒤 5회 실행했다. 회차마다 native와 managed의 순서를
-교대했다. 최종 비교는 다른 전체 테스트가 끝난 뒤 순차 실행했다.
+The comparison used a temporary clone of the same commit of a product project that is actually
+using the standard. Installed dependencies were reused, and each command was run 5 times after one
+warmup. The order of native and managed alternated each round. The final comparison ran
+sequentially after the other full test runs had finished.
 
-native는 `cd backend && .venv/bin/poe docs:check`다. managed는 같은 명령과 표준의 생성 문서·구조·
-검토 기록 검사를 실행했다. 임시 계약에서 VCS 설정을 제외해 문서 거버넌스만 비교했다.
-비교 전 구현은 기존 check-structure.sh, 비교 후 구현은 문서당 단일 AWK 판정과 shell 내부 glob
-계산을 사용했다. 나머지 표준 구현은 같은 작업 트리에서 복사했다.
+Native was `cd backend && .venv/bin/poe docs:check`. Managed ran the same command plus the
+standard's generated-document, structure and review receipt checks. The VCS settings were excluded
+from the temporary contract so that only document governance was compared. The pre-comparison
+implementation was the existing check-structure.sh; the post-comparison implementation used a
+single AWK verdict per document and glob computation inside the shell. The rest of the standard's
+implementation was copied from the same working tree.
 
-원자료에는 프로젝트 commit, 표준의 기준 commit과 작업 diff 해시, 실제 실행 파일들의 SHA-256,
-OS·Python·회차별 시간과 종료 코드를 기록했다. 원본 프로젝트의 코드나 문서 본문은 포함하지 않았다.
+The raw data records the project commit, the standard's base commit and the hash of the working
+diff, the SHA-256 of the files actually executed, and the OS, Python version, and per-run time and
+exit code. It contains no code or document bodies from the original project.
 
-## 결과
+## Results
 
-| 지표 | 최적화 전 | 최적화 후 |
+| Metric | Before optimization | After optimization |
 |---|---:|---:|
-| native 중앙값 | 0.785초 | 0.788초 |
-| managed 중앙값 | 8.946초 | 4.137초 |
-| paired 추가 지연 중앙값 | 8.166초 | 3.324초 |
-| 정상 입력 실패 | 0/5 | 0/5 |
-| managed 주입 오류 탐지 | 2/2 | 2/2 |
-| 기준 충족 | 실패 | 통과 |
+| native median | 0.785 s | 0.788 s |
+| managed median | 8.946 s | 4.137 s |
+| paired additional delay median | 8.166 s | 3.324 s |
+| failures on normal input | 0/5 | 0/5 |
+| managed injected-error detection | 2/2 | 2/2 |
+| criterion met | fail | pass |
 
-문서마다 metadata·절을 읽기 위해 반복 실행하던 awk·sed를 문서당 한 번의 판정으로 합쳤다.
-경로 glob 계산도 command substitution 대신 shell 내부 대입으로 바꿨다. 기존 구조 검사와 작성
-피드백·scaffold 회귀 검사를 유지해 status·필수 metadata·참조·절 순서·빈 절 판정을 확인했다.
+The awk and sed calls that ran repeatedly to read each document's metadata and sections were merged
+into a single verdict per document. Path glob computation was also changed from command
+substitution to assignment inside the shell. The existing structure checks and the write-time
+feedback and scaffold regression checks were kept, confirming the status, required metadata,
+references, section order and empty-section verdicts.
 
-두 원자료의 구현 해시는 `check-structure.sh`만 다르다. 따라서 위 시간 차이는 문서 판정 구현
-하나에서 나왔다. CLI의 plugin 조합·cache와 setup·doctor·hook 관리를 lib 모듈로 분리한 변경은
-두 측정에 모두 들어 있어 이 수치에 영향을 주지 않는다. 그 분리로 진입 파일은 1,815줄에서
-1,070줄로 줄었지만 총 코드량은 비슷하며, 이를 생산성 절감 수치로 세지 않는다. 적용 프로젝트에서
-전체 pytest에 포함된 docs:check를 다시 호출하던 중복을 제거한 것도 이번 비교 대상 밖이다.
+The implementation hashes of the two raw data sets differ only in `check-structure.sh`, so the time
+difference above comes from that one document verdict implementation. The change that split the
+CLI's plugin assembly and cache, and setup, doctor and hook management, into lib modules is present
+in both measurements and does not affect these numbers. That split reduced the entry file from
+1,815 lines to 1,070 lines, but the total amount of code is similar, and it is not counted as a
+productivity saving. Removing the duplicate call to docs:check that the full pytest run in the
+applied project was making is also outside this comparison.
 
-원자료: [최적화 전](data/adoption-2026-09-09/before.json),
-[최적화 후](data/adoption-2026-09-09/after.json).
+Raw data: [before optimization](data/adoption-2026-09-09/before.json),
+[after optimization](data/adoption-2026-09-09/after.json).
 
-## 한계와 후속 조치
+## Limitations and follow-up
 
-한 프로젝트·한 컴퓨터·5회 실행 결과다. 두 가지 주입 오류의 탐지가 모든 누락의 탐지를 보장하지
-않는다. 최초 설치 시간, 사람이 문서를 찾고 쓰고 검토한 시간, 오탐 복구와 도구 유지 시간은 이번
-실험으로 측정하지 않았다. 비교 가능한 사람의 실제 변경 기록이 없으므로 팀의 시간 절감률은 미확정이다.
+These are results from one project, one computer and 5 runs. Detecting two kinds of injected error
+does not guarantee detection of every omission. This experiment did not measure first-install time,
+the time people spent finding, writing and reviewing documents, or false-positive recovery and tool
+maintenance time. With no comparable records of people's real changes, the team's time-saving rate
+is undetermined.
 
-현재는 버전 고정과 검토 신선도 검사를 유지한다. 앞으로 동일 기준을 넘는 지연이나 추가 탐지 없이
-늘어나는 검토 비용이 관찰되면 범위를 줄인다. 이미 잡는 오류를 중복 검사하는 것을 별도 효과로
-계산하지 않는다. 사내 프로젝트의 서버 CI는 중앙 설정 권한이 없어 이 실험의 범위 밖이다.
+For now, version pinning and the review freshness check are kept. If delay beyond the same criterion
+or review cost that grows without additional detections is observed, the scope will be reduced.
+Duplicate checks for errors that are already caught are not counted as a separate effect. Server CI
+for in-house projects is outside the scope of this experiment because there is no permission for
+the central configuration.

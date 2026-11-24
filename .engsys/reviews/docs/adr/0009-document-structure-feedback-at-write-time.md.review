@@ -1,15 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0009-document-structure-feedback-at-write-time.md
-blob: 5821afa26a8e21b7f69c8b31d8fdaeda5a0927c2
+blob: 7b3342737b7e19758811c533d3a75dd98f6b2f08
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: 구조 검사를 언제 돌리고 결과를 누구에게 주는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: Why is the document structure check run at write time and fed back to Claude?
 
-대체 관계 한 줄만 추가했다. 결정·배경·대안·날짜·status 는 그대로다.
-design 0002 는 accepted 이후의 결정 변경을 새 ADR 로 기록하고 기존 기록에 대체 관계를 연결하라고
-정한다. SessionStart 부분만 바뀌었으므로 "나머지 결정은 그대로다"를 같은 문장에 넣었다. 이걸
-빼면 이 ADR 전체가 무효로 읽힌다.
-과거 판단을 고치지 않았다 — SessionStart 를 그렇게 만든 당시 근거는 본문에 남아 있고, 실측으로
-값이 없다고 밝혀졌다는 사실만 뒤에 붙였다.
+Records moving the document structure check to write time via a PostToolUse hook that returns failures to Claude, while the review receipt check stays in the push gate and no Stop hook is used.
+Translated from Korean to English; frontmatter, hook event names, exit code 2, the 20-second timeout and links to design 0001, ADR 0005 and ADR 0010 are unchanged.
+Headings mapped to Decision, Background and Constraints, Rationale and Alternatives, Consequences.
+The final bullet noting that ADR 0010 superseded the SessionStart counting is part of the source and is kept as-is.
+No Korean literals retained.
 

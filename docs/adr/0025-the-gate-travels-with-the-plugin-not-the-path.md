@@ -5,62 +5,70 @@ status: accepted
 date: 2026-09-10
 ---
 
-# 0025. gate 는 PATH 가 아니라 plugin 에 실려 온다
+# 0025. The gate travels with the plugin, not the PATH
 
-merge request gate 를 프로젝트의 `.claude/settings.json` 이 아니라 plugin 의 hook catalog 가
-등록한다. hook 은 `${CLAUDE_PLUGIN_ROOT}` 로 자기 자신을 찾고, 판정할 `engsys` 도 같은 곳에서
-찾는다. PATH 는 마지막 후보다.
+The merge request gate is registered by the plugin's hook catalog, not by the project's
+`.claude/settings.json`. The hook locates itself through `${CLAUDE_PLUGIN_ROOT}` and finds the
+`engsys` that makes the verdict in the same place. PATH is the last candidate.
 
-## 결정
+## Decision
 
-- `packages/vcs-gov/package.yaml` 이 `PreToolUse` · `Bash` hook 을 선언하고, catalog 가 그것을
-  `sh "${CLAUDE_PLUGIN_ROOT}/..."` 로 등록한다.
-- hook 은 launcher 를 `ENGSYS_SYSTEM_ROOT` → `CLAUDE_PLUGIN_ROOT` → PATH 순으로 찾는다. 어디서도
-  찾지 못하면 통과시키지 않고 그 사실을 돌려준다.
-- 프로젝트의 `.claude/settings.json` 은 marketplace 와 plugin 선언만 갖는다. hook 항목은 뺀다.
-- [ADR 0022](0022-a-declared-contract-needs-a-gate-not-an-instruction.md) 의 결정 중 gate 를
-  등록하는 파일만 이 문서가 대신한다. "gate 를 부르는 것은 저장소에 든 선언이지 세션이 읽은
-  skill 이 아니다" 는 그대로다 — 그 선언이 `enabledPlugins` 이고, plugin 이 gate 를 나른다.
+- `packages/vcs-gov/package.yaml` declares a `PreToolUse` / `Bash` hook, and the catalog registers
+  it as `sh "${CLAUDE_PLUGIN_ROOT}/..."`.
+- The hook looks for the launcher in the order `ENGSYS_SYSTEM_ROOT` → `CLAUDE_PLUGIN_ROOT` → PATH.
+  If it finds none, it does not let the call through and returns that fact.
+- The project's `.claude/settings.json` holds only the marketplace and plugin declarations. The hook
+  entry is removed.
+- Of the decisions in [ADR 0022](0022-a-declared-contract-needs-a-gate-not-an-instruction.md), this
+  document supersedes only the file that registers the gate. "What calls the gate is a declaration
+  stored in the repository, not a skill the session read" still stands: that declaration is
+  `enabledPlugins`, and the plugin carries the gate.
 
-## 배경과 제약
+## Context and constraints
 
-ADR 0022 는 gate 를 `.claude/settings.json` 의 hook 으로 등록했다. 명령은 `engsys vcs
-merge-request-hook` 이었고, 이는 `engsys` 가 PATH 에 있다는 전제 위에 있었다.
+ADR 0022 registered the gate as a hook in `.claude/settings.json`. The command was
+`engsys vcs merge-request-hook`, which rested on the premise that `engsys` is on PATH.
 
-2026-09-10 Windows 에서 그 전제가 깨졌다. Claude Code 가 hook 을 로그인 셸이 아닌 곳에서 부르고,
-Git Bash 의 활성화 줄은 로그인 프로필에만 있다. 모든 Bash 호출마다 아래가 나왔다.
+On 2026-09-10 that premise broke on Windows. Claude Code calls hooks outside a login shell, and Git
+Bash's activation line exists only in the login profile. Every Bash call produced the following.
 
 ```
 PreToolUse:Bash hook error
 Failed with non-blocking status code: /usr/bin/bash: line 1: engsys: command not found
 ```
 
-실패가 non-blocking 이라 명령은 그대로 실행됐다. 즉 **gate 가 꺼진 채로 돌았고**, 매 호출마다
-오류만 찍혔다. [ADR 0019](0019-verification-fails-when-it-cannot-run.md) 가 정한 "실행하지 못한
-검사는 실패" 가 hook 이 죽는 자리에서는 성립하지 않는다. 그 자리를 만들지 않는 것이 답이다.
+Because the failure was non-blocking, the commands ran anyway. In other words, **the gate ran
+switched off**, and every call only printed an error. The rule set by
+[ADR 0019](0019-verification-fails-when-it-cannot-run.md), "a check that could not run is a
+failure", does not hold at the point where the hook itself dies. The answer is to not create that
+point.
 
-제약은 경로다. `.claude/settings.json` 은 프로젝트가 commit 하므로 개발자 머신의 절대 경로를
-쓸 수 없고, `${CLAUDE_PLUGIN_ROOT}` 는 plugin 이 등록한 hook 에만 주어진다. plugin 은 이미 그
-파일이 선언해 붙는다([ADR 0023](0023-the-standard-ships-as-a-plugin-marketplace.md)).
+The constraint is the path. `.claude/settings.json` is committed by the project, so it cannot use an
+absolute path on a developer's machine, and `${CLAUDE_PLUGIN_ROOT}` is provided only to hooks the
+plugin registers. The plugin is already attached through that file's declaration
+([ADR 0023](0023-the-standard-ships-as-a-plugin-marketplace.md)).
 
-## 근거와 대안
+## Rationale and alternatives
 
-- **`engsys` 를 시스템 PATH 에 심는다**: Windows 에서 로그인 셸 밖의 PATH 까지 손대야 하고,
-  `install.sh` 가 개발자의 shell profile 만 고친다는 [ADR 0007](0007-one-command-activation-and-main-as-release-channel.md)
-  의 경계를 넘는다.
-- **hook 명령을 `bash -lc` 로 감싼다**: 로그인 프로필을 읽게 되지만 셸 이름을 hook 이 갖게 되고,
-  프로필이 무거운 개발자에게는 Bash 호출마다 그 비용이 붙는다.
-- **settings.json 과 catalog 양쪽에 등록한다**: 어느 한쪽이 빠져도 돌지만, 둘 다 살아 있으면 같은
-  본문을 두 번 판정하고 거부 메시지가 두 번 나온다.
-- **hook 실패를 blocking 으로 만든다**: 이 저장소가 정할 수 있는 것이 아니다. Claude Code 가
-  hook 오류를 non-blocking 으로 처리한다.
+- **Plant `engsys` on the system PATH**: on Windows this would mean touching PATH outside the login
+  shell, and it crosses the boundary set by
+  [ADR 0007](0007-one-command-activation-and-main-as-release-channel.md) that `install.sh` edits only
+  the developer's shell profile.
+- **Wrap the hook command in `bash -lc`**: it would read the login profile, but the hook would then
+  carry a shell name, and developers with heavy profiles would pay that cost on every Bash call.
+- **Register in both settings.json and the catalog**: it would still run if either were missing, but
+  with both active the same body is judged twice and the rejection message appears twice.
+- **Make hook failures blocking**: this is not something this repository can decide. Claude Code
+  treats hook errors as non-blocking.
 
-## 영향
+## Consequences
 
-- gate 는 plugin 이 붙은 세션에서 돈다. plugin 은 프로젝트가 commit 한 선언으로 붙으므로 세션을
-  연 방법과는 여전히 무관하다.
-- 이미 `.claude/settings.json` 에 hook 항목을 받은 프로젝트는 그 항목을 지운다. 남겨 두면 같은
-  판정이 두 번 돌고 PATH 가 없는 머신에서는 오류가 계속 찍힌다.
-- 표준 자체를 고치는 중이라면 `engsys claude` 가 lock revision 의 plugin 을 넘기므로 그 revision
-  의 gate 가 돈다. 일상 경로에서는 marketplace 가 나르는 `main` 의 gate 가 돈다.
-- `engsys` 를 어디서도 찾지 못하면 gate 는 거부한다. 그 상태는 `engsys doctor` 가 실패로 보고한다.
+- The gate runs in sessions where the plugin is attached. The plugin is attached through a
+  declaration the project commits, so it remains independent of how the session was opened.
+- Projects that already received the hook entry in `.claude/settings.json` delete it. If it stays,
+  the same verdict runs twice, and machines without `engsys` on PATH keep printing errors.
+- When working on the standard itself, `engsys claude` passes the plugin of the lock revision, so
+  that revision's gate runs. On the everyday path, the gate from `main` delivered by the marketplace
+  runs.
+- If `engsys` cannot be found anywhere, the gate rejects. `engsys doctor` reports that state as a
+  failure.

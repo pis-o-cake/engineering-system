@@ -1,15 +1,14 @@
 engsys-document-review: 1
 document: docs/adr/0011-vcs-gov-owns-the-commit-and-merge-request-contract.md
-blob: fa7b400caa96dcc67c5459484b7b0b3e98a1afcb
+blob: 7499e7993b7629a83bb10a80f5c65e9c133fd3b9
 decision: pass
-reviewer: claude-opus-5 (자기 검토)
-audience: 기술 책임자와 유지보수자
-purpose: 커밋·MR 규약을 누가 소유하고 무엇이 강제하는가
+reviewer: claude-opus-5-5 (self-review)
+audience: Technical leads and maintainers
+purpose: Who owns the commit and MR conventions, and what do projects declare?
 
-유실됐던 branch 이름 항목이 이 문서에 복구됐다. 이 branch 는 그 commit(c94b377)이 병합 뒤 삭제된
-branch 에 push 돼 main 에 들어가지 못한 것을 되살린 것이다. 본문 내용은 그때 검토한 것과 같고
-새로 쓴 문장은 없다.
-영향 절의 branch 이름 항목이 ADR 0014 와 겹치지 않는지 확인했다. 여기서는 "선언했을 때만
-검사한다"는 사실만 말하고 역할·접두사 설계는 0014 가 갖는다.
-결정·배경·대안·날짜·status 는 바꾸지 않았다.
+Records that vcs-gov owns the commit message format and MR body structure, projects declare only values in the `vcs` block, and a native commit-msg hook enforces it.
+Translated from Korean to English; frontmatter, the `vcs.*` keys, commands, `CLAUDE.md §2` and the measured counts (503 commits, 31 = 6.2%, 88 = 17.5%, 110-line hook, 20 recent commits) are unchanged.
+Korean literal kept on purpose: `…것` (the forbidden Korean ending), with a short English gloss; `·` lists kept as the literal separator character.
+"한국어 명사형" rendered as "Korean noun-form endings"; the Hangul 3-byte / `wc -m` C-locale constraint kept verbatim in meaning.
+Headings mapped to Decision, Background and Constraints, Rationale and Alternatives, Consequences.
 

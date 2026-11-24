@@ -5,40 +5,49 @@ status: accepted
 date: 2026-09-08
 ---
 
-# 0005. 문서는 한 편씩 편집 검토하고 검토 누락을 Git 검사에서 차단한다
+# 0005. Documents get editorial review one at a time, and missing reviews are blocked by Git checks
 
-문서는 한 편씩 독자 기준으로 편집 검토하고, 검토 기록 누락과 검토 후 본문 변경을 native 검사와
-push gate가 차단한다. 이 검사는 문장 품질이나 보고 승인을 증명하지 않는다.
+Each document gets an editorial review on its own, judged against its readers, and the native check
+and the push gate block missing review receipts and body changes made after review. This check
+does not prove sentence quality or approval of a report.
 
-## 문제
+## Problem
 
-프로젝트 문서는 개발자뿐 아니라 상급자의 보고·판단에도 쓰인다. 기존 검사는 생성 결과,
-metadata와 link를 확인하지만, 작업 일지성 서술이나 중복·상충하는 본문을 걸러내지 못한다.
-문체 지침만 추가하면 작성자가 읽고 적용했는지 확인할 수 없다.
+Project documents are used not only by developers but also by managers for reporting and
+decisions. The existing checks confirm generated output, metadata and links, but they do not filter
+out work-log style narration or duplicated or conflicting text. Adding only a style guide gives no
+way to confirm that the author read and applied it.
 
-## 결정
+## Decision
 
-`docs-gov`에 독자와 문서 목적에 따른 편집 기준 및 `review-document` skill을 둔다.
-검토자는 문서를 한 편씩 끝까지 읽고 수정한 뒤, 최종본을 다시 읽는다. 보고서의 결론·영향·요청,
-운영 문서의 절차·판정, 현행 아키텍처의 구조·제약을 각각 확인한다.
+`docs-gov` holds editorial criteria keyed to the document's readers and purpose, and the
+`review-document` skill. The reviewer reads each document to the end, revises it, then rereads the
+final version. The reviewer checks the conclusion, impact and request of a report, the procedure
+and verdicts of an operational document, and the structure and constraints of the current
+architecture, respectively.
 
-`engsys review record`는 한 문서의 해시와 검토자·독자·질문·구체적인 검토 내용을 기록한다.
-`engsys review check`는 프로젝트가 명시한 범위에서 검토 누락과 본문 변경만 검사한다.
-생성 문서는 제외한다. 프로젝트 native command에 이 검사를 연결하고, push 때는 전송할
-commit의 문서와 검토 기록을 함께 검사한다.
+`engsys review record` records one document's hash together with the reviewer, readers, question
+and the specific review content. `engsys review check` checks only for missing reviews and body
+changes, within the scope the project declares. Generated documents are excluded. The check is
+wired into the project's native command, and on push the documents and review receipts of the
+commits being sent are checked together.
 
-## 대안과 비용
+## Alternatives and Costs
 
-- 금지어·줄 수로 자동 판정하면 문맥과 근거의 적절성을 확인할 수 없다.
-- 문체 지침만 두면 검토를 생략한 변경이 통과한다.
-- 모든 문서를 매번 LLM으로 재검토하면 변경되지 않은 문서에도 비용이 든다.
+- Automatic verdicts based on banned words or line counts cannot judge whether context and
+  evidence are appropriate.
+- With only a style guide, changes that skipped review pass.
+- Re-reviewing every document with an LLM every time incurs cost even for documents that did not change.
 
-본문이 바뀐 문서는 다시 검토해야 하며, 검토 기록도 함께 commit해야 한다. 기존 문서를 처음
-범위에 넣을 때는 문서별 최초 검토가 필요하다. 자동으로 일괄 합격 처리하지 않는다.
+A document whose body changed must be reviewed again, and its review receipt must be committed
+with it. When existing documents are first brought into scope, each needs an initial review. They
+are not passed automatically in bulk.
 
-## 보장 범위
+## Scope of the Guarantee
 
-검사는 기록의 존재와 본문 해시를 확인한다. 검토의 진실성·독립성·문장 품질은 증명하지 않는다.
-Agent의 자기 검토는 그 사실대로 기록하며, 상급자의 보고 승인으로 표시하지 않는다.
-기존 historical 기록의 사실·결정은 보존한다. 사용자가 요청한 표현·구성 정리는 그 범위에서
-수행하며, 현행 구현을 과거 기록에 덮어쓰지 않는다.
+The check confirms that a receipt exists and matches the body hash. It does not prove the
+truthfulness or independence of the review or the quality of the sentences. An agent's self-review
+is recorded as exactly that and is not presented as a manager's approval of a report. The facts
+and decisions of existing historical records are preserved. Edits to wording and organization that
+the user requested are carried out within that scope, and the current implementation is not
+written over past records.

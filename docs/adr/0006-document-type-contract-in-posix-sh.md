@@ -5,53 +5,60 @@ status: accepted
 date: 2026-09-08
 ---
 
-# 0006. 문서 유형 계약은 docs-gov가 소유하고 구조 검사는 POSIX sh로 둔다
+# 0006. docs-gov owns the document type contract, and the structure check stays POSIX sh
 
-유형별 독자·필수 metadata·필수 절의 정본을 `packages/docs-gov/document-types.yaml` 하나로 두고,
-프로젝트는 경로에 유형을 배정하는 선언만 갖는다. 구조 검사 `engsys docs check`는 dependency 없는
-POSIX sh로 구현한다.
+The source of truth for each type's readers, required metadata and required sections is the single
+file `packages/docs-gov/document-types.yaml`, and projects only hold declarations that assign types
+to paths. The structure check `engsys docs check` is implemented in dependency-free POSIX sh.
 
-## 결정
+## Decision
 
-- 유형 계약의 정본은 `packages/docs-gov/document-types.yaml`이다. 유형마다 독자, 문서가 답할 질문,
-  필수 frontmatter, status 어휘, `frozen-status`, 필수 절을 선언한다.
-- 프로젝트는 `.engsys/project.yaml`의 `documentation.authoring`에서 경로에 유형을 배정하고
-  (`assign`), 검사 대상이 아닌 경로(`exempt`)와 절 검사를 유예할 경로(`deferred`)를 선언한다.
-  공통 유형 규칙을 프로젝트에 복사하지 않는다.
-- 필수 절은 heading 문자열을 고정하지 않고 정규식 `pattern`으로 확인한다. `frozen-status`에
-  해당하는 기록은 절의 존재만 보고 순서는 보지 않는다.
-- 구조 검사는 `packages/docs-gov/bin/check-structure.sh`이며 `engsys docs check`로 실행한다.
-  Markdown은 frontmatter, HTML은 `<meta name="doc-*">`로 같은 metadata를 선언한다.
-- 검사 범위는 구조와 근거 경로의 존재까지다. 문장의 적절성과 근거의 충분성은
-  [ADR 0005](0005-individual-document-editorial-review.md)의 편집 검토가 판단한다.
+- The source of truth for the type contract is `packages/docs-gov/document-types.yaml`. Each type
+  declares its readers, the question the document answers, required frontmatter, the status
+  vocabulary, `frozen-status`, and required sections.
+- A project assigns types to paths in `documentation.authoring` of `.engsys/project.yaml`
+  (`assign`), and declares paths that are not checked (`exempt`) and paths whose section check is
+  deferred (`deferred`). The shared type rules are not copied into the project.
+- Required sections are matched with a regular expression `pattern` rather than a fixed heading
+  string. Records in a `frozen-status` are checked only for the presence of sections, not their order.
+- The structure check is `packages/docs-gov/bin/check-structure.sh` and runs as `engsys docs check`.
+  Markdown declares the metadata in frontmatter and HTML declares the same metadata with
+  `<meta name="doc-*">`.
+- The check covers structure and the existence of evidence paths. Whether the sentences are
+  appropriate and the evidence sufficient is judged by the editorial review in
+  [ADR 0005](0005-individual-document-editorial-review.md).
 
-## 배경
+## Background
 
-[design 0002](../design/0002-document-authoring-contracts.md)는 유형별 필수 구성과 그 구조 검사를
-요구했지만, `docs-gov`에는 lifecycle 분류와 편집 검토만 있었다. 유형 선택은 작성자의 기억에
-맡겨져 있었고, 필수 절 누락을 막는 검사가 없었다.
+[design 0002](../design/0002-document-authoring-contracts.md) called for a required composition per
+type and a structure check for it, but `docs-gov` had only lifecycle classification and editorial
+review. Choosing a type was left to the author's memory, and no check prevented missing required
+sections.
 
-구현 과정에서 두 개의 안이 동시에 만들어졌다. 하나는 python으로 쓴 검사기, 다른 하나는 sh로 쓴
-검사기였고, 계약 모델과 구현 언어를 각각 선택해야 했다.
+During implementation two proposals were built at the same time, one checker written in python and
+one in sh, so both the contract model and the implementation language had to be chosen.
 
-## 근거와 대안
+## Rationale and Alternatives
 
-- **python으로 구현한다**: 정규식·경로 처리와 YAML 읽기가 짧아진다. 그러나 프로젝트가 매번
-  실행하는 검사가 python3를 요구하게 되어 [ADR 0001](0001-posix-sh-core-with-python-tooling.md)이
-  나눈 실행 주체의 경계가 깨진다. 이 표준은 Windows 개발 서버와 Android 프로젝트에도 적용할
-  계획이므로 채택 전제를 늘리지 않는다.
-- **필수 절을 heading 문자열로 고정한다**: 검사와 안내가 단순해지지만 계약보다 먼저 쓰인 문서를
-  전부 유예 목록에 넣어야 한다. 유예가 기본값이 되면 검사가 형식만 남는다.
-- **유형마다 별도 skill을 만든다**: 작성 안내는 친절해지지만 안내문과 검사기가 서로 다른 필수
-  구성을 갖게 된다. 하나의 선언을 skill과 검사기가 함께 읽는 쪽을 택했다.
+- **Implement in python**: regex and path handling and YAML reading get shorter. But the check that
+  projects run every time would require python3, breaking the boundary by who runs the command that
+  [ADR 0001](0001-posix-sh-core-with-python-tooling.md) drew. This standard is planned for Windows
+  development servers and Android projects as well, so the prerequisites for adoption are not expanded.
+- **Fix required sections to heading strings**: the check and the guidance get simpler, but every
+  document written before the contract would have to go on the deferred list. Once deferral becomes
+  the default, the check is reduced to a formality.
+- **Create a separate skill per type**: authoring guidance becomes friendlier, but the guidance and
+  the checker end up with different required compositions. The chosen option is a single
+  declaration that both the skill and the checker read.
 
-## 영향
+## Consequences
 
-- 유형이나 필수 절을 바꾸면 이 레포의 `engsys docs check`가 먼저 깨진다. 채택 비용을 먼저
-  치른다는 [ADR 0004](0004-self-hosted-first-pilot.md)의 방식을 유지한다.
-- sh 파서는 `document-types.yaml`의 선언 깊이에 의존한다. 선언이 지금보다 깊어지면 ADR 0001의
-  경계를 다시 검토한다.
-- 이 레포의 `docs/design` 두 편은 계약보다 먼저 작성됐으므로 `deferred`로 두어 절 검사를
-  유예했다. metadata와 근거 경로는 계속 검사한다. 전환은 그 문서를 실제로 편집할 때 한다.
-- 구조 검사 통과는 검토가 아니다. 새 문서는 `engsys docs check`와 개별 편집 검토를 모두 거쳐야
-  완료된다.
+- Changing a type or its required sections breaks this repository's `engsys docs check` first. This
+  keeps the approach of [ADR 0004](0004-self-hosted-first-pilot.md), which pays the adoption cost first.
+- The sh parser depends on the declaration depth of `document-types.yaml`. If declarations become
+  deeper than they are now, revisit the boundary in ADR 0001.
+- The two `docs/design` documents in this repository were written before the contract, so they are
+  set to `deferred` and their section check is deferred. Metadata and evidence paths are still
+  checked. They are converted when those documents are actually edited.
+- Passing the structure check is not a review. A new document is complete only after passing both
+  `engsys docs check` and an individual editorial review.

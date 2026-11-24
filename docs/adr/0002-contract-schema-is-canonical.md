@@ -5,44 +5,51 @@ status: accepted
 date: 2026-09-07
 ---
 
-# 0002. 계약 형식의 정본은 JSON Schema로 두고 sh check는 근사로 둔다
+# 0002. JSON Schema is the source of truth for the contract format; the sh check is an approximation
 
-프로젝트 계약 형식의 정본은 JSON Schema다. 프로젝트에서 도는 `engsys check`는 dependency 없이
-실행돼야 하므로 필수 항목과 최상위 key만 보는 근사 검사로 남는다.
+The source of truth for the project contract format is JSON Schema. `engsys check`, which runs in
+projects, must run without dependencies, so it remains an approximate check that looks only at
+required fields and top-level keys.
 
-## 맥락
+## Context
 
-`schemas/project.schema.json`과 `schemas/lock.schema.json`은 v0.1 초기부터 있었지만 어떤
-코드도 이 파일을 읽지 않았다. 실제 검사는 `engsys check`의 `grep` 검사였고, 계약을 쓰는 쪽은
-`write_project_contract`의 `printf`였다. 형식의 정본이 schema·writer·parser 세 곳으로 갈라져
-있었고, 셋 중 어느 하나가 바뀌어도 나머지가 알 수 없었다.
+`schemas/project.schema.json` and `schemas/lock.schema.json` had existed since early v0.1, but no
+code read them. The actual check was a `grep` check in `engsys check`, and the contract was written
+by `printf` in `write_project_contract`. The source of truth for the format was split across three
+places, schema, writer and parser, and a change to any one of them went unnoticed by the other two.
 
-이것은 이 시스템이 문서에 대해 지적하는 문제와 같은 구조다. 사람이 같은 사실을 여러 곳에
-관리하면 결국 갈라진다.
+This is the same structure as the problem this system points out in documents: when people
+maintain the same fact in several places, the copies eventually diverge.
 
-## 결정
+## Decision
 
-- 계약 형식의 **정본은 JSON Schema**다.
-- 프로젝트에서 도는 `engsys check`는 dependency 없이 실행돼야 하므로 schema를 직접 읽지 않고,
-  필수 항목과 최상위 key 집합만 검사하는 **근사**로 남는다.
-- 시스템 레포의 test는 지원하는 계약 사례에서 근사와 정본의 일치를 확인한다.
-  `tests/test-schema.sh`는 bootstrap이 만든 계약을 schema로 검증하고, 알 수 없는 최상위 key를
-  `engsys check`도 거부하는지 확인한다. 모든 입력에 대한 동등성을 보장하지는 않는다.
-- schema에 새 keyword를 추가하려면 `tools/lib/jsonschema_min.py`에 구현을 추가해야 한다.
-  미구현 keyword를 만나면 검증기는 통과시키지 않고 즉시 실패한다.
+- The **source of truth** for the contract format is **JSON Schema**.
+- `engsys check`, which runs in projects, must run without dependencies, so it does not read the
+  schema directly. It remains an **approximation** that checks only required fields and the set of
+  top-level keys.
+- The system repository's tests confirm that the approximation agrees with the source of truth for
+  the supported contract cases. `tests/test-schema.sh` validates the contract that bootstrap
+  produces against the schema, and confirms that `engsys check` also rejects unknown top-level keys.
+  Equivalence over all inputs is not guaranteed.
+- Adding a new keyword to the schema requires adding its implementation to
+  `tools/lib/jsonschema_min.py`. When the validator meets an unimplemented keyword, it fails
+  immediately instead of passing.
 
-## 대안
+## Alternatives
 
-- **schema를 삭제한다**: 이중 관리는 사라지지만 계약 형식을 기계가 읽을 수 있는 정본이
-  없어진다. 편집기 지원과 외부 도구 연동도 포기하게 된다.
-- **`engsys check`가 schema를 직접 검증한다**: 정본이 하나가 되지만 프로젝트에 JSON Schema
-  검증기를 요구한다. [ADR 0001](0001-posix-sh-core-with-python-tooling.md)의 경계를 깬다.
-- **검증기가 미구현 keyword를 건너뛴다**: 구현이 쉬워지지만 schema가 다시 장식이 된다.
-  검사를 통과했다는 신호가 거짓이 되는 쪽이 더 나쁘다.
+- **Delete the schema**: the duplicate maintenance disappears, but there is no longer a
+  machine-readable source of truth for the contract format. Editor support and integration with
+  external tools are also given up.
+- **Have `engsys check` validate against the schema directly**: there is a single source of truth,
+  but projects need a JSON Schema validator. That breaks the boundary in
+  [ADR 0001](0001-posix-sh-core-with-python-tooling.md).
+- **Have the validator skip unimplemented keywords**: implementation is easier, but the schema
+  becomes decoration again. A false signal that the check passed is the worse outcome.
 
-## 결과
+## Consequences
 
-- 계약 형식을 바꾸려면 schema를 먼저 고치고 writer와 sh check의 관련 test를 함께 갱신한다.
-  `sh tests/test-all.sh`는 test에 포함된 사례의 불일치를 검사한다.
-- 프로젝트가 계약을 손으로 고쳤을 때 sh 근사가 놓치는 위반은 여전히 존재한다. 그 범위는
-  최상위 key와 필수 항목 밖의 세부 형식이다.
+- To change the contract format, change the schema first and update the related tests for the
+  writer and the sh check along with it. `sh tests/test-all.sh` checks for mismatches in the cases
+  the tests include.
+- Violations that the sh approximation misses when a project edits its contract by hand still
+  exist. Their scope is detailed format outside the top-level keys and required fields.

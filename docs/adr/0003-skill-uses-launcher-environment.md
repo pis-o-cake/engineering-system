@@ -5,38 +5,40 @@ status: accepted
 date: 2026-09-07
 ---
 
-# 0003. skill은 launcher가 export한 ENGSYS_PLUGIN_ROOT만 사용한다
+# 0003. Skills use only the ENGSYS_PLUGIN_ROOT exported by the launcher
 
-plugin 안의 스크립트를 실행하는 skill은 launcher가 export한 `ENGSYS_PLUGIN_ROOT`만 사용한다.
-`CLAUDE_PLUGIN_ROOT`는 hook process 전용이라 skill에서는 비어 있다.
+Skills that run scripts inside the plugin use only `ENGSYS_PLUGIN_ROOT`, which the launcher exports.
+`CLAUDE_PLUGIN_ROOT` is reserved for hook processes and is empty in skills.
 
-## 맥락
+## Context
 
-v0.1의 skill 5개는 모두 `${CLAUDE_PLUGIN_ROOT}/bin/engsys` 형태로 명령을 실행하도록 적혀
-있었다. 실제로 `CLAUDE_PLUGIN_ROOT`와 `CLAUDE_PROJECT_DIR`은 Claude Code가 **hook process에만**
-주입하는 변수다. skill 본문의 지시에 따라 Bash로 실행하면 이 변수는 비어 있고, 명령은
-`/bin/engsys`를 실행하려다 실패한다.
+All five v0.1 skills were written to run commands in the form `${CLAUDE_PLUGIN_ROOT}/bin/engsys`.
+In fact, `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PROJECT_DIR` are variables that Claude Code injects
+**only into hook processes**. When the commands run through Bash as the skill body instructs, this
+variable is empty, and the command fails trying to run `/bin/engsys`.
 
-즉 skill 전체가 동작하지 않는 상태였고, 문서상으로는 맞아 보였기 때문에 발견이 늦었다.
+In other words, none of the skills worked, and because the documentation looked correct, the
+problem was found late.
 
-## 결정
+## Decision
 
-- plugin 안의 스크립트를 실행해야 하는 skill은 `ENGSYS_PLUGIN_ROOT`를 쓴다.
-- 이 변수는 `engsys claude` launcher가 plugin view를 만든 뒤 export한다. launcher는 함께
-  프로젝트 root로 이동해서 Claude Code를 실행하므로, skill은 프로젝트 파일을 상대 경로로 읽는다.
-- `CLAUDE_PLUGIN_ROOT`는 hook 명령에서만 쓴다. hook은 Claude Code가 직접 실행하므로 이 변수가
-  주입된다.
-- skill 본문에 hook 전용 변수가 다시 등장하면 `tests/test-launcher.sh`가 실패한다.
+- Skills that need to run scripts inside the plugin use `ENGSYS_PLUGIN_ROOT`.
+- The `engsys claude` launcher exports this variable after it builds the plugin view. The launcher
+  also changes to the project root before starting Claude Code, so skills read project files by
+  relative path.
+- `CLAUDE_PLUGIN_ROOT` is used only in hook commands. Claude Code runs hooks directly, so the
+  variable is injected there.
+- If a hook-only variable reappears in a skill body, `tests/test-launcher.sh` fails.
 
-## 대안
+## Alternatives
 
-- **skill이 plugin 경로를 직접 찾는다**: 경로 추론 로직이 skill 본문마다 중복되고, lock에 따라
-  달라지는 plugin view를 skill이 알아야 한다.
-- **`engsys`를 PATH에 넣고 그냥 `engsys`로 호출한다**: 짧지만 어떤 revision의 engsys가
-  실행되는지 세션마다 달라진다. lock으로 revision을 고정한다는 설계와 충돌한다.
+- **Have skills locate the plugin path themselves**: the path inference logic is duplicated in
+  every skill body, and skills must know about the plugin view, which varies with the lock.
+- **Put `engsys` on PATH and call plain `engsys`**: shorter, but which revision of engsys runs
+  varies from session to session. That conflicts with the design of pinning the revision with the lock.
 
-## 결과
+## Consequences
 
-- skill은 `engsys claude`로 시작한 세션에서만 정상 동작한다. 변수가 비어 있으면 skill이
-  그 사실을 말하고 멈춘다.
-- Claude Code가 skill 실행 환경에 plugin 경로를 노출하게 되면 이 결정을 다시 검토한다.
+- Skills work correctly only in sessions started with `engsys claude`. If the variable is empty,
+  the skill says so and stops.
+- Revisit this decision if Claude Code starts exposing the plugin path to the skill execution environment.

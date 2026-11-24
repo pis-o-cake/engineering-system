@@ -4,55 +4,70 @@ status: active
 version: 1
 ---
 
-# 표준 도입의 효과와 비용 평가
+# Evaluating the effect and cost of adopting the standard
 
-검사기가 동작하는지와 팀의 시간이 절약되는지를 별도로 판정한다. 전자는 반복 가능한 실험으로,
-후자는 실제 변경에서 기록한 사람의 작업 시간으로 판단한다. 테스트 통과를 생산성 향상으로 해석하지 않는다.
+Whether the checkers work and whether the team saves time are judged separately. The former is
+judged by repeatable experiments, the latter by people's working time recorded on real changes.
+Passing tests is not interpreted as a productivity gain.
 
-## 검증 범위
+## Scope
 
-문서 거버넌스의 추가 오류 탐지와 실행 지연을 측정한다. 기존 프로젝트의 native 문서 검사를
-비교 기준으로 삼고, 같은 입력에 표준의 문서 구조·검토 기록·생성 문서 검사를 추가한다.
-VCS 설정 변경이나 전체 application 테스트 속도는 이 비교에 섞지 않는다.
+This measures the additional error detection and the execution delay of document governance. The
+existing project's native document check is the baseline, and the standard's document structure,
+review receipt and generated-document checks are added on the same input. VCS settings changes and
+overall application test speed are not mixed into this comparison.
 
-실제 팀 효과는 문서 탐색·수정·검토·오탐 복구·도구 유지 시간을 모두 포함한다.
-자동 실행 시간과 사람의 작업 시간은 합산하지 않는다.
+The real team effect includes all of document search, editing, review, false-positive recovery and
+tool maintenance time. Automated execution time and people's working time are not added together.
 
-## 시험 조건
+## Conditions
 
-- `tools/measure-adoption.py`는 clean한 프로젝트를 임시 clone한다. 원본 파일을 변경하지 않는다.
-- 설치된 dependency는 재사용한다. 네트워크 설치 시간과 첫 dependency 설치 비용은 측정하지 않는다.
-- native와 managed를 각각 한 번 warmup하고 5회 이상 반복한다. 실행 순서는 회차마다 교대한다.
-- 프로젝트 revision, 표준 구현 식별자, OS, Python version, 각 실행의 시간과 종료 코드를 기록한다.
-- 문서 검사만 비교하기 위해 임시 계약의 native 명령을 주어진 명령으로 바꾸고 VCS 블록을 제외한다.
-- 생성 문서 불일치와 검토 후 본문 변경을 각각 주입하고 복원 후 정상 통과까지 확인한다.
-- 공개 기록에는 코드·문서 본문·credential·명령의 상세 출력을 넣지 않는다.
+- `tools/measure-adoption.py` makes a temporary clone of a clean project. It does not modify the
+  original files.
+- Installed dependencies are reused. Network installation time and the cost of the first dependency
+  installation are not measured.
+- Native and managed each get one warmup run and are repeated at least 5 times. The execution order
+  alternates each round.
+- Record the project revision, the standard's implementation identifier, the OS, the Python
+  version, and each run's time and exit code.
+- To compare only document checks, the native command in the temporary contract is replaced with
+  the given command and the VCS block is excluded.
+- Inject a generated-document mismatch and a post-review body change separately, and confirm a
+  normal pass after restoring each.
+- Public records do not include code, document bodies, credentials or detailed command output.
 
-## 항목별 판정 기준
+## Verdict criteria by item
 
-기계 검사 실험의 기준은 실행 전에 정한다. 정상 입력 실패 0건, 주입한 두 오류 모두 managed에서
-실패, 복원 후 성공, paired 추가 지연 중앙값 5초 이하면 통과다. 기준을 넘으면 결과를 실패로 남기고
-구현을 개선한 뒤 같은 조건으로 다시 측정한다. native도 잡는 오류는 추가 효과로 세지 않는다.
+The criteria for the mechanical check experiment are fixed before it runs. It passes with 0
+failures on normal input, both injected errors failing under managed, success after restoration,
+and a median paired additional delay of 5 seconds or less. If a criterion is exceeded, record the
+result as a failure, improve the implementation and measure again under the same conditions. Errors
+that native also catches are not counted as additional effect.
 
-팀 효과는 작성자·검토자별 실제 변경 10건 이상을 기록한 뒤 검토한다. 변경 규모와 문서 유형을
-함께 남기고, 비교 가능한 도입 전 기록이 없으면 시간 절감률을 계산하지 않는다. 추가 탐지한
-누락이 없고 검토·유지 시간이 계속 늘어나는 규칙은 적용 범위를 줄이거나 제거한다.
+The team effect is reviewed after at least 10 real changes are recorded per author and reviewer.
+Record the change size and document type with them, and do not compute a time-saving rate when no
+comparable pre-adoption records exist. A rule that finds no additional omissions and whose review
+and maintenance time keeps growing has its scope reduced or is removed.
 
-본문이 바뀌지 않은 상태에서 발견한 불일치를 별도 항목으로 센다. 문서 해시가 같아 구조 검사와
-검토 기록이 모두 통과했는데 근거가 된 코드·설정·결정이 바뀌어 설명이 더 이상 맞지 않는 경우다.
-건마다 발견 경로(사람의 지적, 변경 영향 검토, 정기 확인), 발견까지 걸린 변경 수, 처리 방법을
-남긴다. 이 수치가 세 번째 판정을 계약으로 올릴지 판단하는 근거다
+Inconsistencies found while the body was unchanged are counted as a separate item. These are cases
+where the document hash is unchanged, so the structure check and the review receipt both pass, but
+the code, configuration or decision the explanation rests on has changed and the explanation no
+longer holds. For each case, record the discovery path (pointed out by a person, change impact
+review, periodic check), the number of changes until discovery, and how it was handled. These
+numbers are the basis for deciding whether to raise the third verdict into the contract
 ([docs/design/0003](../design/0003-unresolved-item-ledger.md)).
 
-필요한 기록은 변경 식별자, 문서 유형·규모, 탐색·수정·검토 분, 오탐 복구 분, 도구 유지 분,
-검사가 발견한 실제 누락, 비교 기준 유무다. 존재하지 않는 과거 시간은 추정해서 채우지 않는다.
+The required records are: change identifier, document type and size, search/editing/review
+minutes, false-positive recovery minutes, tool maintenance minutes, real omissions found by checks,
+and whether a baseline exists. Past times that do not exist are not filled in by estimation.
 
-## 실행과 증빙
+## Evidence and execution
 
 ```sh
 python3 tools/measure-adoption.py --project /path/to/project \
   --native 'cd backend && .venv/bin/poe docs:check' --samples 5 --output /tmp/adoption.json
 ```
 
-원자료와 결과는 `docs/reports/`에 함께 남긴다. 자동 측정은 실행 비용과 주입 오류의 탐지를
-입증하며, 사람의 시간 절감·문서 신뢰·팀 전체 품질에 관한 판정은 실제 기록이 모일 때까지 미확정이다.
+Raw data and results are kept together in `docs/reports/`. Automated measurement establishes
+execution cost and detection of injected errors; verdicts on people's time savings, trust in
+documents and overall team quality remain undetermined until real records accumulate.

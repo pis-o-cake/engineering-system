@@ -5,40 +5,45 @@ status: accepted
 date: 2026-09-07
 ---
 
-# 0004. 이 레포를 표준의 첫 pilot으로 삼는다
+# 0004. This repository is the standard's first pilot
 
-이 레포 자신을 표준의 첫 pilot으로 삼아 `.engsys/` 계약과 문서 세 구분을 직접 운영한다.
-`public-ai-qa`는 언어·framework가 있는 두 번째 pilot으로 남는다.
+This repository itself is the standard's first pilot and directly operates the `.engsys/` contract
+and the three-way split of documents. `public-ai-qa` remains the second pilot, one with a language
+and a framework.
 
-## 맥락
+## Context
 
-v0.1 설계는 첫 pilot을 별도 프로젝트(`public-ai-qa`)로 잡았다. 그동안 이 레포 자신은
-`.engsys/` 계약도, ADR도, 생성 문서도 없었다. ADR과 생성 문서를 배포하는 레포가 그 둘 중
-어느 것도 쓰지 않는 상태였다.
+The v0.1 design took a separate project (`public-ai-qa`) as the first pilot. Meanwhile this
+repository itself had no `.engsys/` contract, no ADRs and no generated documents. The repository
+that distributes ADRs and generated documents used neither.
 
-표준을 채택하는 비용을 가장 먼저, 가장 싸게 측정할 수 있는 프로젝트는 이 레포다. 여기서
-불편한 것은 다른 프로젝트에서도 불편하다.
+The project where the cost of adopting the standard can be measured first and most cheaply is this
+repository. Whatever is inconvenient here is inconvenient in other projects too.
 
-## 결정
+## Decision
 
-- 이 레포에 `engsys init`으로 계약을 만들고 `.engsys/`를 커밋한다.
-- 문서를 세 가지 책임으로 나눠 실제로 운영한다.
-  - `docs/design/` — 그때의 판단 (frozen status: `implemented`)
-  - `docs/adr/` — 그 뒤의 변경 이유 (frozen status: `accepted`)
-  - `docs/architecture/` — 지금 상태
-- package·skill·hook 목록처럼 선언에서 결정적으로 얻을 수 있는 사실은
-  `docs/generated/system-catalog.md`로 생성하고, 직접 수정은 hook이 막고 최신 여부는
-  `engsys verify`가 검사한다.
-- `commands.verify`는 `sh tests/test-all.sh`이며, 그 안에서 이 레포 자신의 계약 검사도 돈다.
+- Create the contract in this repository with `engsys init` and commit `.engsys/`.
+- Split documents into three responsibilities and actually operate them.
+  - `docs/design/` — the judgment at the time (frozen status: `implemented`)
+  - `docs/adr/` — the reasons for later changes (frozen status: `accepted`)
+  - `docs/architecture/` — the current state
+- Facts that can be derived deterministically from declarations, such as the lists of packages,
+  skills and hooks, are generated into `docs/generated/system-catalog.md`; a hook blocks direct
+  edits and `engsys verify` checks that it is up to date.
+- `commands.verify` is `sh tests/test-all.sh`, and the contract check for this repository itself
+  also runs inside it.
 
-## 대안
+## Alternatives
 
-- **외부 pilot만 사용한다**: 실제 제품에서 검증한다는 장점은 있지만 표준을 고칠 때마다
-  다른 레포를 오가야 하고, 표준이 자기 규칙을 어겨도 아무도 모른다.
-- **dogfooding을 문서로만 선언한다**: 강제 지점이 없으므로 바빠지는 순간 제일 먼저 빠진다.
+- **Use only external pilots**: this has the advantage of validating in a real product, but every
+  change to the standard means switching to another repository, and no one notices when the
+  standard breaks its own rules.
+- **Declare dogfooding only in documentation**: there is no enforcement point, so it is the first
+  thing dropped when things get busy.
 
-## 결과
+## Consequences
 
-- 표준을 바꾸면 이 레포의 계약과 생성 문서가 먼저 깨진다. 채택 비용을 매번 직접 치른다.
-- `public-ai-qa`는 두 번째 pilot으로 남는다. 언어·framework가 있는 실제 프로젝트에서만
-  드러나는 문제는 거기서 확인한다.
+- When the standard changes, this repository's contract and generated documents break first. The
+  adoption cost is paid directly every time.
+- `public-ai-qa` remains the second pilot. Problems that surface only in a real project with a
+  language and a framework are checked there.

@@ -5,49 +5,54 @@ status: accepted
 date: 2026-09-09
 ---
 
-# 0017. 표준은 branch 이름을 갖지 않는다
+# 0017. The standard holds no branch names
 
-`branch-defaults` 를 제거한다. branch 이름과 접두사는 프로젝트가 선언하고, 선언하지 않으면 도구는
-답하지 않는다. [ADR 0014](0014-projects-name-their-branches.md) 의 기본값 결정을 대체한다.
+`branch-defaults` is removed. The project declares branch names and prefixes, and when it does not,
+tools give no answer. This supersedes the defaults decision in
+[ADR 0014](0014-projects-name-their-branches.md).
 
-## 결정
+## Decision
 
-- 계약에서 `branch-defaults` 를 지운다. 표준에 `develop` · `main` · `feat/` 같은 이름이 남지 않는다.
-- `vcs.branch.model` 을 선언했는데 `roles` 가 없으면 `engsys vcs check-settings` 가 무엇을 선언해야
-  하는지 알리고 실패한다.
-- `engsys vcs base-branch` 는 `roles` 선언이 없으면 답하지 않고 그 사실을 알린다. 빈 값을 돌려주면
-  hook 이 그것을 branch 이름으로 쓴다.
-- `vcs.branch` 를 두지 않은 프로젝트는 branch 규약을 채택하지 않은 것으로 보고 판정하지 않는다.
-  `vcs.commit` 만 선언한 프로젝트가 branch 검사 때문에 실패하지 않는다.
-- hotfix 분기는 `prefixes.hotfix` 를 선언했을 때만 갈라진다. 선언하지 않으면 hotfix branch 도 첫
-  역할 branch 에서 분기한다. 도구는 선언하지 않은 것을 추측하지 않는다.
+- `branch-defaults` is deleted from the contract. No names such as `develop`, `main` or `feat/`
+  remain in the standard.
+- If `vcs.branch.model` is declared but `roles` is not, `engsys vcs check-settings` reports what
+  needs to be declared and fails.
+- Without a `roles` declaration, `engsys vcs base-branch` gives no answer and reports that fact. If
+  it returned an empty value, a hook would use it as a branch name.
+- A project without `vcs.branch` is treated as not having adopted the branch conventions and is not
+  judged. A project that declares only `vcs.commit` does not fail because of branch checks.
+- Hotfix branching diverges only when `prefixes.hotfix` is declared. Without it, hotfix branches
+  also branch from the first role branch. Tools do not guess at what was not declared.
 
-## 배경과 제약
+## Context and constraints
 
-ADR 0014 는 이름을 프로젝트로 옮기면서 계약에 기본값을 남겼다. 선언하지 않은 기존 프로젝트가 채택
-첫날 실패하지 않게 하려는 것이었다.
+ADR 0014 moved names to the project but left defaults in the contract. The intent was to keep
+existing projects without a declaration from failing on the first day of adoption.
 
-그 결과 표준이 `develop` 과 `feat/` 를 들고 있었다. 선언을 빠뜨린 프로젝트는 남의 팀 이름을
-물려받고, 그 사실이 어디에도 드러나지 않았다. `public-ai-qa` 가 그 상태였다 — `roles` 를 선언하지
-않아 표준의 기본값으로 동작하고 있었다.
+As a result, the standard held `develop` and `feat/`. A project that omitted the declaration
+inherited another team's names, and nothing showed that it had. `public-ai-qa` was in that state: it
+had not declared `roles` and was running on the standard's defaults.
 
-제약이 하나 있었다. 기본값을 없애면 선언하지 않은 프로젝트에서 도구가 답할 수 없다. 그러나
-`engsys init --detect` 가 실재하는 branch 에서 역할을 읽어 쓰므로 새 프로젝트는 영향을 받지 않는다.
+There was one constraint. Without defaults, tools cannot answer in a project that has no
+declaration. However, `engsys init --detect` reads roles from branches that actually exist and
+writes them, so new projects are not affected.
 
-## 근거와 대안
+## Rationale and alternatives
 
-- **기본값을 남기고 `doctor` 가 경고한다**: 경고는 읽히지 않는다. 그리고 경고를 읽기 전까지 그
-  프로젝트의 hook 과 skill 은 남의 팀 이름으로 동작한다.
-- **이름 없이 역할만으로 동작한다**: `base-branch` 가 역할 이름을 돌려주면 hook 이 `git` 에 넘길 수
-  없다. 어딘가에서는 실제 이름이 필요하고, 그 자리는 프로젝트다.
-- **`init` 이 감지하지 못하면 물어본다**: `init` 은 비대화형으로도 돌아야 한다. 감지하지 못하면
-  `vcs` 블록을 만들지 않고, 필요할 때 `check-settings` 가 무엇을 선언할지 알린다.
+- **Keep the defaults and have `doctor` warn**: warnings go unread. And until the warning is read,
+  that project's hooks and skills run with another team's names.
+- **Operate on roles alone, without names**: if `base-branch` returns a role name, a hook cannot
+  pass it to `git`. The actual name is needed somewhere, and that place is the project.
+- **Have `init` ask when it cannot detect**: `init` must also run non-interactively. When it cannot
+  detect anything, it does not create a `vcs` block, and when needed `check-settings` reports what
+  to declare.
 
-## 영향
+## Consequences
 
-- `vcs.branch.model` 을 선언한 프로젝트는 `roles` 도 선언해야 한다. `public-ai-qa` 는 이 결정에
-  앞서 선언했다.
-- `prefixes.hotfix` 를 선언하지 않으면 hotfix 분기 기준이 일반 작업과 같아진다. 이전에는 표준의
-  기본값 때문에 갈라졌다. 갈라야 하면 선언한다.
-- 표준을 읽는 사람이 `develop` 이라는 이름을 어디에서도 보지 않는다. 그 이름은 각 프로젝트의
-  계약에만 있다.
+- A project that declares `vcs.branch.model` must also declare `roles`. `public-ai-qa` declared them
+  ahead of this decision.
+- Without `prefixes.hotfix`, the base for hotfix branches is the same as for regular work.
+  Previously they diverged because of the standard's defaults. A project that needs them to diverge
+  declares it.
+- Someone reading the standard does not see the name `develop` anywhere. That name exists only in
+  each project's contract.

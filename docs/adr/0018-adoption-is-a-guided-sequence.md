@@ -5,53 +5,62 @@ status: accepted
 date: 2026-09-09
 ---
 
-# 0018. 채택은 단계마다 확인하고 진행한다
+# 0018. Adoption proceeds step by step, with confirmation at each step
 
-`engsys setup` 이 채택을 단계로 나누어, 각 단계에서 상태를 확인하고 바꿀 것을 보여 준 뒤 동의를
-받고 실행한다. 다른 명령은 비대화형으로 남긴다. `engsys init --dry-run` 이 그 미리보기를 만든다.
+`engsys setup` splits adoption into steps; at each step it checks the current state, shows what it
+will change, and runs only after getting consent. Other commands stay non-interactive.
+`engsys init --dry-run` produces that preview.
 
-## 결정
+## Decision
 
-- `engsys setup` 을 둔다. 전제 도구 → 시스템 checkout → 개발자 활성화 → 대상 프로젝트 → Git hook
-  → 검사 → 남은 것의 일곱 단계이며, 각 단계는 확인 결과를 먼저 출력한다.
-- 파일을 바꾸는 단계는 무엇을 바꿀지 보여 준 뒤 묻는다. 계약 생성은 `init --dry-run` 의 출력을
-  그대로 보여 주고 동의를 받는다.
-- `--yes` 는 모든 단계를 승인한다. 터미널이 없고 `--yes` 도 없으면 시작하지 않는다. 물어볼 수
-  없는데 진행하면 전부 거절한 것과 같아지고, 그 사실이 드러나지 않는다.
-- 다른 명령은 대화형으로 바꾸지 않는다. `init` · `verify` · `hooks` 는 CI 와 script 가 부른다.
-- 마지막 단계에서 `doctor` 를 한 번 더 돌린다. 중간 단계가 경고만 내고 넘어갔을 수 있으므로,
-  남은 문제가 있으면 성공으로 끝내지 않는다.
-- 실패하면 멈춘 단계와 다음에 할 명령을 마지막에 다시 출력하고, 전체 출력을 파일로 남긴다. 한 줄만
-  찍고 끝나면 터미널을 닫는 순간 사라지고 무엇을 고쳐야 하는지도 알 수 없다.
-- `setup` 은 여러 번 돌릴 수 있다. 이미 있는 계약을 다시 만들지 않고, 프로젝트가 고친 hook 을
-  덮지 않는다.
+- Add `engsys setup`. It has seven steps: prerequisite tools → system checkout → developer
+  activation → target project → Git hooks → checks → what remains. Each step prints its check
+  results first.
+- A step that changes files shows what it will change and then asks. Contract generation shows the
+  output of `init --dry-run` as is and asks for consent.
+- `--yes` approves every step. With no terminal and no `--yes`, it does not start. Proceeding when
+  it cannot ask would amount to declining everything, and that fact would not be visible.
+- Other commands are not made interactive. `init`, `verify` and `hooks` are called by CI and
+  scripts.
+- The final step runs `doctor` once more. An intermediate step may have only warned and moved on,
+  so if problems remain, it does not finish as a success.
+- On failure, it prints again at the end the step where it stopped and the next command to run,
+  and saves the full output to a file. A single printed line would vanish once the terminal is
+  closed, and it would not say what needs fixing.
+- `setup` can be run more than once. It does not regenerate an existing contract, and it does not
+  overwrite hooks the project modified.
 
-## 배경과 제약
+## Context and constraints
 
-채택은 명령 세 개였다. `install.sh`, `engsys init --detect --hooks`, `engsys doctor`. 각 명령은
-한 번에 끝나고, 무엇이 일어나는지는 실행한 뒤에야 보였다. 처음 붙이는 사람이 중간에 멈추거나
-확인할 자리가 없었다.
+Adoption was three commands: `install.sh`, `engsys init --detect --hooks` and `engsys doctor`. Each
+command finished in one go, and what happened was visible only after running it. Someone attaching
+the system for the first time had no point at which to stop or confirm.
 
-제약은 자동화다. 이 명령들은 CI 와 script 에서도 불린다. 대화형으로 바꾸면 그 경로가 깨진다.
+The constraint is automation. These commands are also called from CI and scripts. Making them
+interactive would break that path.
 
-## 근거와 대안
+## Rationale and alternatives
 
-- **`install.sh` 와 `init` 을 대화형으로 바꾼다**: 명령 수가 늘지 않지만 CI 에서 쓸 수 없게 된다.
-  안내는 별도 진입점에 두고 기존 명령은 그대로 둔다.
-- **`doctor` 를 확장해 고치게 한다**: `doctor` 는 진단만 한다는 결정이 이미 있다
-  ([ADR 0007](0007-one-command-activation-and-main-as-release-channel.md)). 진단과 변경을 한
-  명령에 두면 무엇이 바뀌었는지 흐려진다.
-- **문서로만 절차를 적는다**: 지금까지의 방식이다. 순서를 지켰는지, 각 단계가 끝났는지 확인해
-  주는 것이 없다.
-- **물어볼 수 없을 때 기본값으로 진행한다**: 전부 거절한 것과 같은 결과가 되고 사용자는 성공으로
-  읽는다. 시작하지 않고 이유를 말한다.
+- **Make `install.sh` and `init` interactive**: the number of commands would not grow, but they
+  could no longer be used in CI. Guidance lives in a separate entry point, and existing commands
+  stay as they are.
+- **Extend `doctor` to fix things**: there is already a decision that `doctor` only diagnoses
+  ([ADR 0007](0007-one-command-activation-and-main-as-release-channel.md)). Putting diagnosis and
+  change in one command blurs what was changed.
+- **Describe the procedure only in documentation**: this was the approach until now. Nothing
+  confirms that the order was followed or that each step finished.
+- **Proceed with defaults when it cannot ask**: the result is the same as declining everything, and
+  the user reads it as success. It does not start and states why.
 
-## 영향
+## Consequences
 
-- 처음 채택하는 사람이 `engsys setup` 하나만 알면 된다. 각 단계의 명령은 출력에 그대로 보인다.
-- `init --dry-run` 이 생겨 계약을 만들기 전에 감지 결과를 확인할 수 있다. `setup` 밖에서도 쓴다.
-- `setup` 은 문서 유형 배정과 편집 검토 범위를 자동으로 선언하지 않는다. 무엇을 해야 하는지만
-  마지막 단계에서 알린다. 그 선언은 실제 문서를 보고 사람이 정한다.
-- 배정한 경로가 아직 하나도 없을 때 `docs check` 가 실패하던 것을 경고로 바꿨다. 새 프로젝트는
-  README 를 만들기 전에도 검사를 통과한다. 낡은 선언과 아직 만들지 않은 경로를 기계가 구분할 수
-  없으므로 막지 않고 알린다.
+- Someone adopting for the first time only needs to know `engsys setup`. Each step's command is
+  visible as is in the output.
+- `init --dry-run` now exists, so the detection result can be checked before a contract is
+  created. It is also used outside `setup`.
+- `setup` does not automatically declare document type assignments or editorial review scope. The
+  final step only reports what needs to be done. A person decides those declarations after looking
+  at the actual documents.
+- `docs check`, which used to fail when none of the assigned paths existed yet, now warns instead.
+  A new project passes the check even before it creates a README. A machine cannot tell a stale
+  declaration from a path that has not been created yet, so it reports rather than blocks.

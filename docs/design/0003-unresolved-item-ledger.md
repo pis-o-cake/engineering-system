@@ -4,75 +4,82 @@ status: draft
 scope: unresolved-item-linking
 ---
 
-# 미결 항목 연결 기준안
+# Proposal for linking unresolved items
 
-변경에서 닫지 못한 것은 담당자와 종료 조건을 가진 업무 항목에 연결하고, 문서는 그 상태를
-다시 관리하지 않는다. 표준이 갖는 것은 연결 규칙과 종료 조건의 형식이며, 어떤 추적 도구를
-쓸지와 항목의 진행 상태는 프로젝트가 갖는다.
+Anything a change could not close is linked to a work item that has an owner and a closing
+condition, and the documentation does not track that state a second time. The standard owns the
+linking rules and the form of the closing condition; the project owns the choice of tracker and the
+progress of each item.
 
-이 문서는 도입 제안이다. 연결 규칙과 권한 선언은
-[ADR 0024](../adr/0024-the-project-declares-its-tracker-and-agent-permissions.md)로 구현했고,
-그것을 계속 쓸지는 성격이 다른 세 사례를 각각 한 건 운영한 뒤에 결정한다.
+This document is an adoption proposal. The linking rules and the permission declaration were
+implemented in
+[ADR 0024](../adr/0024-the-project-declares-its-tracker-and-agent-permissions.md). Whether to keep
+them is decided after running one case of each of three different kinds.
 
-## 제안 요약
+## Proposal summary
 
-문서 거버넌스에는 지금 두 가지 판정이 있다. 선언한 형식과 기계적 사실이 맞는가(구조·생성
-검사), 그리고 이 본문을 독자와 목적에 맞춰 검토했는가(개별 편집 검토)다. 검토 기록은
-검토한 본문과 지금 본문이 같은지를 확인하며, 그 보장 범위는
-[ADR 0005](../adr/0005-individual-document-editorial-review.md)가 정확히 제한했다.
+Document governance currently has two verdicts. Do the declared form and the mechanical facts hold
+(structure and generated-document checks)? And was this body reviewed against its readers and
+purpose (individual editorial review)? A review receipt confirms that the reviewed body is the same
+as the current body, and
+[ADR 0005](../adr/0005-individual-document-editorial-review.md) limits that guarantee precisely.
 
-세 번째 판정이 빠져 있다. **이후 변경에도 그 설명과 절차가 유효한가**이다. 본문이 그대로면
-해시가 같고 검토 기록은 계속 유효하지만, 근거가 된 코드·설정·결정이 바뀌면 문서는 더 이상
-맞지 않는다.
+A third verdict is missing: **do the explanation and procedure still hold after later changes?** If
+the body is unchanged, the hash is the same and the review receipt stays valid, but when the code,
+configuration or decision it rests on changes, the document no longer matches.
 
-이 저장소에서 2026-09-10 하루에 두 건이 나왔다.
+This repository produced two such cases on a single day, 2026-09-10.
 
-- [ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md)는 hook 상태가 다섯이라고
-  적었다. 여섯 번째 상태를 더한 변경이 들어온 뒤에도 본문과 검토 기록은 그대로였다.
-- [ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md)은 근거와 대안에서
-  plugin marketplace 배포를 거절했다. 그 판단을 뒤집는 변경이 들어온 뒤에도 마찬가지였다.
+- [ADR 0015](../adr/0015-hook-copies-are-diagnosed-not-overwritten.md) stated that there were five
+  hook states. After a change added a sixth state, the body and its review receipt stayed as they
+  were.
+- [ADR 0007](../adr/0007-one-command-activation-and-main-as-release-channel.md) rejected plugin
+  marketplace distribution in its rationale and alternatives. The same happened after a change
+  reversed that judgment.
 
-두 건 모두 사람이 지적해서 발견했고, 검사는 끝까지 통과했다. 두 건 모두 새 결정 기록으로
-처리했으나, 발견 자체는 기계가 하지 않았다.
+Both were found because a person pointed them out, and the checks passed throughout. Both were
+handled with new decision records, but the detection itself was not done by a machine.
 
-세 번째 판정을 개별 편집 검토에 합치지 않는다. 지금의 검토 기록은 "이 본문을 읽고 검토했다"만
-뜻하며, 여기에 "운영에서도 확인했다"를 얹으면 정확히 제한된 보장이 흐려진다.
+The third verdict is not merged into individual editorial review. A review receipt today means only
+"this body was read and reviewed"; adding "this was also confirmed in operation" would blur a
+guarantee that is precisely limited.
 
-## 설계
+## Design
 
-### 표준이 갖는 것과 프로젝트가 갖는 것
+### What the standard owns and what the project owns
 
-| 책임 | 둘 곳 |
+| Responsibility | Where it lives |
 |---|---|
-| 문서가 답할 질문, 정본, 갱신 조건 | 표준의 문서 거버넌스 |
-| 미결을 어디에 연결하고 무엇을 종료 조건으로 쓰는가 | 표준의 연결 규칙 |
-| 담당자, 기한, 진행 상태, 종료 판정 | 프로젝트의 업무 추적 도구 |
-| 변경 내용과 검증 결과, 후속 항목 연결 | 기존 merge request |
-| 당시 발견하고 측정한 사실 | 검토 보고서와 실험 기록 |
-| 위험 수용 결정 | 결정권자의 확인 기록 |
+| The question a document answers, its source of truth, its update conditions | The standard's document governance |
+| Where an unresolved item is linked and what serves as its closing condition | The standard's linking rules |
+| Owner, due date, progress, closing verdict | The project's work tracker |
+| What changed, verification results, links to follow-up items | The existing merge request |
+| Facts found and measured at the time | Review reports and experiment records |
+| Risk acceptance decisions | The decision-maker's confirmation record |
 
-표준은 특정 추적 도구를 소유하지 않는다. 프로젝트가 원장을 선언하고, 표준은 연결이 있는지와
-종료 조건이 적혔는지만 본다. 이 저장소의 원장은 GitHub Issues이고, `public-ai-qa`의 원장은
-GitLab Issues다. 표준이 둘 중 하나를 이름으로 갖지 않는 이유는
-[ADR 0017](../adr/0017-the-standard-holds-no-branch-names.md)이 branch 이름에 대해 정한 것과 같다.
+The standard does not own any particular tracker. The project declares its ledger, and the standard
+checks only that a link exists and that a closing condition is written. This repository's ledger is
+GitHub Issues; the ledger of `public-ai-qa` is GitLab Issues. The standard does not name either one
+for the same reason
+[ADR 0017](../adr/0017-the-standard-holds-no-branch-names.md) gives for branch names.
 
-### 미결의 종류
+### Kinds of unresolved items
 
-미결을 하나로 묶으면 "누가 코드를 고쳐야 하는가"와 "누가 답을 받아 와야 하는가"의 차이가
-사라진다. 종류마다 종료 조건의 성격이 다르다.
+Lumping all unresolved items together erases the difference between "who has to fix the code" and
+"who has to fetch an answer". Each kind has a different kind of closing condition.
 
-| 종류 | 추적할 곳 | 종료 조건의 성격 |
+| Kind | Where it is tracked | Nature of the closing condition |
 |---|---|---|
-| 결함 | 결함 항목 | 수정 후 실패 시나리오를 다시 재현해 통과 |
-| 해야 할 후속 작업 | 작업 항목 | 약속한 산출물이나 실행 결과를 확인 |
-| 미확정 결정 | 결정 항목, 필요하면 proposed 상태의 결정 기록 | 결정권자가 선택하고 근거를 남김 |
-| 외부 답변 대기 | 차단 상태의 항목 | 답변을 받아 기준 문서에 반영 |
-| 당장 해결하지 않을 위험 | 위험 수용 기록과 연결된 항목 | 수용권자, 조건, 재검토 시점 명시 |
+| Defect | Defect item | After the fix, the failure scenario is reproduced again and passes |
+| Required follow-up work | Work item | The promised deliverable or execution result is confirmed |
+| Open decision | Decision item, plus a decision record in proposed status if needed | The decision-maker chooses and records the rationale |
+| Waiting on an external answer | Item in blocked state | The answer is received and reflected in the reference document |
+| Risk not being addressed now | Item linked to a risk acceptance record | The accepting party, conditions and review date are stated |
 
-### 업무 항목의 형식
+### Form of a work item
 
-표준이 요구하는 것은 담당자 한 명과 기계가 아닌 사람이 판정할 수 있는 종료 조건이다. 나머지
-필드는 프로젝트의 도구를 따른다.
+The standard requires one owner and a closing condition that a person, not a machine, can judge.
+All other fields follow the project's tool.
 
 ```
 제목: 답변 종료 이벤트 없이 SSE 가 닫히면 입력이 잠기는 문제
@@ -89,69 +96,104 @@ GitLab Issues다. 표준이 둘 중 하나를 이름으로 갖지 않는 이유�
 종료 증거: 검사 결과
 ```
 
-담당자를 여럿 적지 않는다. 종료 조건은 "개선한다"가 아니라 무엇을 확인하면 닫히는지로 적는다.
+The example stays in Korean, as a Korean-language project would write it. In English it reads:
 
-### 변경 하나를 처리하는 순서
+```
+Title: Input locks when SSE closes without an answer-end event
+Type: Defect
+Owner: one person
+Impact / priority: user cannot continue the conversation / before next release
+Basis: link to the relevant section of the review report
 
-1. **영향 확인** — 이 변경으로 어느 문서의 어떤 설명이 달라질 수 있는지 확인한다.
-2. **처리 결정** — 갱신하거나, 확인했고 갱신이 불필요하다는 사실을 짧게 남긴다.
-3. **검토와 검사** — 문서를 고쳤다면 개별 편집 검토와 선언한 native 검사를 수행한다.
-4. **미결 연결** — 이번에 닫지 못한 것을 종료 조건이 있는 업무 항목에 연결한다.
-5. **완료 판정** — 문서 편집 완료와 실제 동작 확인 완료를 구분한다.
+Closing conditions:
+- After an early EOF, an error message is shown and the user can type again.
+- The regression check for that path passes.
 
-결과는 별도 보고서가 아니라 merge request 의 「영향 및 후속 작업」 절에 적는다. 그 절은 이미
-계약에 있다.
+Related change: merge request link
+Closing evidence: check results
+```
+
+Do not list multiple owners. Write the closing condition as what has to be confirmed for the item
+to close, not as "improve X".
+
+### Order of handling one change
+
+1. **Check impact** — identify which explanation in which document this change may alter.
+2. **Decide handling** — update it, or briefly record that it was checked and needs no update.
+3. **Review and check** — if a document was edited, run individual editorial review and the
+   declared native checks.
+4. **Link unresolved items** — link whatever this change could not close to a work item with a
+   closing condition.
+5. **Judge completion** — distinguish finishing the document edit from confirming the actual
+   behavior.
+
+The result goes in the merge request's `영향 및 후속 작업` ("Impact and follow-up work") section,
+not in a separate report. That section is already part of the contract.
 
 > 백업 volume 변경에 맞춰 복구 절차를 갱신했다. 문서 검사와 개별 검토는 완료했다. 복구 실험은
 > 미실행이며 후속 항목 OPS-12 에서 추적한다.
 
-**후속 항목을 만들었다는 사실이 완료 판정이 되지 않는다.** 그 실험이 이 변경의 필수 완료
-조건이면 이월할 수 없다. 무엇을 이월할 수 있는지는 프로젝트의 위험과 배포 조건이 정한다.
+(In English: "Updated the recovery procedure for the backup volume change. Document checks and
+individual review are done. The recovery experiment has not been run and is tracked in follow-up
+item OPS-12.")
 
-### 정기 확인의 범위
+**Creating a follow-up item does not by itself count as completion.** If that experiment is a
+required completion condition of this change, it cannot be deferred. What can be deferred is
+decided by the project's risk and release conditions.
 
-변경 시점의 확인이 주 경로이고, 정기 확인은 누락을 찾는 보조 경로다. 네 가지면 충분하다.
+### Scope of periodic checks
 
-- 문서 영향이 미결로 남은 변경
-- 근거가 된 코드나 설정이 바뀐 주요 현행 문서
-- 완료로 표시했으나 필요한 증거가 없는 항목
-- 같은 현재 사실을 다르게 설명하는 문서
+Checking at change time is the main path; periodic checks are a secondary path for catching what
+was missed. Four targets are enough.
 
-검토 날짜가 오래됐다는 이유만으로 전 문서를 다시 읽게 하지 않는다. 보존 문서는 오래된 것이
-정상이고, 현행 문서도 관련 구현이 바뀌지 않았으면 달력 기준 재검토의 실익이 작다. 반대로
-복구 절차처럼 실행 환경에 민감한 문서는 정기 실험이 필요할 수 있다. 그 주기는 표준이 일괄
-정하지 않고 프로젝트가 선언한다.
+- Changes whose documentation impact was left unresolved
+- Major current documents whose underlying code or configuration has changed
+- Items marked done that lack the required evidence
+- Documents that describe the same current fact differently
 
-### 무엇을 먼저 구현했나
+Do not make people reread every document only because its review date is old. Retained documents
+are expected to be old, and for current documents whose related implementation has not changed, a
+calendar-based re-review has little value. Conversely, documents that are sensitive to the
+execution environment, such as recovery procedures, may need periodic experiments. The standard
+does not set that interval globally; the project declares it.
 
-수기 운영을 먼저 하려던 순서를 바꿨다. 사람이 skill 이름을 기억해서 부르고 양식을 채워야 하면
-바쁠 때 가장 먼저 생략되고, 생략된 기록으로는 이 절차가 쓸 만한지 판단할 수 없다. 그래서 기존
-작업 흐름에 먼저 연결하고, 그 흐름이 만든 항목과 merge request 자체를 운영 증거로 쓴다. 별도
-수기 대장은 만들지 않는다.
+### What was implemented first
 
-- `packages/vcs-gov/tracker-contract.yaml` — 항목의 종류와 종료 조건, 필수 정보, 중복 확인,
-  등록 시점, 추출 규칙, 종료 증거, 비용 기록의 두 축
-- `vcs.tracker` 선언과 `engsys vcs tracker` · `check-tracker`
-- `track-unresolved` skill — 조회·중복 확인·등록·근거 갱신을 한 흐름으로
-- merge request gate 의 누락 확인 — 후속을 적고 링크가 없으면 막는다
+The original plan to start with manual operation was reversed. If people have to remember a skill
+name, invoke it and fill in a form, that is the first thing skipped when they are busy, and skipped
+records cannot tell whether this procedure is useful. So it was wired into the existing workflow
+first, and the items that workflow creates, together with the merge requests themselves, serve as
+operating evidence. No separate manual ledger is kept.
 
-`packages/docs-gov/policy.yaml` 과 문서 쪽 계약은 늘리지 않았다. 세 번째 판정을 문서 거버넌스의
-계약으로 올릴지는 결정 항목에서 따로 판단한다.
+- `packages/vcs-gov/tracker-contract.yaml` — item kinds and closing conditions, required
+  information, duplicate checks, registration timing, extraction rules, closing evidence, and the
+  two axes of cost recording
+- The `vcs.tracker` declaration and `engsys vcs tracker` · `check-tracker`
+- The `track-unresolved` skill — lookup, duplicate check, registration and evidence update in one
+  flow
+- The merge request gate's missing-link check — it blocks a merge request that lists follow-up
+  work without a link
 
-운영 비용은 [도입 평가 규정](../verification/adoption.md)의 기준으로 기록한다. 그 문서는 이미
-탐색·수정·검토·오탐 복구·유지 시간을 모두 포함하고, 추가 탐지가 없고 검토·유지 시간이 계속
-늘어나는 규칙은 적용 범위를 줄이거나 제거한다고 정했다. 여기에 **본문이 바뀌지 않은 상태에서
-발견한 불일치** 사례를 항목으로 더한다.
+`packages/docs-gov/policy.yaml` and the documentation-side contract were not extended. Whether to
+raise the third verdict into the document governance contract is judged separately in a decision
+item.
 
-### 첫 운영 대상
+Operating cost is recorded against the criteria in the
+[adoption evaluation specification](../verification/adoption.md). That document already covers
+search, editing, review, false-positive recovery and maintenance time, and it states that a rule
+with no additional detections and steadily growing review and maintenance time has its scope
+reduced or is removed. This proposal adds **inconsistencies found while the body was unchanged** as
+an item there.
 
-성격이 다른 세 사례를 넣는다. 문장 수정만 잘 처리하는 절차인지, 실제 운영 판단까지 지원하는지는
-그렇게 해야 갈린다.
+### First operating targets
 
-- 코드 동작 변경에 따른 현행 문서 확인
-- 배포·복구 절차 변경과 실행 증거 연결
-- 미확정 결정의 기준 확정 추적
+Three cases of different kinds are included. Only that shows whether the procedure merely handles
+wording fixes well or also supports real operating judgments.
 
-건수가 아니라 종류로 판단한다. 같은 종류를 열 번 반복해도 문장 수정만 잘 처리하는 절차인지는
-갈리지 않는다. 배포·복구 사례와 미확정 결정 사례는 `public-ai-qa` 가 대상이며, 그 프로젝트의
-native 검사가 통과하는 상태가 선행 조건이다.
+- Checking current documents after a change in code behavior
+- Changes to release and recovery procedures, linked to execution evidence
+- Tracking an open decision until its criteria are settled
+
+The judgment is by kind, not by count. Repeating the same kind ten times does not show whether the
+procedure only handles wording fixes well. The release/recovery case and the open-decision case
+target `public-ai-qa`, and a passing native check in that project is a precondition.
