@@ -1,0 +1,18 @@
+engsys-document-review: 1
+document: README.ko.md
+blob: 1dc89c988e9a3899ee52ad08522928826b8dd8c4
+decision: pass
+reviewer: claude-opus-5-5 (self-review)
+audience: 표준을 쓰는 개발자와 리뷰어
+purpose: 표준을 프로젝트에 붙이는 방법과 각 명령·gate가 검사하는 것
+
+README.ko.md is the Korean README for the same readers, written in terse bullet style with noun-form
+endings (개조식, 명사형 종결) as the user requested; it mirrors README.md section by section.
+Converted each prose paragraph into labelled bullets (대상, 범위, 이유, 한계) while keeping the causal
+reasons (e.g. why --yes is required without a terminal, why core.hooksPath must be set per clone,
+why PATH alone leaves the gate off) and every command, flag, path and ADR link.
+Code blocks and CLI output are byte-identical to the original Korean README.
+Checked prose lines for verb endings (~한다/~합니다); none remain outside code blocks.
+Limitation: two subheadings (Claude Code 연결 경로, branch model) were added for structure, mirrored in
+README.md.
+
